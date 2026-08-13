@@ -31,7 +31,7 @@ const steps = [
 
 const stats = [
   { value: "3–5", label: "Business day delivery" },
-  { value: "$3.99", label: "Starting price per mailing" },
+  { value: "$4.99", label: "Starting price per mailing" },
   { value: "100%", label: "You control the facts" },
   { value: "0", label: "Printers needed" },
 ];
@@ -58,7 +58,7 @@ const faqItems = [
   { q: "What types of notices can I respond to?", a: "IRS notices and letters, court summonses and complaints, regulatory agency actions, licensing board decisions, FOIA determinations, and appeals of denied claims or rulings." },
   { q: "How does the mailing work?", a: "Your final document is printed, placed in an envelope, and mailed via USPS. You can choose first-class, certified, or certified with return receipt for proof of delivery." },
   { q: "Is my data secure?", a: "All documents are stored with encryption, never shared with third parties, and never used for marketing. You can request full deletion of your data at any time." },
-  { q: "What does it cost?", a: "Prices start at $3.99 per mailing, including printing, paper, envelope, and postage. Certified mail starts at $8.99. No subscription required." },
+  { q: "What does it cost?", a: "Costs start at $4.99 per mailing, including printing, paper, envelope, and postage. Certified starts at $14.94. No subscription required." },
 ];
 
 function HomePage() {
@@ -170,7 +170,7 @@ function HomePage() {
             <h2 className="mt-3 text-3xl font-bold text-slate-700 md:text-4xl" style={{ fontFamily: "var(--font-serif)" }}>What are you responding to?</h2>
             <p className="mt-4 text-slate-400">Choose a guided starting point. Notice Respond is designed around government notice responses, not generic AI chat.</p>
           </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {workflows.map(({ title, description, icon: Icon, href }) => (
               <Link key={title} to={href} className="card group p-6 transition hover:-translate-y-1 hover:shadow-lg">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
@@ -305,10 +305,9 @@ function HomePage() {
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-4">
             {[
-              { type: "First-Class", price: "$3.99", desc: "3–5 business days, tracking included", icon: Mail },
-              { type: "Certified", price: "$8.99", desc: "Signature tracking, proof of delivery", icon: PackageCheck },
-              { type: "Certified + Return Receipt", price: "$12.99", desc: "Signed return receipt card", icon: ShieldCheck, featured: true },
-              { type: "Registered", price: "$15.99", desc: "Highest security, insured, signature required", icon: Stamp },
+              { type: "Standard", price: "$4.99", desc: "3–7 business days, tracking included", icon: Mail },
+              { type: "Certified", price: "$14.94", desc: "Delivery tracking + confirmation", icon: PackageCheck },
+              { type: "Registered", price: "$32.49", desc: "Secure handling + tracking, insured", icon: Stamp, featured: true },
             ].map(({ type, price, desc, icon: Icon, featured }) => (
               <div key={type} className={`card p-6 text-center ${featured ? "ring-2 ring-emerald-400" : ""}`}>
                 {featured && <div className="badge badge-emerald mb-3">Most popular</div>}
