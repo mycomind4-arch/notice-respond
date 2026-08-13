@@ -1,0 +1,81 @@
+//#region node_modules/.nitro/vite/services/ssr/assets/workflows-CntJTiKq.js
+var workflows = {
+	"irs-notice": {
+		id: "irs-notice",
+		title: "Respond to an IRS Notice",
+		description: "Organize an IRS notice or letter, prepare a written response, and mail it with proof of delivery.",
+		disclaimer: "Notice Respond provides document preparation and mailing assistance. It is not a law firm, CPA firm, or tax professional and does not provide legal or tax advice.",
+		steps: [
+			"intro",
+			"document",
+			"facts",
+			"objective",
+			"draft",
+			"review",
+			"attachments",
+			"recipient",
+			"mailing",
+			"checkout",
+			"submitted"
+		]
+	},
+	"court-summons": {
+		id: "court-summons",
+		title: "Respond to a Court Summons",
+		description: "Prepare a written response to a court summons or complaint and file it by mail with proof of delivery.",
+		disclaimer: "Notice Respond is not a law firm and does not provide legal advice. Court filings have strict deadlines and procedural requirements. Consult an attorney if you are unsure.",
+		steps: [
+			"intro",
+			"document",
+			"facts",
+			"objective",
+			"draft",
+			"review",
+			"attachments",
+			"recipient",
+			"mailing",
+			"checkout",
+			"submitted"
+		]
+	},
+	"agency-action": {
+		id: "agency-action",
+		title: "Respond to an Agency Action",
+		description: "Prepare a written response to a regulatory agency notice, licensing board action, or FOIA determination.",
+		disclaimer: "Agency responses may have strict deadlines and specific formatting requirements. Review the agency's instructions carefully. Notice Respond is not a law firm.",
+		steps: [
+			"intro",
+			"document",
+			"facts",
+			"objective",
+			"draft",
+			"review",
+			"attachments",
+			"recipient",
+			"mailing",
+			"checkout",
+			"submitted"
+		]
+	},
+	"file-appeal": {
+		id: "file-appeal",
+		title: "File an Appeal",
+		description: "Prepare an appeal letter for a denied claim, decision, or ruling and mail it with proof of delivery.",
+		disclaimer: "Appeals often have short deadlines and specific requirements. Review the appeal instructions from the agency or court. Notice Respond is not a law firm.",
+		steps: [
+			"intro",
+			"document",
+			"facts",
+			"objective",
+			"draft",
+			"review",
+			"attachments",
+			"recipient",
+			"mailing",
+			"checkout",
+			"submitted"
+		]
+	}
+};
+//#endregion
+export { workflows as t };

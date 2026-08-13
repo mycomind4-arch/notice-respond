@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/llms.txt",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/assets/_slug-DattvR2c.js",
+    "/assets/about-I2sVxCOj.js",
+    "/assets/agency-action-Cz6YrWe-.js",
+    "/assets/auth-BxJqlHFg.js",
+    "/assets/check-DLHQ5maf.js",
+    "/assets/chevron-down-DwGhd2BO.js",
+    "/assets/circle-check-B2_HYfj3.js",
+    "/assets/clock-BUDWTKLW.js",
+    "/assets/contact-BfhuvUhL.js",
+    "/assets/court-summons-BdiFkUDk.js",
+    "/assets/dashboard-BoMcN5wM.js",
+    "/assets/faq-cbIMetJF.js",
+    "/assets/file-appeal-DHTggGzO.js",
+    "/assets/file-text-C1D2nJqG.js",
+    "/assets/file-up-CJz9qTs5.js",
+    "/assets/index-CAY2xSEd.js",
+    "/assets/irs-notice-BTIbYPlA.js",
+    "/assets/lock-dr0Qvxb7.js",
+    "/assets/mail-Brpsj4ae.js",
+    "/assets/package-check-guXh0vIv.js",
+    "/assets/pricing-DbjA_taZ.js",
+    "/assets/privacy-BuE4Gugd.js",
+    "/assets/resources-GCi0Gn_X.js",
+    "/assets/routes-DG0V8h8w.js",
+    "/assets/shield-alert-Dd1C2h0f.js",
+    "/assets/shield-check-qU03pDFm.js",
+    "/assets/sparkles-CTeJnr17.js",
+    "/assets/stamp-cOx764Kv.js",
+    "/assets/styles-yA-Rt9lr.css",
+    "/assets/terms-CBXoIy5N.js",
+    "/assets/triangle-alert-CGYGgR8I.js",
+    "/assets/workflows-D7UsUcax.js"
+  ]
+}
