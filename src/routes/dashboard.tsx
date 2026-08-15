@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { NarrationButton, VoiceBadge } from "@/components/voice-controls";
+import { buildScript, createSegment } from "@/domain/voice";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "My Mailings — Notice Respond" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -25,19 +27,37 @@ const mailings = [
 const statusBadge: Record<string, string> = { in_transit: "text-stamp", delivered: "text-emerald-700" };
 
 function DashboardPage() {
+  const summaryScript = buildScript("summary", "Dashboard Summary", [
+    createSegment("Welcome to Notice Respond.", "heading", { pauseAfter: 500 }),
+    createSegment("You have 5 total responses. 1 is in transit, and 4 have been delivered.", "body", { pauseAfter: 400 }),
+    createSegment("Average delivery time: 4.2 days.", "value"),
+    createSegment("Your most recent mailing, NR-2026-0052, is currently in transit via Certified Mail.", "body", { pauseAfter: 600 }),
+    createSegment("To respond to a new notice, click the Respond to a Notice button, or try the new Analysis Studio with voice narration.", "instruction", { pauseAfter: 500 }),
+  ]);
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="postmark w-fit">My Mailings</div>
+            <div className="flex items-center gap-2">
+              <div className="postmark w-fit">My Mailings</div>
+              <VoiceBadge active={true} />
+            </div>
             <h1 className="mt-3 font-serif text-4xl">Your response records</h1>
             <p className="mt-1 text-sm text-muted-foreground">Track your notice responses and delivery records.</p>
           </div>
-          <Link to="/workflows/irs-notice" className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5">
-            Respond to a notice <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-          </Link>
+          <div className="flex items-center gap-3">
+            <NarrationButton script={summaryScript} label="Listen to summary" />
+            <Link to="/workflows/analyze" className="inline-flex items-center gap-2 rounded-full border border-stamp px-4 py-2 text-sm font-medium text-stamp transition-colors hover:bg-stamp hover:text-accent-foreground">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5" /></svg>
+              Analysis Studio
+            </Link>
+            <Link to="/workflows/irs-notice" className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5">
+              Respond to a notice <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">

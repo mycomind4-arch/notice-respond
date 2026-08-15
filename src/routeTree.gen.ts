@@ -21,6 +21,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResourcesIndexRouteImport } from './routes/resources/index'
 import { Route as ResourcesSlugRouteImport } from './routes/resources/$slug'
 import { Route as WorkflowsAgencyActionRouteImport } from './routes/workflows/agency-action'
+import { Route as WorkflowsAnalyzeRouteImport } from './routes/workflows/analyze'
 import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/court-summons'
 import { Route as WorkflowsFileAppealRouteImport } from './routes/workflows/file-appeal'
 import { Route as WorkflowsIrsNoticeRouteImport } from './routes/workflows/irs-notice'
@@ -85,6 +86,11 @@ const WorkflowsAgencyActionRoute = WorkflowsAgencyActionRouteImport.update({
   path: '/workflows/agency-action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkflowsAnalyzeRoute = WorkflowsAnalyzeRouteImport.update({
+  id: '/workflows/analyze',
+  path: '/workflows/analyze',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkflowsCourtSummonsRoute = WorkflowsCourtSummonsRouteImport.update({
   id: '/workflows/court-summons',
   path: '/workflows/court-summons',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
+  '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
+  '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
+  '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
+    | '/workflows/analyze'
     | '/workflows/court-summons'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
+    | '/workflows/analyze'
     | '/workflows/court-summons'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
+    | '/workflows/analyze'
     | '/workflows/court-summons'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -219,6 +231,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ResourcesSlugRoute: typeof ResourcesSlugRoute
   WorkflowsAgencyActionRoute: typeof WorkflowsAgencyActionRoute
+  WorkflowsAnalyzeRoute: typeof WorkflowsAnalyzeRoute
   WorkflowsCourtSummonsRoute: typeof WorkflowsCourtSummonsRoute
   WorkflowsFileAppealRoute: typeof WorkflowsFileAppealRoute
   WorkflowsIrsNoticeRoute: typeof WorkflowsIrsNoticeRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsAgencyActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/analyze': {
+      id: '/workflows/analyze'
+      path: '/workflows/analyze'
+      fullPath: '/workflows/analyze'
+      preLoaderRoute: typeof WorkflowsAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/court-summons': {
       id: '/workflows/court-summons'
       path: '/workflows/court-summons'
@@ -347,6 +367,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ResourcesSlugRoute: ResourcesSlugRoute,
   WorkflowsAgencyActionRoute: WorkflowsAgencyActionRoute,
+  WorkflowsAnalyzeRoute: WorkflowsAnalyzeRoute,
   WorkflowsCourtSummonsRoute: WorkflowsCourtSummonsRoute,
   WorkflowsFileAppealRoute: WorkflowsFileAppealRoute,
   WorkflowsIrsNoticeRoute: WorkflowsIrsNoticeRoute,

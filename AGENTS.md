@@ -1,0 +1,59 @@
+# Notice Respond — Agent Guide
+
+## What This Repo Is
+Notice Respond is a MailMyPDF vertical for responding to government and administrative notices.
+Users upload a notice, the system analyzes it, helps them understand what's being demanded,
+identifies deadlines, surfaces evidence and contradictions, and prepares a professional response
+that can be mailed with proof of delivery.
+
+## Constraints
+- Do NOT touch `mailmypdf-platform` repo.
+- Do NOT use sub-agents.
+- Work ONLY in this repository (`notice-respond`).
+- Use `appeal-mail` as a sophistication benchmark but do NOT copy its code blindly.
+- Notice-specific domain knowledge stays in Notice Respond, not in shared platform code.
+
+## Tech Stack
+- Vite + React + TanStack Router + TanStack Start
+- Cloudflare Pages (Nitro preset)
+- Zod for schema validation
+- pdf.js for client-side PDF text extraction
+- MailMyPDF API for physical mailing
+
+## Build Commands
+- `npm run dev` — dev server
+- `npm run build` — production build
+- `npm test` — run tests (`node --test tests/*.test.mjs`)
+- `npm run verify:launch` — tests + build
+
+## Architecture
+```
+src/
+  domain/          — Notice-specific domain models and intelligence
+    notice.ts      — Central Notice object with facts, deadlines, analysis
+    notice-type.ts — Notice classification and notice-type taxonomy
+    fact.ts        — Extracted facts with provenance
+    deadline.ts    — Deadline intelligence
+    evidence.ts    — Evidence model with exhibit indexing
+    finding.ts     — Analysis findings (contradictions, gaps, issues)
+    readiness.ts   — Case readiness assessment
+    strategy.ts    — Response strategy options
+    response.ts    — Response generation
+    proof.ts       — Proof packet for mailed response
+    workflows.ts   — (existing) workflow definitions
+    mailing.ts     — (existing) mailing types
+  platform/        — Platform adapters and server functions
+    notice-extraction.ts — Pattern-based extraction from notice text
+    text-extraction.ts   — Client-side PDF/image text extraction
+    extract-fn.ts        — Server function for extraction
+  components/      — Shared UI components
+  routes/          — Page routes
+    workflows/     — Workflow pages
+tests/             — Test files
+agent/             — Agent recovery state
+```
+
+## Recovery Files
+- `agent/CHECKPOINT.md` — Last completed milestone
+- `agent/NEXT_ACTION.md` — What to do next
+- `agent/SESSION_STATE.json` — Machine-readable state
