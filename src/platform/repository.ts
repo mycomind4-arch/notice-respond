@@ -3,34 +3,43 @@
    
    Returns the active CaseRepository implementation.
    
-   Currently: InMemoryCaseRepository (dev/SSR default).
-   Next stage: SupabaseCaseRepository when env vars are present.
+   - If SUPABASE_URL + SUPABASE_ANON_KEY are set → SupabaseCaseRepository
+   - Otherwise → InMemoryCaseRepository (dev/SSR default)
    
    Usage:
      import { getRepository } from "@/platform/repository";
      const repo = getRepository();
      const myCase = await repo.load(id);
+   
+   Override for tests:
+     import { setRepository } from "@/platform/repository";
+     setRepository(new InMemoryCaseRepository());
    ═══════════════════════════════════════════════════════════ */
 
 import type { CaseRepository } from "../domain/case-repository";
 import { getInMemoryRepository } from "./in-memory-repository";
+import { SupabaseCaseRepository } from "./supabase-repository";
+import { hasSupabase } from "./supabase-client";
 
 let activeRepo: CaseRepository | null = null;
 
 /**
  * Returns the active case repository.
- * Falls back to in-memory when no persistence is configured.
+ * Uses Supabase when configured, falls back to in-memory.
  */
 export function getRepository(): CaseRepository {
   if (!activeRepo) {
-    activeRepo = getInMemoryRepository();
+    if (hasSupabase()) {
+      activeRepo = new SupabaseCaseRepository();
+    } else {
+      activeRepo = getInMemoryRepository();
+    }
   }
   return activeRepo;
 }
 
 /**
- * Override the repository (used when Supabase is initialized
- * or in tests to inject a mock).
+ * Override the repository (used in tests to inject a mock).
  */
 export function setRepository(repo: CaseRepository): void {
   activeRepo = repo;
