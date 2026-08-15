@@ -5,13 +5,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { NarrationButton, DictationInput, VoiceBadge } from "@/components/voice-controls";
 import { extractFromText } from "@/platform/notice-extraction";
 import { classifyNoticeType, NOTICE_TYPE_META } from "@/domain/notice-type";
-import { computeDeadlineDate, daysUntil, deadlineUrgency, URGENCY_META, createDeadline } from "@/domain/deadline";
+import { computeDeadlineDate, daysUntil, deadlineUrgency, URGENCY_META, createDeadline, validateDeadline } from "@/domain/deadline";
 import { createFact } from "@/domain/fact";
 import { createEvidence } from "@/domain/evidence";
 import { runReadinessReview } from "@/domain/readiness";
 import { recommendStrategies, STRATEGY_TYPE_LABELS } from "@/domain/strategy";
 import { generateResponseDraft } from "@/domain/response";
-import { createCase, updateCase, primaryDeadline, inferProgress, type NoticeCase } from "@/domain/notice";
+import { createCase, updateCase, type NoticeCase } from "@/domain/notice";
 import {
   buildAnalysisNarration,
   buildDeadlineNarration,
@@ -19,11 +19,18 @@ import {
   buildStrategyNarration,
   type WalkthroughStep,
 } from "@/domain/voice";
-import {
-  NarrationController,
-  loadVoiceSettings,
-  type NarrationState,
-} from "@/platform/speech";
+import { NarrationController, loadVoiceSettings } from "@/platform/speech";
+
+// New intelligence modules
+import { classifyContent, wrapDocumentForAI, validateTextInput } from "@/domain/security";
+import { detectContradictions, resolveContradiction, contradictionSummary, type Contradiction } from "@/domain/contradiction";
+import { detectMissingInfo, resolveMissingInfo, missingInfoSummary, type MissingInfoItem } from "@/domain/missing-info";
+import { assessCaseHealth, HEALTH_STATUS_META } from "@/domain/health";
+import { generateActionQueue, PRIORITY_META } from "@/domain/next-action";
+import { evaluateResponseQuality } from "@/domain/quality";
+import { explainDeadline, explainStrategy, explainResponse, explainReadiness } from "@/domain/explainability";
+import { createVersionedResponse, addVersion, getVersionHistory, type VersionedResponse } from "@/domain/versioning";
+import { AuditLog } from "@/domain/audit";
 
 export const Route = createFileRoute("/workflows/analyze")({
   head: () => ({
@@ -52,8 +59,29 @@ function AnalyzeNotice() {
   const [selectedStrategyIdx, setSelectedStrategyIdx] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [autoNarrated, setAutoNarrating] = useState(false);
+  const [contradictions, setContradictions] = useState<Contradiction[]>([]);
+  const [missingItems, setMissingItems] = useState<MissingInfoItem[]>([]);
+  const [showWhyDeadline, setShowWhyDeadline] = useState(false);
+  const [showWhyStrategy, setShowWhyStrategy] = useState<number | null>(null);
+  const [showWhyResponse, setShowWhyResponse] = useState(false);
+  const [showWhyHealth, setShowWhyHealth] = useState(false);
+  const [versionedResponse, setVersionedResponse] = useState<VersionedResponse | null>(null);
+  const [editingDraft, setEditingDraft] = useState("");
 
   const caseRef = useRef<NoticeCase | null>(null);
+  const auditLogRef = useRef(new AuditLog());
+
+  // Security classification of input
+  const securityCheck = useMemo(() => {
+    if (!noticeText.trim()) return null;
+    return classifyContent(noticeText, "untrusted");
+  }, [noticeText]);
+
+  // Input validation
+  const inputValidation = useMemo(() => {
+    if (!noticeText.trim()) return null;
+    return validateTextInput(noticeText);
+  }, [noticeText]);
 
   // Run analysis
   const analysis = useMemo(() => {
@@ -110,8 +138,97 @@ function AnalyzeNotice() {
       readinessState: readiness.state as any,
     });
 
-    return { extraction, classification, deadline, dUntil, urgency, confirmedFacts, readiness, strategies };
-  }, [noticeText]);
+    // Detect contradictions
+    const detectedContradictions = detectContradictions({
+      facts: extraction.facts,
+      userFacts: userFacts || undefined,
+      evidence: [],
+      deadlines: extraction.deadlines.map((d) => ({ date: d.deadline.date, rawText: d.deadline.rawText, certainty: d.deadline.certainty })),
+    });
+
+    // Detect missing information
+    const detectedMissing = detectMissingInfo({
+      facts: extraction.facts.map((f) => ({ id: f.id, label: f.label, value: f.value, confidence: f.confidence, userConfirmed: f.userConfirmed })),
+      deadlines: [{ date: deadline.date, certainty: deadline.certainty }],
+      evidence: [],
+      agency: extraction.agency || undefined,
+      referenceNumber: extraction.referenceNumber || undefined,
+      noticeDate: extraction.noticeDate || undefined,
+    });
+
+    // Assess case health
+    const health = assessCaseHealth({
+      facts: extraction.facts.map((f) => ({ id: f.id, label: f.label, value: f.value, confidence: f.confidence, userConfirmed: f.userConfirmed })),
+      evidence: [],
+      deadlines: [{ date: deadline.date, certainty: deadline.certainty }],
+      findings: [],
+      contradictions: detectedContradictions.map((c) => ({ status: c.status, severity: c.severity })),
+      missingInfo: detectedMissing.map((m) => ({ status: m.status, impact: m.impact })),
+      readinessScore: readiness.score,
+      readinessState: readiness.state,
+      hasDraft: false,
+      draftWordCount: 0,
+    });
+
+    // Generate action queue
+    const actionQueue = generateActionQueue({
+      readinessState: readiness.state,
+      readinessScore: readiness.score,
+      deadlineUrgency: urgency,
+      deadlineDaysRemaining: dUntil,
+      contradictions: detectedContradictions.map((c) => ({ status: c.status, severity: c.severity, field: c.field, description: c.description })),
+      missingInfo: detectedMissing.map((m) => ({ status: m.status, impact: m.impact, label: m.label, whyItMatters: m.whyItMatters, field: m.field })),
+      facts: extraction.facts.map((f) => ({ confidence: f.confidence, userConfirmed: f.userConfirmed, label: f.label })),
+      evidenceCount: 0,
+      hasDraft: false,
+      draftPlaceholders: 0,
+    });
+
+    // Audit log
+    auditLogRef.current.record({
+      actor: "user",
+      action: "document_processed",
+      objectType: "notice",
+      description: `Notice analyzed: ${classification.type} from ${extraction.agency || "unknown agency"}`,
+      caseId: noticeCase.id,
+      metadata: { factCount: extraction.facts.length, strategyCount: strategies.length },
+    });
+
+    if (detectedContradictions.length > 0) {
+      auditLogRef.current.record({
+        actor: "system",
+        action: "contradiction_detected",
+        objectType: "contradiction",
+        description: `${detectedContradictions.length} contradiction(s) detected`,
+        caseId: noticeCase.id,
+        metadata: { count: detectedContradictions.length },
+      });
+    }
+
+    return {
+      extraction,
+      classification,
+      deadline,
+      dUntil,
+      urgency,
+      confirmedFacts,
+      readiness,
+      strategies,
+      contradictions: detectedContradictions,
+      missingItems: detectedMissing,
+      health,
+      actionQueue,
+      deadlineValidation: validateDeadline(deadline),
+    };
+  }, [noticeText, userFacts]);
+
+  // Update contradictions and missing items when analysis changes
+  useEffect(() => {
+    if (analysis) {
+      setContradictions(analysis.contradictions);
+      setMissingItems(analysis.missingItems);
+    }
+  }, [analysis]);
 
   // Voice narration scripts
   const analysisNarration = useMemo(() => {
@@ -144,24 +261,28 @@ function AnalyzeNotice() {
     );
   }, [analysis]);
 
-  // Auto-narrate on phase change
-  useEffect(() => {
-    if (phase === "analysis" && analysis && !autoNarrated) {
-      setAutoNarrating(true);
-      // Browser speech synthesis requires user interaction; this will only work
-      // if the user clicked a button to reach this phase
-    }
-  }, [phase, analysis, autoNarrated]);
-
   const handleAnalyze = useCallback(() => {
     if (!noticeText.trim()) return;
+    if (inputValidation && !inputValidation.valid) return;
+    auditLogRef.current.record({
+      actor: "user",
+      action: "document_uploaded",
+      objectType: "document",
+      description: "Notice text submitted for analysis",
+    });
     setPhase("analysis");
-  }, [noticeText]);
+  }, [noticeText, inputValidation]);
 
   const handleSelectStrategy = useCallback((idx: number) => {
     setSelectedStrategyIdx(idx);
+    auditLogRef.current.record({
+      actor: "user",
+      action: "strategy_selected",
+      objectType: "strategy",
+      description: `Strategy selected: ${analysis?.strategies[idx]?.type || "unknown"}`,
+    });
     setPhase("draft");
-  }, []);
+  }, [analysis]);
 
   // Draft generation
   const draft = useMemo(() => {
@@ -178,6 +299,47 @@ function AnalyzeNotice() {
       hasSignature: true,
     });
   }, [analysis, selectedStrategyIdx, userObjective, userFacts]);
+
+  // Quality evaluation
+  const qualityReport = useMemo(() => {
+    if (!draft || !analysis) return null;
+    return evaluateResponseQuality({
+      draftContent: draft.content,
+      facts: analysis.extraction.facts.map((f) => ({ id: f.id, label: f.label, value: f.value, confidence: f.confidence, userConfirmed: f.userConfirmed })),
+      evidence: [],
+      deadline: { date: analysis.deadline.date, certainty: analysis.deadline.certainty },
+      agency: analysis.extraction.agency || undefined,
+      referenceNumber: analysis.extraction.referenceNumber || undefined,
+      noticeDate: analysis.extraction.noticeDate || undefined,
+      selectedStrategyType: analysis.strategies[selectedStrategyIdx || 0]?.type,
+      userObjective: userObjective || undefined,
+      unresolvedPlaceholders: draft.unresolvedPlaceholders.map((p) => ({ placeholder: p.placeholder, reason: p.reason })),
+    });
+  }, [draft, analysis, selectedStrategyIdx, userObjective]);
+
+  // Versioned response tracking
+  useEffect(() => {
+    if (draft && analysis) {
+      if (!versionedResponse) {
+        const vr = createVersionedResponse(caseRef.current?.id || "temp");
+        const updated = addVersion(vr, {
+          content: draft.content,
+          strategyType: analysis.strategies[selectedStrategyIdx || 0]?.type,
+          strategyId: analysis.strategies[selectedStrategyIdx || 0]?.id,
+          sourceFactIds: analysis.extraction.facts.map((f) => f.id),
+          unresolvedPlaceholders: draft.unresolvedPlaceholders.length,
+          changeDescription: "Initial draft",
+        });
+        setVersionedResponse(updated);
+        auditLogRef.current.record({
+          actor: "system",
+          action: "response_generated",
+          objectType: "response",
+          description: `Response draft generated (v1, ${draft.wordCount} words)`,
+        });
+      }
+    }
+  }, [draft, analysis, selectedStrategyIdx]);
 
   const walkthrough = useMemo(() => {
     return WALKTHROUGH_STEPS.map((s, i) => ({
@@ -196,10 +358,43 @@ function AnalyzeNotice() {
 
   const walkthroughNarration = useMemo(() => buildWalkthroughNarration(walkthrough), [walkthrough]);
 
+  // Resolve contradiction
+  const handleResolveContradiction = useCallback((idx: number, value: string) => {
+    setContradictions((prev) => {
+      const updated = [...prev];
+      updated[idx] = resolveContradiction(updated[idx], value, "user");
+      return updated;
+    });
+    auditLogRef.current.record({
+      actor: "user",
+      action: "contradiction_resolved",
+      objectType: "contradiction",
+      description: `Contradiction resolved with value: ${value.substring(0, 50)}`,
+    });
+  }, []);
+
+  // Resolve missing info
+  const handleResolveMissingInfo = useCallback((idx: number, value: string) => {
+    setMissingItems((prev) => {
+      const updated = [...prev];
+      updated[idx] = resolveMissingInfo(updated[idx], value);
+      return updated;
+    });
+    auditLogRef.current.record({
+      actor: "user",
+      action: "missing_info_resolved",
+      objectType: "missing_info",
+      description: `Missing info resolved: ${value.substring(0, 50)}`,
+    });
+  }, []);
+
+  const contrSummary = useMemo(() => contradictionSummary(contradictions), [contradictions]);
+  const missingSummary = useMemo(() => missingInfoSummary(missingItems), [missingItems]);
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-4xl px-6 py-10" role="main">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -214,7 +409,7 @@ function AnalyzeNotice() {
         </div>
 
         {/* Progress bar */}
-        <div className="mt-6">
+        <div className="mt-6" role="navigation" aria-label="Workflow progress">
           <div className="progress-track">
             <div
               className="progress-fill"
@@ -244,11 +439,37 @@ function AnalyzeNotice() {
                 multiline
                 rows={10}
               />
+
+              {/* Security indicator */}
+              {securityCheck && securityCheck.detectedInjectionPatterns.length > 0 && (
+                <div className="mt-4 rounded-md border border-red-300/60 bg-red-50/60 p-3" role="alert">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.999 2.878 2.748 2.878h9.11c1.749 0 2.614-1.378 1.748-2.878L13.748 3.376c-.866-1.5-2.63-1.5-3.496 0L3.697 8.376zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <span className="text-sm font-medium text-red-700">
+                      Security notice: {securityCheck.detectedInjectionPatterns.length} potential injection pattern(s) detected
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-red-600">
+                    Document content will be treated as data, not instructions. Patterns: {securityCheck.detectedInjectionPatterns.join(", ")}
+                  </p>
+                </div>
+              )}
+
+              {/* Input validation warnings */}
+              {inputValidation && inputValidation.warnings.length > 0 && securityCheck?.detectedInjectionPatterns.length === 0 && (
+                <div className="mt-4 rounded-md border border-amber-300/50 bg-amber-50/50 p-3">
+                  <p className="text-xs text-amber-700">{inputValidation.warnings.join("; ")}</p>
+                </div>
+              )}
+
               <div className="mt-4 flex items-center gap-3">
                 <button
                   onClick={handleAnalyze}
                   disabled={!noticeText.trim()}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Analyze the notice text"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.055-.75.095m.75-.099a48.05 48.05 0 0 1 9 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5" />
@@ -280,6 +501,93 @@ function AnalyzeNotice() {
               </div>
             </div>
 
+            {/* Case Health Dashboard */}
+            <div className="envelope-card p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-lg">Case Health</h3>
+                <button
+                  onClick={() => setShowWhyHealth(!showWhyHealth)}
+                  className="text-xs text-stamp underline hover:no-underline"
+                  aria-label="Show explanation of case health"
+                >
+                  Why?
+                </button>
+              </div>
+              <div className="mt-3 flex items-center gap-4">
+                <div className="text-center">
+                  <div className={`font-mono text-3xl ${analysis.health.overallScore >= 80 ? "text-emerald-600" : analysis.health.overallScore >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                    {analysis.health.overallScore}
+                  </div>
+                  <div className="text-xs text-muted-foreground">/100</div>
+                </div>
+                <div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    analysis.health.status === "ready" ? "bg-emerald-100 text-emerald-700" :
+                    analysis.health.status === "needs_review" ? "bg-amber-100 text-amber-700" :
+                    analysis.health.status === "incomplete" ? "bg-yellow-100 text-yellow-700" :
+                    analysis.health.status === "conflicting" ? "bg-red-100 text-red-700" :
+                    "bg-red-100 text-red-700"
+                  }`}>
+                    {HEALTH_STATUS_META[analysis.health.status]?.label}
+                  </span>
+                  <p className="mt-1 text-xs text-muted-foreground">{HEALTH_STATUS_META[analysis.health.status]?.description}</p>
+                </div>
+              </div>
+
+              {/* Health dimensions */}
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {analysis.health.dimensions.map((dim) => (
+                  <div key={dim.name} className="border border-rule/30 rounded-md p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">{dim.label}</span>
+                      <span className={`text-xs font-mono ${
+                        dim.status === "good" ? "text-emerald-600" :
+                        dim.status === "warning" ? "text-amber-600" :
+                        dim.status === "poor" ? "text-red-600" :
+                        "text-gray-400"
+                      }`}>{dim.score}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{dim.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground italic">Scores are heuristic-based, not statistically validated.</p>
+
+              {/* Why health? */}
+              {showWhyHealth && (
+                <div className="mt-4 rounded-md bg-muted/50 p-4">
+                  <h4 className="text-sm font-medium">Why this health score?</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">{analysis.health.summary}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Next Best Actions */}
+            {analysis.actionQueue.length > 0 && (
+              <div className="envelope-card p-5">
+                <h3 className="font-serif text-lg mb-3">Next Best Actions</h3>
+                <div className="space-y-2">
+                  {analysis.actionQueue.slice(0, 5).map((action) => (
+                    <div key={action.id} className="flex items-start gap-3 border-b border-rule/30 pb-2 last:border-0">
+                      <span className={`mt-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        action.priority === "critical" ? "bg-red-100 text-red-700" :
+                        action.priority === "high" ? "bg-amber-100 text-amber-700" :
+                        action.priority === "medium" ? "bg-blue-100 text-blue-700" :
+                        "bg-gray-100 text-gray-500"
+                      }`}>
+                        {PRIORITY_META[action.priority]?.label}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-ink">{action.title}</p>
+                        <p className="text-xs text-muted-foreground">{action.why}</p>
+                        <p className="mt-0.5 text-xs text-stamp">{action.impact}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Notice type badge */}
             <div className="envelope-card p-5">
               <div className="text-xs uppercase tracking-widest text-muted-foreground">Notice Type</div>
@@ -299,8 +607,21 @@ function AnalyzeNotice() {
               <div className={`envelope-card p-5 border-l-4 ${analysis.urgency === "expired" || analysis.urgency === "critical" ? "border-l-red-500" : analysis.urgency === "urgent" ? "border-l-amber-500" : "border-l-stamp"}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs uppercase tracking-widest text-muted-foreground">Response Deadline</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs uppercase tracking-widest text-muted-foreground">Response Deadline</div>
+                      <button
+                        onClick={() => setShowWhyDeadline(!showWhyDeadline)}
+                        className="text-xs text-stamp underline hover:no-underline"
+                        aria-label="Show deadline explanation"
+                      >
+                        Why?
+                      </button>
+                    </div>
                     <div className="mt-1 font-serif text-2xl">{analysis.deadline.date}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Certainty: <span className="font-mono">{analysis.deadline.certainty}</span>
+                      {analysis.deadline.calculationMethod && ` · ${analysis.deadline.calculationMethod}`}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className={`text-sm font-medium ${URGENCY_META[analysis.urgency]?.color === "red" ? "text-red-600" : URGENCY_META[analysis.urgency]?.color === "amber" ? "text-amber-600" : "text-stamp"}`}>
@@ -313,7 +634,157 @@ function AnalyzeNotice() {
                     )}
                   </div>
                 </div>
-                <NarrationButton script={deadlineNarration} label="Listen to deadline info" compact />
+
+                {/* Deadline validation warnings */}
+                {analysis.deadlineValidation.warnings.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {analysis.deadlineValidation.warnings.map((w, i) => (
+                      <p key={i} className="text-xs text-amber-600">⚠ {w}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Why deadline? */}
+                {showWhyDeadline && (
+                  <div className="mt-3 rounded-md bg-muted/50 p-4">
+                    {(() => {
+                      const exp = explainDeadline({
+                        date: analysis.deadline.date,
+                        source: analysis.deadline.sourceExcerpt,
+                        calculationMethod: analysis.deadline.calculationMethod,
+                        certainty: analysis.deadline.certainty,
+                        startDate: analysis.deadline.startDate,
+                        daysWindow: analysis.deadline.daysWindow,
+                        businessDays: analysis.deadline.businessDays,
+                      });
+                      return (
+                        <>
+                          <h4 className="text-sm font-medium">{exp.title}</h4>
+                          <p className="mt-1 text-xs text-muted-foreground">{exp.summary}</p>
+                          <div className="mt-2 space-y-1">
+                            {exp.steps.map((step, i) => (
+                              <div key={i} className="text-xs">
+                                <span className="font-medium text-ink">{step.label}:</span>{" "}
+                                <span className="text-muted-foreground">{step.detail}</span>
+                                {step.confidence && (
+                                  <span className="ml-1 text-muted-foreground/60">({step.confidence})</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {exp.assumptions.length > 0 && (
+                            <div className="mt-2">
+                              <span className="text-xs font-medium text-ink">Assumptions:</span>
+                              <ul className="ml-4">
+                                {exp.assumptions.map((a, i) => (
+                                  <li key={i} className="text-xs text-muted-foreground list-disc">{a}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                <div className="mt-2">
+                  <NarrationButton script={deadlineNarration} label="Listen to deadline info" compact />
+                </div>
+              </div>
+            )}
+
+            {/* Contradictions */}
+            {contradictions.length > 0 && (
+              <div className="envelope-card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-serif text-lg">Contradictions Detected</h3>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-mono ${contrSummary.unresolved > 0 ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                    {contrSummary.unresolved} unresolved / {contrSummary.total} total
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {contradictions.map((c, idx) => (
+                    <div key={c.id} className={`rounded-md border p-3 ${c.status === "unresolved" ? "border-red-300/50 bg-red-50/30" : "border-emerald-300/50 bg-emerald-50/30"}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${c.severity === "critical" ? "bg-red-200 text-red-800" : c.severity === "high" ? "bg-amber-200 text-amber-800" : "bg-gray-200 text-gray-600"}`}>
+                          {c.severity}
+                        </span>
+                        <span className="text-sm font-medium text-ink">{c.field}</span>
+                        {c.status === "resolved" && <span className="text-xs text-emerald-600">✓ Resolved</span>}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{c.description}</p>
+                      {c.status === "unresolved" && c.sources.length >= 2 && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <select
+                            className="rounded border border-rule/40 px-2 py-1 text-xs"
+                            onChange={(e) => { if (e.target.value) handleResolveContradiction(idx, e.target.value); }}
+                            defaultValue=""
+                            aria-label={`Resolve contradiction for ${c.field}`}
+                          >
+                            <option value="" disabled>Select correct value...</option>
+                            {c.sources.map((s) => (
+                              <option key={s.sourceId} value={s.value}>{s.value}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Information */}
+            {missingItems.filter((m) => m.status === "missing").length > 0 && (
+              <div className="envelope-card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-serif text-lg">Missing Information</h3>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-mono ${missingSummary.blocking > 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                    {missingSummary.blocking} blocking · {missingSummary.missing} total
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {missingItems.filter((m) => m.status === "missing").map((item, idx) => {
+                    const realIdx = missingItems.indexOf(item);
+                    return (
+                      <div key={item.id} className={`rounded-md border p-3 ${item.impact === "blocking" ? "border-red-300/50 bg-red-50/30" : "border-amber-300/50 bg-amber-50/30"}`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${item.impact === "blocking" ? "bg-red-200 text-red-800" : "bg-amber-200 text-amber-800"}`}>
+                            {item.impact}
+                          </span>
+                          <span className="text-sm font-medium text-ink">{item.label}</span>
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{item.whyItMatters}</p>
+                        {item.suggestedActions.length > 0 && (
+                          <div className="mt-1">
+                            <span className="text-xs font-medium text-stamp">Suggested:</span>
+                            <ul className="ml-4">
+                              {item.suggestedActions.map((a, i) => (
+                                <li key={i} className="text-xs text-muted-foreground list-disc">{a}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <div className="mt-2 flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Provide value..."
+                            className="rounded border border-rule/40 px-2 py-1 text-xs flex-1"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && e.currentTarget.value) {
+                                handleResolveMissingInfo(realIdx, e.currentTarget.value);
+                                e.currentTarget.value = "";
+                              }
+                            }}
+                            aria-label={`Resolve missing info: ${item.label}`}
+                          />
+                          <span className="text-xs text-muted-foreground">Press Enter to resolve</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -327,6 +798,9 @@ function AnalyzeNotice() {
                       <div>
                         <span className="text-sm font-medium text-ink">{fact.label}</span>
                         <p className="text-sm text-ink-soft">{fact.value}</p>
+                        {fact.sourceExcerpt && (
+                          <p className="mt-0.5 text-xs text-muted-foreground italic">Source: {fact.sourceExcerpt.substring(0, 100)}...</p>
+                        )}
                       </div>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-mono ${
                         fact.confidence === "high" ? "bg-emerald-100 text-emerald-700" :
@@ -388,15 +862,15 @@ function AnalyzeNotice() {
           <div className="mt-8 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl">Response Strategies</h2>
-              <NarrationButton script={null} label="" />
+              <button onClick={() => setPhase("analysis")} className="text-sm text-muted-foreground hover:text-foreground">
+                ← Back to analysis
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Based on the analysis, here are recommended approaches. These are options, not legal advice.
-            </p>
 
             {analysis.strategies.map((strategy, idx) => {
               const stratNarration = buildStrategyNarration({
-                label: STRATEGY_TYPE_LABELS[strategy.type],
+                strategyType: strategy.type,
+                strategyLabel: STRATEGY_TYPE_LABELS[strategy.type],
                 description: strategy.description,
                 reason: strategy.reason,
                 confidence: strategy.confidence,
@@ -416,6 +890,13 @@ function AnalyzeNotice() {
                         }`}>
                           {strategy.confidence} confidence
                         </span>
+                        <button
+                          onClick={() => setShowWhyStrategy(showWhyStrategy === idx ? null : idx)}
+                          className="text-xs text-stamp underline hover:no-underline"
+                          aria-label={`Show explanation for ${STRATEGY_TYPE_LABELS[strategy.type]}`}
+                        >
+                          Why?
+                        </button>
                       </div>
                       <p className="mt-2 text-sm text-ink-soft">{strategy.description}</p>
                       {strategy.reason && <p className="mt-2 text-xs text-muted-foreground">{strategy.reason}</p>}
@@ -427,6 +908,47 @@ function AnalyzeNotice() {
                               <li key={i} className="text-xs text-muted-foreground">• {risk}</li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+                      {strategy.prerequisites.length > 0 && (
+                        <div className="mt-2">
+                          <span className="text-xs font-medium text-amber-600">Prerequisites:</span>
+                          <ul className="mt-1 space-y-0.5">
+                            {strategy.prerequisites.map((prereq, i) => (
+                              <li key={i} className="text-xs text-muted-foreground">• {prereq}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Why this strategy? */}
+                      {showWhyStrategy === idx && (
+                        <div className="mt-3 rounded-md bg-muted/50 p-4">
+                          {(() => {
+                            const exp = explainStrategy({
+                              strategyType: strategy.type,
+                              strategyLabel: STRATEGY_TYPE_LABELS[strategy.type],
+                              reason: strategy.reason,
+                              relevantFacts: analysis.extraction.facts.map((f) => ({ label: f.label, value: f.value })),
+                              evidence: [],
+                              constraints: strategy.prerequisites,
+                              missingInfo: missingItems.filter((m) => m.status === "missing").map((m) => m.label),
+                            });
+                            return (
+                              <>
+                                <h4 className="text-sm font-medium">{exp.title}</h4>
+                                <p className="mt-1 text-xs text-muted-foreground">{exp.summary}</p>
+                                <div className="mt-2 space-y-1">
+                                  {exp.steps.map((step, i) => (
+                                    <div key={i} className="text-xs">
+                                      <span className="font-medium text-ink">{step.label}:</span>{" "}
+                                      <span className="text-muted-foreground">{step.detail}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -455,19 +977,64 @@ function AnalyzeNotice() {
           <div className="mt-8 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl">Your Response Draft</h2>
-              <NarrationButton
-                script={{
-                  id: "draft-narration",
-                  mode: "narration",
-                  title: "Response Draft",
-                  segments: [{ id: "1", text: draft.content, role: "body" as const, priority: "normal" as const, pauseAfter: 400 }],
-                  totalWords: draft.wordCount,
-                  estimatedSeconds: Math.ceil(draft.wordCount / 2.5),
-                  createdAt: new Date().toISOString(),
-                }}
-                label="Listen to draft"
-              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowWhyResponse(!showWhyResponse)}
+                  className="text-xs text-stamp underline hover:no-underline"
+                >
+                  Why?
+                </button>
+                <NarrationButton
+                  script={{
+                    id: "draft-narration",
+                    mode: "narration",
+                    title: "Response Draft",
+                    segments: [{ id: "1", text: draft.content, role: "body" as const, priority: "normal" as const, pauseAfter: 400 }],
+                    totalWords: draft.wordCount,
+                    estimatedSeconds: Math.ceil(draft.wordCount / 2.5),
+                    createdAt: new Date().toISOString(),
+                  }}
+                  label="Listen to draft"
+                />
+              </div>
             </div>
+
+            {/* Version info */}
+            {versionedResponse && (
+              <div className="text-xs text-muted-foreground">
+                Version {versionedResponse.currentVersionNumber} · {getVersionHistory(versionedResponse).length} version(s) in history
+              </div>
+            )}
+
+            {/* Why this response? */}
+            {showWhyResponse && analysis && (
+              <div className="rounded-md bg-muted/50 p-4">
+                {(() => {
+                  const exp = explainResponse({
+                    userObjective: userObjective || undefined,
+                    noticeRequirements: analysis.deadline.date ? [`Respond by ${analysis.deadline.date}`] : [],
+                    supportingEvidence: [],
+                    strategyUsed: STRATEGY_TYPE_LABELS[analysis.strategies[selectedStrategyIdx || 0]?.type] || "selected",
+                    factsIncluded: analysis.extraction.facts.length,
+                    placeholdersRemaining: draft.unresolvedPlaceholders.length,
+                  });
+                  return (
+                    <>
+                      <h4 className="text-sm font-medium">{exp.title}</h4>
+                      <p className="mt-1 text-xs text-muted-foreground">{exp.summary}</p>
+                      <div className="mt-2 space-y-1">
+                        {exp.steps.map((step, i) => (
+                          <div key={i} className="text-xs">
+                            <span className="font-medium text-ink">{step.label}:</span>{" "}
+                            <span className="text-muted-foreground">{step.detail}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
 
             {/* User inputs */}
             <div className="envelope-card p-5 space-y-4">
@@ -491,6 +1058,43 @@ function AnalyzeNotice() {
               />
             </div>
 
+            {/* Quality Report */}
+            {qualityReport && (
+              <div className="envelope-card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-serif text-lg">Response Quality Report</h3>
+                  <span className={`font-mono text-2xl ${qualityReport.passed ? "text-emerald-600" : "text-amber-600"}`}>
+                    {qualityReport.overallScore}
+                    <span className="text-sm text-muted-foreground">/100</span>
+                  </span>
+                </div>
+                <div className={`rounded-full px-3 py-1 text-xs font-medium inline-block mb-3 ${qualityReport.passed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  {qualityReport.passed ? "PASSED" : "NEEDS ATTENTION"}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {qualityReport.dimensions.map((dim) => (
+                    <div key={dim.name} className="border border-rule/30 rounded-md p-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">{dim.label}</span>
+                        <span className={`text-xs font-mono ${dim.score >= 80 ? "text-emerald-600" : dim.score >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                          {dim.score}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{dim.description}</p>
+                      {dim.issues.length > 0 && (
+                        <ul className="mt-1">
+                          {dim.issues.slice(0, 2).map((issue, i) => (
+                            <li key={i} className="text-xs text-red-500 list-disc ml-3">{issue}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground italic">{qualityReport.summary}</p>
+              </div>
+            )}
+
             {/* Draft content */}
             <div className="envelope-card p-5">
               <div className="flex items-center justify-between mb-3">
@@ -505,7 +1109,7 @@ function AnalyzeNotice() {
 
             {/* Placeholder warnings */}
             {draft.unresolvedPlaceholders.length > 0 && (
-              <div className="rounded-md border border-amber-300/50 bg-amber-50/50 p-4">
+              <div className="rounded-md border border-amber-300/50 bg-amber-50/50 p-4" role="alert">
                 <h4 className="text-sm font-medium text-amber-700">Unresolved items ({draft.unresolvedPlaceholders.length})</h4>
                 <ul className="mt-2 space-y-1">
                   {draft.unresolvedPlaceholders.map((p, i) => (
