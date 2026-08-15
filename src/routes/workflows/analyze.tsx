@@ -33,6 +33,8 @@ import { createVersionedResponse, addVersion, getVersionHistory, type VersionedR
 import { AuditLog } from "@/domain/audit";
 import { getRepository } from "@/platform/repository";
 import { transitionStatus } from "@/domain/notice";
+import { getOwnerId } from "@/platform/owner-context";
+import { executeSave, type SaveStatus, initialSaveStatus } from "@/platform/save-state";
 
 export const Route = createFileRoute("/workflows/analyze")({
   head: () => ({
@@ -69,6 +71,7 @@ function AnalyzeNotice() {
   const [showWhyHealth, setShowWhyHealth] = useState(false);
   const [versionedResponse, setVersionedResponse] = useState<VersionedResponse | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(initialSaveStatus);
 
   const caseRef = useRef<NoticeCase | null>(null);
   const auditLogRef = useRef(new AuditLog());
@@ -125,7 +128,7 @@ function AnalyzeNotice() {
       factConfidence: extraction.extractionConfidence > 0.7 ? "high" : "medium",
     });
 
-    const noticeCase = createCase("analyze");
+    const noticeCase = updateCase(createCase("analyze"), { ownerId: getOwnerId() });
     caseRef.current = updateCase(noticeCase, {
       noticeType: classification.type,
       typeConfidence: classification.confidence,
@@ -232,9 +235,10 @@ function AnalyzeNotice() {
     }
   }, [analysis]);
 
-  // Persist case to repository after analysis
+  // Persist case to repository after analysis — errors are surfaced, not swallowed
   useEffect(() => {
     if (!caseRef.current || !analysis) return;
+    const ownerId = getOwnerId();
     const repo = getRepository();
     const updated = updateCase(caseRef.current, {
       status: "analyzed",
@@ -246,13 +250,27 @@ function AnalyzeNotice() {
       actionQueue: analysis.actionQueue,
     });
     caseRef.current = updated;
-    repo.save(updated).catch(() => {
-      // Persistence is best-effort; UI continues regardless
-    });
-    // Flush audit entries to repository
-    for (const entry of auditLogRef.current.getAll()) {
-      repo.saveAudit(entry).catch(() => {});
-    }
+    
+    const doSave = async () => {
+      setSaveStatus({ state: "saving", retryCount: saveStatus.retryCount });
+      const { status } = await executeSave(
+        () => repo.save(updated),
+        saveStatus,
+      );
+      setSaveStatus(status);
+      // Flush audit entries to repository — also surfaced
+      if (status.state === "saved") {
+        for (const entry of auditLogRef.current.getAll()) {
+          try {
+            await repo.saveAudit(entry, ownerId);
+          } catch (err) {
+            // Audit save failure is logged but does not block case save
+            console.error("Audit entry save failed:", err);
+          }
+        }
+      }
+    };
+    doSave();
   }, [analysis]);
 
   // Voice narration scripts
@@ -306,14 +324,17 @@ function AnalyzeNotice() {
       objectType: "strategy",
       description: `Strategy selected: ${analysis?.strategies[idx]?.type || "unknown"}`,
     });
-    // Persist case with in_progress status
+    // Persist case with in_progress status — surfaced, not swallowed
     if (caseRef.current) {
       const updated = transitionStatus(caseRef.current, "in_progress");
       caseRef.current = updated;
-      getRepository().save(updated).catch(() => {});
+      const ownerId = getOwnerId();
+      setSaveStatus({ state: "saving", retryCount: saveStatus.retryCount });
+      executeSave(() => getRepository().save(updated), saveStatus)
+        .then(({ status }) => setSaveStatus(status));
     }
     setPhase("draft");
-  }, [analysis]);
+  }, [analysis, saveStatus]);
 
   // Draft generation
   const draft = useMemo(() => {
@@ -368,7 +389,7 @@ function AnalyzeNotice() {
           objectType: "response",
           description: `Response draft generated (v1, ${draft.wordCount} words)`,
         });
-        // Persist case with final response
+        // Persist case with final response — surfaced, not swallowed
         if (caseRef.current) {
           const caseUpdate = updateCase(caseRef.current, {
             finalResponse: draft.content,
@@ -377,11 +398,14 @@ function AnalyzeNotice() {
             userFacts: userFacts,
           });
           caseRef.current = caseUpdate;
-          getRepository().save(caseUpdate).catch(() => {});
+          const ownerId = getOwnerId();
+          setSaveStatus({ state: "saving", retryCount: saveStatus.retryCount });
+          executeSave(() => getRepository().save(caseUpdate), saveStatus)
+            .then(({ status }) => setSaveStatus(status));
         }
       }
     }
-  }, [draft, analysis, selectedStrategyIdx]);
+  }, [draft, analysis, selectedStrategyIdx, saveStatus]);
 
   const walkthrough = useMemo(() => {
     return WALKTHROUGH_STEPS.map((s, i) => ({
@@ -449,6 +473,42 @@ function AnalyzeNotice() {
           </div>
           <NarrationButton script={walkthroughNarration} label="Walkthrough" />
         </div>
+
+        {/* Save status indicator */}
+        {saveStatus.state !== "idle" && (
+          <div className="mt-4 flex items-center gap-3 text-sm" role="status" aria-live="polite">
+            {saveStatus.state === "saving" && (
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+                Saving case…
+              </span>
+            )}
+            {saveStatus.state === "saved" && (
+              <span className="flex items-center gap-2 text-emerald-700">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                Case saved
+              </span>
+            )}
+            {saveStatus.state === "failed" && (
+              <span className="flex items-center gap-2 text-destructive">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /></svg>
+                Save failed{saveStatus.retryCount > 0 ? ` (attempt ${saveStatus.retryCount + 1})` : ""}: {saveStatus.error}
+                <button
+                  className="ml-2 rounded border border-input px-2 py-0.5 text-xs hover:bg-muted"
+                  onClick={() => {
+                    if (caseRef.current) {
+                      setSaveStatus({ state: "saving", retryCount: saveStatus.retryCount });
+                      executeSave(() => getRepository().save(caseRef.current!), saveStatus)
+                        .then(({ status }) => setSaveStatus(status));
+                    }
+                  }}
+                >
+                  Retry
+                </button>
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="mt-6" role="navigation" aria-label="Workflow progress">

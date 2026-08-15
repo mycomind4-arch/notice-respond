@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { NarrationButton, VoiceBadge } from "@/components/voice-controls";
 import { buildScript, createSegment } from "@/domain/voice";
 import { getRepository } from "@/platform/repository";
+import { getOwnerId } from "@/platform/owner-context";
 import type { CaseSummary } from "@/domain/notice";
 import { NOTICE_TYPE_META } from "@/domain/notice-type";
 
@@ -54,7 +55,7 @@ function DashboardPage() {
   useEffect(() => {
     const repo = getRepository();
     repo
-      .listSummaries()
+      .listSummaries(getOwnerId())
       .then((data) => {
         setSummaries(data);
         setLoading(false);

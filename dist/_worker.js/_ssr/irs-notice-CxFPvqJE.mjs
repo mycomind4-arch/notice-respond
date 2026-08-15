@@ -1,0 +1,380 @@
+import { r as __toESM } from "../_runtime.mjs";
+import { n as require_jsx_runtime, r as require_react } from "../_libs/react+tanstack__react-query.mjs";
+import { a as Success, c as workflows, i as ReviewChecks, n as MailOptions, o as UploadZone, r as RecipientForm, s as WorkflowShell, t as CheckoutStep } from "./workflow-shell-DxnqbNBk.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/irs-notice-CxFPvqJE.js
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+var STEPS = [
+	{
+		id: "intro",
+		label: "Start"
+	},
+	{
+		id: "notice",
+		label: "Notice"
+	},
+	{
+		id: "facts",
+		label: "Facts"
+	},
+	{
+		id: "objective",
+		label: "Objective"
+	},
+	{
+		id: "draft",
+		label: "Draft"
+	},
+	{
+		id: "review",
+		label: "Review"
+	},
+	{
+		id: "attachments",
+		label: "Documents"
+	},
+	{
+		id: "recipient",
+		label: "Recipient"
+	},
+	{
+		id: "mailing",
+		label: "Mail"
+	},
+	{
+		id: "checkout",
+		label: "Checkout"
+	},
+	{
+		id: "done",
+		label: "Done"
+	}
+];
+var REVIEW_CHECKS = [
+	"I reviewed every factual statement in this draft.",
+	"Names, dates, notice numbers, and amounts are correct.",
+	"I reviewed the uploaded notice and IRS instructions.",
+	"I understand Notice Respond is not providing legal or tax advice."
+];
+function IRSNotice() {
+	const definition = workflows["irs-notice"];
+	const [step, setStep] = (0, import_react.useState)(0);
+	const [noticeNumber, setNoticeNumber] = (0, import_react.useState)("");
+	const [noticeType, setNoticeType] = (0, import_react.useState)("");
+	const [noticeDate, setNoticeDate] = (0, import_react.useState)("");
+	const [responseDeadline, setResponseDeadline] = (0, import_react.useState)("");
+	const [taxYear, setTaxYear] = (0, import_react.useState)("");
+	const [facts, setFacts] = (0, import_react.useState)("");
+	const [objective, setObjective] = (0, import_react.useState)("");
+	const [draft, setDraft] = (0, import_react.useState)("");
+	const [checks, setChecks] = (0, import_react.useState)(REVIEW_CHECKS.map(() => false));
+	const [mailType, setMailType] = (0, import_react.useState)("certified");
+	const [recipient, setRecipient] = (0, import_react.useState)({
+		name: "",
+		org: "",
+		address1: "",
+		address2: "",
+		city: "",
+		state: "",
+		zip: ""
+	});
+	const [done, setDone] = (0, import_react.useState)(false);
+	const allChecked = checks.every(Boolean);
+	function generateDraft() {
+		return `Re: Response to IRS Notice ${noticeNumber || "[Notice Number]"}
+${noticeType ? `Notice Type: ${noticeType}` : ""}
+${taxYear ? `Tax Year: ${taxYear}` : ""}
+${noticeDate ? `Notice Date: ${noticeDate}` : ""}
+${responseDeadline ? `Response Deadline: ${responseDeadline}` : ""}
+
+Dear Sir or Madam,
+
+I am writing in response to the notice referenced above. ${objective || "[Your objective will appear here.]"}
+
+${facts || "[The facts you provided will appear here.]"}
+
+Please find enclosed the requested information and documentation. I respectfully request that you consider this response in a timely manner.
+
+Sincerely,
+[Your Name]`;
+	}
+	function canContinue() {
+		switch (step) {
+			case 1: return noticeNumber.trim().length > 0;
+			case 2: return facts.trim().length > 0;
+			case 3: return objective.trim().length > 0;
+			case 5: return allChecked;
+			case 7: return !!(recipient.name && recipient.address1 && recipient.city && recipient.state && recipient.zip);
+			default: return true;
+		}
+	}
+	function next() {
+		if (step === 4 && !draft) setDraft(generateDraft());
+		if (step === STEPS.length - 1) {
+			setDone(true);
+			return;
+		}
+		setStep((s) => Math.min(s + 1, STEPS.length - 1));
+	}
+	if (done) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Success, {
+		title: "Your IRS response has been submitted",
+		href: "/workflows/irs-notice"
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(WorkflowShell, {
+		title: "Respond to an IRS Notice",
+		steps: STEPS,
+		step,
+		setStep,
+		canContinue: canContinue(),
+		onNext: next,
+		onBack: () => setStep((s) => Math.max(s - 1, 0)),
+		children: [
+			step === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "1 · Start"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-4xl",
+					children: "Respond to an IRS notice"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "We'll help you organize the notice, confirm the information, prepare an editable draft, and move toward mailing. Nothing is sent until you review and approve it."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-6 rounded-md border border-rule/70 bg-paper-deep/40 p-4 text-sm text-muted-foreground",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "font-mono text-xs uppercase tracking-widest text-stamp",
+						children: "Disclaimer"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "mt-2",
+						children: definition.disclaimer
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "mt-6 grid gap-3 sm:grid-cols-2",
+					children: [
+						"Upload or identify the notice",
+						"Confirm your facts and objective",
+						"Review and edit the draft",
+						"Choose mailing and send"
+					].map((item, i) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2 text-sm text-ink-soft",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "flex h-6 w-6 items-center justify-center rounded-full bg-paper-deep font-mono text-xs text-muted-foreground",
+							children: i + 1
+						}), item]
+					}, item))
+				})
+			] }),
+			step === 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "2 · Notice"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Start with the notice"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Upload the IRS notice when document processing is connected, or identify it here so the workflow can begin."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UploadZone, {
+					label: "Upload IRS notice",
+					sublabel: "PDF, JPG, or PNG · Secure storage"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-6 grid gap-4 sm:grid-cols-2",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							className: "input-label",
+							children: "Notice number *"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							className: "input-field",
+							value: noticeNumber,
+							onChange: (e) => setNoticeNumber(e.target.value),
+							placeholder: "CP2000, CP14, etc."
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							className: "input-label",
+							children: "Notice type"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							className: "input-field",
+							value: noticeType,
+							onChange: (e) => setNoticeType(e.target.value),
+							placeholder: "Underreported income, balance due, etc."
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							className: "input-label",
+							children: "Notice date"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "date",
+							className: "input-field",
+							value: noticeDate,
+							onChange: (e) => setNoticeDate(e.target.value)
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							className: "input-label",
+							children: "Response deadline"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							type: "date",
+							className: "input-field",
+							value: responseDeadline,
+							onChange: (e) => setResponseDeadline(e.target.value)
+						})] }),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+							className: "input-label",
+							children: "Tax year"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+							className: "input-field",
+							value: taxYear,
+							onChange: (e) => setTaxYear(e.target.value),
+							placeholder: "2024"
+						})] })
+					]
+				})
+			] }),
+			step === 2 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "3 · Facts"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "What facts should the response address?"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Use your own words. Only include information you can verify."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+					className: "input-field mt-6 min-h-48",
+					value: facts,
+					onChange: (e) => setFacts(e.target.value),
+					placeholder: "Enter the relevant facts you want included in your response..."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-4 rounded-md border border-rule/70 bg-paper-deep/40 p-3 text-sm text-muted-foreground",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", { children: "Tip:" }), " Include dates, amounts, notice numbers, and specific requests from the IRS notice."]
+				})
+			] }),
+			step === 3 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "4 · Objective"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "What do you want the response to accomplish?"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+					className: "input-field mt-6 min-h-40",
+					value: objective,
+					onChange: (e) => setObjective(e.target.value),
+					placeholder: "Example: I want to explain the discrepancy in my 2024 income reporting and provide corrected documentation..."
+				})
+			] }),
+			step === 4 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "5 · Draft"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Your response letter"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Review every fact, name, date, and statement. This is editable — change anything."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+					className: "input-field mt-6 min-h-72 font-mono text-sm leading-6",
+					value: draft,
+					onChange: (e) => setDraft(e.target.value)
+				})
+			] }),
+			step === 5 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "6 · Review"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Review before anything is mailed"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Please confirm each item below."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ReviewChecks, {
+					items: REVIEW_CHECKS,
+					checks,
+					setChecks
+				})
+			] }),
+			step === 6 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "7 · Documents"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Add supporting documents"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Attach any documents referenced in your response — forms, receipts, prior correspondence, etc."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(UploadZone, {
+					label: "Add attachments",
+					sublabel: "Forms, receipts, evidence, prior correspondence"
+				})
+			] }),
+			step === 7 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "8 · Recipient"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Where should we send it?"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "Enter the IRS mailing address from the notice."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RecipientForm, {
+					recipient,
+					setRecipient,
+					orgPlaceholder: "IRS — Department of the Treasury"
+				})
+			] }),
+			step === 8 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "postmark w-fit",
+					children: "9 · Mail"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 font-serif text-3xl",
+					children: "Choose your mail type"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-3 text-muted-foreground",
+					children: "For IRS responses, Certified mail is recommended for proof of timely submission."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MailOptions, {
+					selected: mailType,
+					onSelect: setMailType
+				})
+			] }),
+			step === 9 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CheckoutStep, {
+				mailType,
+				recipient
+			})
+		]
+	});
+}
+//#endregion
+export { IRSNotice as component };

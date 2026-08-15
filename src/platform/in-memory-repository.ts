@@ -1,14 +1,16 @@
 /* ═══════════════════════════════════════════════════════════
    IN-MEMORY CASE REPOSITORY
    
-   Default implementation for development, testing, and SSR.
+   Implementation for development, testing, and SSR.
    Cases are stored in a Map; audit entries in an array.
    No persistence across server restarts.
    
-   For production, swap with the Supabase implementation.
+   OWNERSHIP ENFORCEMENT:
+   All access methods verify ownership. A caller requesting
+   another user's case gets null/false — same as "not found".
+   This prevents leaking the existence of other users' data.
    
-   Provides both async (CaseRepository interface) and sync methods
-   (for testing and synchronous call sites).
+   For production, use SupabaseCaseRepository instead.
    ═══════════════════════════════════════════════════════════ */
 
 import type { NoticeCase, CaseSummary } from "../domain/notice";
@@ -21,32 +23,45 @@ export class InMemoryCaseRepository implements CaseRepository {
   private store = new Map<string, Record<string, unknown>>();
   private auditStore: AuditEntry[] = [];
 
+  /** Composite key: ownerId + ":" + caseId — prevents cross-owner overwrites */
+  private key(ownerId: string, id: string): string {
+    return `${ownerId}:${id}`;
+  }
+
   /* ── Sync methods (for tests and SSR) ── */
 
   saveSync(caseObj: NoticeCase): NoticeCase {
+    if (!caseObj.ownerId) {
+      throw new RepositoryError(
+        "Cannot save a case without an owner",
+        RepositoryErrorCode.VALIDATION_ERROR,
+      );
+    }
     const serialized = serializeCase(caseObj);
-    this.store.set(caseObj.id, serialized);
+    this.store.set(this.key(caseObj.ownerId, caseObj.id), serialized);
     return caseObj;
   }
 
-  loadSync(id: string): NoticeCase | null {
-    const data = this.store.get(id);
+  loadSync(id: string, ownerId: string): NoticeCase | null {
+    const data = this.store.get(this.key(ownerId, id));
     if (!data) return null;
     return deserializeCase(data);
   }
 
-  deleteSync(id: string): boolean {
-    return this.store.delete(id);
+  deleteSync(id: string, ownerId: string): boolean {
+    const k = this.key(ownerId, id);
+    if (!this.store.has(k)) return false;
+    return this.store.delete(k);
   }
 
-  existsSync(id: string): boolean {
-    return this.store.has(id);
+  existsSync(id: string, ownerId: string): boolean {
+    return this.store.has(this.key(ownerId, id));
   }
 
-  listSummariesSync(ownerId?: string): CaseSummary[] {
+  listSummariesSync(ownerId: string): CaseSummary[] {
     const summaries: CaseSummary[] = [];
     for (const data of this.store.values()) {
-      if (ownerId && data.ownerId && data.ownerId !== ownerId) continue;
+      if (data.ownerId !== ownerId) continue;
       try {
         const caseObj = deserializeCase(data);
         summaries.push(toCaseSummary(caseObj));
@@ -58,15 +73,35 @@ export class InMemoryCaseRepository implements CaseRepository {
     return summaries;
   }
 
-  listByStatusSync(status: string, ownerId?: string): CaseSummary[] {
+  listByStatusSync(status: string, ownerId: string): CaseSummary[] {
     return this.listSummariesSync(ownerId).filter((s) => s.status === status);
   }
 
-  saveAuditSync(entry: AuditEntry): void {
+  saveAuditSync(entry: AuditEntry, ownerId: string): void {
+    // If the entry references a case, verify ownership
+    if (entry.caseId) {
+      const caseData = this.store.get(this.key(ownerId, entry.caseId));
+      if (!caseData) {
+        // Case not owned by this user — check if it exists at all
+        // If it exists under another owner, this is unauthorized
+        for (const data of this.store.values()) {
+          if (data.id === entry.caseId) {
+            throw new RepositoryError(
+              "Cannot save audit entry for a case owned by another user",
+              RepositoryErrorCode.UNAUTHORIZED,
+            );
+          }
+        }
+        // Case doesn't exist at all — allow (might be created later)
+      }
+    }
     this.auditStore.push(entry);
   }
 
-  loadAuditSync(caseId: string): AuditEntry[] {
+  loadAuditSync(caseId: string, ownerId: string): AuditEntry[] {
+    // Verify ownership of the case
+    const caseData = this.store.get(this.key(ownerId, caseId));
+    if (!caseData) return [];
     return this.auditStore.filter((e) => e.caseId === caseId);
   }
 
@@ -76,6 +111,7 @@ export class InMemoryCaseRepository implements CaseRepository {
     try {
       return this.saveSync(caseObj);
     } catch (err) {
+      if (err instanceof RepositoryError) throw err;
       throw new RepositoryError(
         `Failed to save case ${caseObj.id}`,
         RepositoryErrorCode.SAVE_FAILED,
@@ -84,9 +120,9 @@ export class InMemoryCaseRepository implements CaseRepository {
     }
   }
 
-  async load(id: string): Promise<NoticeCase | null> {
+  async load(id: string, ownerId: string): Promise<NoticeCase | null> {
     try {
-      return this.loadSync(id);
+      return this.loadSync(id, ownerId);
     } catch (err) {
       throw new RepositoryError(
         `Failed to load case ${id}`,
@@ -96,28 +132,28 @@ export class InMemoryCaseRepository implements CaseRepository {
     }
   }
 
-  async delete(id: string): Promise<boolean> {
-    return this.deleteSync(id);
+  async delete(id: string, ownerId: string): Promise<boolean> {
+    return this.deleteSync(id, ownerId);
   }
 
-  async exists(id: string): Promise<boolean> {
-    return this.existsSync(id);
+  async exists(id: string, ownerId: string): Promise<boolean> {
+    return this.existsSync(id, ownerId);
   }
 
-  async listSummaries(ownerId?: string): Promise<CaseSummary[]> {
+  async listSummaries(ownerId: string): Promise<CaseSummary[]> {
     return this.listSummariesSync(ownerId);
   }
 
-  async listByStatus(status: string, ownerId?: string): Promise<CaseSummary[]> {
+  async listByStatus(status: string, ownerId: string): Promise<CaseSummary[]> {
     return this.listByStatusSync(status, ownerId);
   }
 
-  async saveAudit(entry: AuditEntry): Promise<void> {
-    this.saveAuditSync(entry);
+  async saveAudit(entry: AuditEntry, ownerId: string): Promise<void> {
+    this.saveAuditSync(entry, ownerId);
   }
 
-  async loadAudit(caseId: string): Promise<AuditEntry[]> {
-    return this.loadAuditSync(caseId);
+  async loadAudit(caseId: string, ownerId: string): Promise<AuditEntry[]> {
+    return this.loadAuditSync(caseId, ownerId);
   }
 
   /* ── Test helpers ── */

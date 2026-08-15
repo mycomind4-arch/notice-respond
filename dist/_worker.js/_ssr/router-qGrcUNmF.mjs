@@ -1,0 +1,728 @@
+import { n as __exportAll$1, r as __toESM } from "../_runtime.mjs";
+import { n as require_jsx_runtime, r as require_react, t as QueryClientProvider } from "../_libs/react+tanstack__react-query.mjs";
+import { _ as Link, f as createRouter, g as createRootRouteWithContext, h as createFileRoute, l as Scripts, m as lazyRouteComponent, p as Outlet, u as HeadContent } from "../_libs/@tanstack/react-router+[...].mjs";
+import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/router-qGrcUNmF.js
+var router_qGrcUNmF_exports = /* @__PURE__ */ __exportAll$1({
+	getRouter: () => getRouter,
+	i: () => SiteHeader,
+	n: () => Route$5,
+	r: () => SiteFooter,
+	t: () => router_exports
+});
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+var __defProp = Object.defineProperty;
+var __exportAll = (all, no_symbols) => {
+	let target = {};
+	for (var name in all) __defProp(target, name, {
+		get: all[name],
+		enumerable: true
+	});
+	if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: "Module" });
+	return target;
+};
+var styles_default = "/assets/styles-RZZMphg5.css";
+function Logo() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		"aria-hidden": true,
+		className: "relative inline-flex h-8 w-10 items-center justify-center rounded-sm border border-ink bg-paper-deep overflow-hidden",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+			className: "h-4 w-4 text-stamp",
+			fill: "none",
+			viewBox: "0 0 24 24",
+			stroke: "currentColor",
+			strokeWidth: 1.5,
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				d: "M9 12l2 2 4-4M5 3h14v18l-7-3-7 3V3z"
+			})
+		})
+	});
+}
+function SiteHeader({ variant = "default" }) {
+	const [mobileOpen, setMobileOpen] = (0, import_react.useState)(false);
+	const transparent = variant === "transparent";
+	const navItems = [
+		{
+			label: "How it works",
+			href: "/#how"
+		},
+		{
+			label: "What you can respond to",
+			href: "/#workflows"
+		},
+		{
+			label: "Pricing",
+			href: "/pricing"
+		},
+		{
+			label: "Resources",
+			href: "/resources"
+		},
+		{
+			label: "FAQ",
+			href: "/faq"
+		}
+	];
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
+		className: `sticky top-0 z-50 border-b transition-all ${transparent ? "border-transparent bg-transparent" : "border-rule/60 bg-paper/85 backdrop-blur-md"}`,
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
+					to: "/",
+					className: "flex items-center gap-2.5 group",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Logo, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: `font-serif text-lg leading-none transition-colors ${transparent ? "text-white group-hover:text-stamp-soft" : "group-hover:text-stamp"}`,
+						children: "Notice Respond"
+					})]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "hidden items-center gap-1 md:flex",
+					children: [
+						navItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+							href: item.href,
+							className: `px-3 py-2 text-sm transition-colors ${transparent ? "text-white/80 hover:text-white" : "text-ink-soft hover:text-foreground"}`,
+							children: item.label
+						}, item.label)),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: "/dashboard",
+							className: `ml-2 px-3 py-2 text-sm transition-colors ${transparent ? "text-white/90 hover:text-white" : "text-ink-soft hover:text-foreground"}`,
+							children: "My Mailings"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: "/workflows/irs-notice",
+							className: `ml-2 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${transparent ? "bg-stamp text-accent-foreground shadow-stamp" : "bg-primary text-primary-foreground shadow-stamp"}`,
+							children: "Respond to a notice"
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					className: "flex h-9 w-9 items-center justify-center rounded-md border border-rule md:hidden",
+					onClick: () => setMobileOpen(!mobileOpen),
+					"aria-label": "Menu",
+					"aria-expanded": mobileOpen,
+					children: mobileOpen ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+						className: "h-4 w-4",
+						fill: "none",
+						viewBox: "0 0 24 24",
+						stroke: "currentColor",
+						strokeWidth: 1.5,
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+							strokeLinecap: "round",
+							strokeLinejoin: "round",
+							d: "M6 18L18 6M6 6l12 12"
+						})
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", {
+						className: "h-4 w-4",
+						fill: "none",
+						viewBox: "0 0 24 24",
+						stroke: "currentColor",
+						strokeWidth: 1.5,
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", {
+							strokeLinecap: "round",
+							strokeLinejoin: "round",
+							d: "M4 6h16M4 12h16M4 18h16"
+						})
+					})
+				})
+			]
+		}), mobileOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "border-t border-rule bg-paper md:hidden",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-col gap-1 px-4 py-3",
+				children: [
+					navItems.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+						href: item.href,
+						className: "rounded-md px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-muted/50 hover:text-foreground",
+						onClick: () => setMobileOpen(false),
+						children: item.label
+					}, item.label)),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+						to: "/dashboard",
+						className: "rounded-md px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-muted/50 hover:text-foreground",
+						onClick: () => setMobileOpen(false),
+						children: "My Mailings"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+						to: "/workflows/irs-notice",
+						className: "mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground",
+						onClick: () => setMobileOpen(false),
+						children: "Respond to a notice"
+					})
+				]
+			})
+		})]
+	});
+}
+function SiteFooter() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("footer", {
+		className: "mt-16 border-t border-rule/60 sm:mt-24",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "grid gap-8 sm:gap-10 sm:grid-cols-2 md:grid-cols-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "sm:col-span-2 md:col-span-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Logo, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "font-serif text-lg",
+								children: "Notice Respond"
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "mt-3 max-w-sm text-sm text-muted-foreground",
+							children: "Understand the notice. Prepare your response. Send it properly. Keep the proof. Guided workflows for responding to government notices — not blank-page AI chat."
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "text-xs uppercase tracking-widest text-muted-foreground",
+						children: "Product"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("ul", {
+						className: "mt-3 space-y-2 text-sm",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/workflows/irs-notice",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "IRS Notice Response"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/workflows/court-summons",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Court Summons Response"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/workflows/agency-action",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Agency Action Response"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/workflows/file-appeal",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "File an Appeal"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/pricing",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Pricing"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/dashboard",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "My Mailings"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/faq",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "FAQ"
+							}) })
+						]
+					})] }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "text-xs uppercase tracking-widest text-muted-foreground",
+						children: "Company"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("ul", {
+						className: "mt-3 space-y-2 text-sm",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/resources",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Resources"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/about",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "About"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/contact",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Contact"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/privacy",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Privacy"
+							}) }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+								to: "/terms",
+								className: "text-ink-soft hover:text-stamp transition-colors",
+								children: "Terms"
+							}) })
+						]
+					})] })
+				]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "hairline mt-6 pt-6 text-xs text-muted-foreground sm:mt-8",
+				children: "Notice Respond provides document preparation and mailing tools. We are not a law firm, CPA firm, or government agency and do not provide legal or tax advice. Users are responsible for reviewing their documents, addresses, deadlines, and mailing requirements before submitting an order. Mailing fulfillment provided by MailMyPDF."
+			})]
+		})
+	});
+}
+var ErrorBoundary = class extends import_react.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			hasError: false,
+			error: null
+		};
+	}
+	static getDerivedStateFromError(error) {
+		return {
+			hasError: true,
+			error
+		};
+	}
+	componentDidCatch(error, errorInfo) {
+		console.error("ErrorBoundary caught:", error.message);
+	}
+	handleReset = () => {
+		this.setState({
+			hasError: false,
+			error: null
+		});
+	};
+	render() {
+		if (this.state.hasError) {
+			if (this.props.fallback) return this.props.fallback;
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "min-h-screen flex items-center justify-center p-6",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "max-w-md text-center",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-4xl mb-4",
+							children: "📭"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+							className: "font-serif text-2xl mb-2",
+							children: "Something went wrong"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-sm text-muted-foreground mb-4",
+							children: "An unexpected error occurred. Your work has been preserved."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-muted-foreground/60 mb-6",
+							children: this.state.error?.message || "Unknown error"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-center gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								onClick: this.handleReset,
+								className: "rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground",
+								children: "Try Again"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+								href: "/",
+								className: "rounded-full border border-rule px-6 py-2 text-sm font-medium hover:bg-muted",
+								children: "Go Home"
+							})]
+						})
+					]
+				})
+			});
+		}
+		return this.props.children;
+	}
+};
+var Route$16 = createRootRouteWithContext()({
+	head: () => ({
+		meta: [
+			{ charSet: "utf-8" },
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1"
+			},
+			{ title: "Notice Respond — Respond to government notices with confidence" },
+			{
+				name: "description",
+				content: "Guided workflows to prepare, review, send, and track responses to IRS notices, court summonses, agency actions, and appeals. Physical mail with proof of delivery. Not a law firm."
+			},
+			{
+				name: "robots",
+				content: "index,follow"
+			},
+			{
+				name: "theme-color",
+				content: "#1e293b"
+			},
+			{
+				property: "og:title",
+				content: "Notice Respond — Respond to government notices with confidence"
+			},
+			{
+				property: "og:description",
+				content: "Prepare, review, send, track, and keep a record of responses to government notices."
+			},
+			{
+				property: "og:type",
+				content: "website"
+			},
+			{
+				property: "og:site_name",
+				content: "Notice Respond"
+			},
+			{
+				name: "twitter:card",
+				content: "summary_large_image"
+			},
+			{
+				name: "twitter:title",
+				content: "Notice Respond — Respond to government notices"
+			},
+			{
+				name: "twitter:description",
+				content: "Guided workflows, physical mail with tracking, and proof of delivery."
+			}
+		],
+		links: [
+			{
+				rel: "stylesheet",
+				href: styles_default
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.googleapis.com"
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.gstatic.com",
+				crossOrigin: "anonymous"
+			},
+			{
+				rel: "stylesheet",
+				href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+			}
+		]
+	}),
+	notFoundComponent: NotFoundPage,
+	shellComponent: RootShell,
+	component: RootComponent
+});
+function RootShell({ children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("html", {
+		lang: "en",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", { children: [children, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})] })]
+	});
+}
+function RootComponent() {
+	const { queryClient } = Route$16.useRouteContext();
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBoundary, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueryClientProvider, {
+		client: queryClient,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {})
+	}) });
+}
+function NotFoundPage() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "min-h-screen",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SiteHeader, {}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("main", {
+				className: "mx-auto max-w-lg px-6 py-32 text-center",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "postmark mx-auto w-fit",
+						children: "404"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h1", {
+						className: "mt-6 text-6xl",
+						style: { fontFamily: "var(--font-serif)" },
+						children: ["Filed in the ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "italic text-stamp",
+							children: "wrong place."
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "mt-4 text-muted-foreground",
+						children: "The page you're looking for doesn't exist or has moved. Let's get you back on track."
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "mt-8 flex flex-wrap justify-center gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: "/",
+							className: "inline-flex items-center rounded-full border border-input px-5 py-3 text-sm font-medium transition-colors hover:bg-muted",
+							children: "← Home"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: "/workflows/irs-notice",
+							className: "inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5",
+							children: "Respond to a notice"
+						})]
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SiteFooter, {})
+		]
+	});
+}
+var $$splitComponentImporter$15 = () => import("./routes-Cy_pmNjQ.mjs");
+var Route$15 = createFileRoute("/")({
+	head: () => ({
+		meta: [{ title: "Notice Respond — Respond to government notices with confidence" }, {
+			name: "description",
+			content: "Prepare, review, send, and track responses to IRS notices, court summonses, agency actions, and appeals. Guided workflows, AI-assisted drafting, physical mail with proof of delivery. Not a law firm."
+		}],
+		links: [{
+			rel: "canonical",
+			href: "/"
+		}],
+		scripts: [{
+			type: "application/ld+json",
+			children: JSON.stringify({
+				"@context": "https://schema.org",
+				"@type": "Service",
+				name: "Notice Respond",
+				description: "Prepare and send responses to government notices with guided workflows, AI-assisted drafting, and physical mail with proof of delivery.",
+				areaServed: "US",
+				offers: [
+					{
+						"@type": "Offer",
+						name: "Standard mail (1-2 pages)",
+						price: "4.99",
+						priceCurrency: "USD"
+					},
+					{
+						"@type": "Offer",
+						name: "Certified mail (1-2 pages)",
+						price: "14.94",
+						priceCurrency: "USD"
+					},
+					{
+						"@type": "Offer",
+						name: "Registered mail (1-2 pages)",
+						price: "32.49",
+						priceCurrency: "USD"
+					}
+				]
+			})
+		}]
+	}),
+	component: lazyRouteComponent($$splitComponentImporter$15, "component")
+});
+var $$splitComponentImporter$14 = () => import("./about-dbksPg5b.mjs");
+var Route$14 = createFileRoute("/about")({
+	head: () => ({ meta: [{ title: "About — Notice Respond" }, {
+		name: "description",
+		content: "Notice Respond helps people respond to government notices with confidence."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$14, "component")
+});
+var $$splitComponentImporter$13 = () => import("./auth-BHZgH_DT.mjs");
+var Route$13 = createFileRoute("/auth")({
+	head: () => ({ meta: [{ title: "Sign In — Notice Respond" }, {
+		name: "robots",
+		content: "noindex,nofollow"
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$13, "component")
+});
+var $$splitComponentImporter$12 = () => import("./contact-DVBvjLxH.mjs");
+var Route$12 = createFileRoute("/contact")({
+	head: () => ({ meta: [{ title: "Contact — Notice Respond" }, {
+		name: "description",
+		content: "Get in touch with the Notice Respond team."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$12, "component")
+});
+var $$splitComponentImporter$11 = () => import("./dashboard-BdVu7Lsh.mjs");
+var Route$11 = createFileRoute("/dashboard")({
+	head: () => ({ meta: [{ title: "My Cases — Notice Respond" }, {
+		name: "robots",
+		content: "noindex,nofollow"
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$11, "component")
+});
+var $$splitComponentImporter$10 = () => import("./faq-CpjweNu_.mjs");
+var Route$10 = createFileRoute("/faq")({
+	head: () => ({ meta: [{ title: "FAQ — Notice Respond" }, {
+		name: "description",
+		content: "Answers to common questions about Notice Respond."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$10, "component")
+});
+var $$splitComponentImporter$9 = () => import("./pricing-DNhpaFTg.mjs");
+var Route$9 = createFileRoute("/pricing")({
+	head: () => ({ meta: [{ title: "Pricing — Notice Respond" }, {
+		name: "description",
+		content: "Simple per-mailing pricing. Standard $4.99, Certified $14.94, Registered $32.49. No subscription."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$9, "component")
+});
+var $$splitComponentImporter$8 = () => import("./privacy-CGGbROCV.mjs");
+var Route$8 = createFileRoute("/privacy")({
+	head: () => ({ meta: [{ title: "Privacy Policy — Notice Respond" }, {
+		name: "description",
+		content: "How Notice Respond collects, uses, stores, and protects your data and documents."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$8, "component")
+});
+var $$splitComponentImporter$7 = () => import("./terms-CXi-P6gr.mjs");
+var Route$7 = createFileRoute("/terms")({
+	head: () => ({ meta: [{ title: "Terms of Service — Notice Respond" }, {
+		name: "description",
+		content: "Terms of service for Notice Respond."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$7, "component")
+});
+var $$splitComponentImporter$6 = () => import("./resources-CwS1thxu.mjs");
+var Route$6 = createFileRoute("/resources/")({
+	head: () => ({ meta: [{ title: "Resources & Guides — Notice Respond" }, {
+		name: "description",
+		content: "Guides for responding to government notices: IRS notices, court summonses, agency actions, and appeals."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$6, "component")
+});
+var $$splitComponentImporter$5 = () => import("../_slug-Dv59FYBj.mjs");
+var Route$5 = createFileRoute("/resources/$slug")({
+	head: () => ({ meta: [{ title: "Guides — Notice Respond" }, {
+		name: "description",
+		content: "Guides for responding to government notices."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$5, "component")
+});
+var $$splitComponentImporter$4 = () => import("./agency-action-D7r2vu2U.mjs");
+var Route$4 = createFileRoute("/workflows/agency-action")({
+	head: () => ({ meta: [{ title: "Respond to an Agency Action — Notice Respond" }, {
+		name: "description",
+		content: "Prepare a written response to a regulatory agency notice, licensing board action, or FOIA determination."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$4, "component")
+});
+var $$splitComponentImporter$3 = () => import("./analyze-CDJBK-iF.mjs");
+var Route$3 = createFileRoute("/workflows/analyze")({
+	head: () => ({ meta: [{ title: "Analyze a Notice — Notice Respond" }, {
+		name: "description",
+		content: "Upload or paste a notice. Get instant analysis with voice narration, deadline tracking, and response drafting."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$3, "component")
+});
+var $$splitComponentImporter$2 = () => import("./court-summons-DRoamMDr.mjs");
+var Route$2 = createFileRoute("/workflows/court-summons")({
+	head: () => ({ meta: [{ title: "Respond to a Court Summons — Notice Respond" }, {
+		name: "description",
+		content: "Prepare a written response to a court summons or complaint and file it by mail with proof of delivery."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$2, "component")
+});
+var $$splitComponentImporter$1 = () => import("./file-appeal-COJ695Uq.mjs");
+var Route$1 = createFileRoute("/workflows/file-appeal")({
+	head: () => ({ meta: [{ title: "File an Appeal — Notice Respond" }, {
+		name: "description",
+		content: "Prepare an appeal letter for a denied claim, decision, or ruling and mail it with proof of delivery."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter$1, "component")
+});
+var $$splitComponentImporter = () => import("./irs-notice-CxFPvqJE.mjs");
+var Route = createFileRoute("/workflows/irs-notice")({
+	head: () => ({ meta: [{ title: "Respond to an IRS Notice — Notice Respond" }, {
+		name: "description",
+		content: "Guided workflow to organize an IRS notice, prepare a written response, and mail it with proof of delivery."
+	}] }),
+	component: lazyRouteComponent($$splitComponentImporter, "component")
+});
+var IndexRoute = Route$15.update({
+	id: "/",
+	path: "/",
+	getParentRoute: () => Route$16
+});
+var AboutRoute = Route$14.update({
+	id: "/about",
+	path: "/about",
+	getParentRoute: () => Route$16
+});
+var AuthRoute = Route$13.update({
+	id: "/auth",
+	path: "/auth",
+	getParentRoute: () => Route$16
+});
+var ContactRoute = Route$12.update({
+	id: "/contact",
+	path: "/contact",
+	getParentRoute: () => Route$16
+});
+var DashboardRoute = Route$11.update({
+	id: "/dashboard",
+	path: "/dashboard",
+	getParentRoute: () => Route$16
+});
+var FaqRoute = Route$10.update({
+	id: "/faq",
+	path: "/faq",
+	getParentRoute: () => Route$16
+});
+var PricingRoute = Route$9.update({
+	id: "/pricing",
+	path: "/pricing",
+	getParentRoute: () => Route$16
+});
+var PrivacyRoute = Route$8.update({
+	id: "/privacy",
+	path: "/privacy",
+	getParentRoute: () => Route$16
+});
+var TermsRoute = Route$7.update({
+	id: "/terms",
+	path: "/terms",
+	getParentRoute: () => Route$16
+});
+var ResourcesIndexRoute = Route$6.update({
+	id: "/resources/",
+	path: "/resources/",
+	getParentRoute: () => Route$16
+});
+var rootRouteChildren = {
+	IndexRoute,
+	AboutRoute,
+	AuthRoute,
+	ContactRoute,
+	DashboardRoute,
+	FaqRoute,
+	PricingRoute,
+	PrivacyRoute,
+	TermsRoute,
+	ResourcesSlugRoute: Route$5.update({
+		id: "/resources/$slug",
+		path: "/resources/$slug",
+		getParentRoute: () => Route$16
+	}),
+	WorkflowsAgencyActionRoute: Route$4.update({
+		id: "/workflows/agency-action",
+		path: "/workflows/agency-action",
+		getParentRoute: () => Route$16
+	}),
+	WorkflowsAnalyzeRoute: Route$3.update({
+		id: "/workflows/analyze",
+		path: "/workflows/analyze",
+		getParentRoute: () => Route$16
+	}),
+	WorkflowsCourtSummonsRoute: Route$2.update({
+		id: "/workflows/court-summons",
+		path: "/workflows/court-summons",
+		getParentRoute: () => Route$16
+	}),
+	WorkflowsFileAppealRoute: Route$1.update({
+		id: "/workflows/file-appeal",
+		path: "/workflows/file-appeal",
+		getParentRoute: () => Route$16
+	}),
+	WorkflowsIrsNoticeRoute: Route.update({
+		id: "/workflows/irs-notice",
+		path: "/workflows/irs-notice",
+		getParentRoute: () => Route$16
+	}),
+	ResourcesIndexRoute
+};
+var routeTree = Route$16._addFileChildren(rootRouteChildren)._addFileTypes();
+var router_exports = /* @__PURE__ */ __exportAll({ getRouter: () => getRouter });
+var getRouter = () => {
+	const queryClient = new QueryClient();
+	return createRouter({
+		routeTree,
+		context: { queryClient },
+		scrollRestoration: true,
+		defaultPreloadStaleTime: 0
+	});
+};
+//#endregion
+export { router_qGrcUNmF_exports as i, SiteFooter as n, SiteHeader as r, Route$5 as t };
