@@ -31,6 +31,8 @@ import { evaluateResponseQuality } from "@/domain/quality";
 import { explainDeadline, explainStrategy, explainResponse, explainReadiness } from "@/domain/explainability";
 import { createVersionedResponse, addVersion, getVersionHistory, type VersionedResponse } from "@/domain/versioning";
 import { AuditLog } from "@/domain/audit";
+import { getRepository } from "@/platform/repository";
+import { transitionStatus } from "@/domain/notice";
 
 export const Route = createFileRoute("/workflows/analyze")({
   head: () => ({
@@ -230,6 +232,29 @@ function AnalyzeNotice() {
     }
   }, [analysis]);
 
+  // Persist case to repository after analysis
+  useEffect(() => {
+    if (!caseRef.current || !analysis) return;
+    const repo = getRepository();
+    const updated = updateCase(caseRef.current, {
+      status: "analyzed",
+      contradictions: analysis.contradictions,
+      missingInfo: analysis.missingItems,
+      healthScore: analysis.health.overallScore,
+      healthStatus: analysis.health.status,
+      healthSummary: analysis.health.summary,
+      actionQueue: analysis.actionQueue,
+    });
+    caseRef.current = updated;
+    repo.save(updated).catch(() => {
+      // Persistence is best-effort; UI continues regardless
+    });
+    // Flush audit entries to repository
+    for (const entry of auditLogRef.current.getAll()) {
+      repo.saveAudit(entry).catch(() => {});
+    }
+  }, [analysis]);
+
   // Voice narration scripts
   const analysisNarration = useMemo(() => {
     if (!analysis) return null;
@@ -281,6 +306,12 @@ function AnalyzeNotice() {
       objectType: "strategy",
       description: `Strategy selected: ${analysis?.strategies[idx]?.type || "unknown"}`,
     });
+    // Persist case with in_progress status
+    if (caseRef.current) {
+      const updated = transitionStatus(caseRef.current, "in_progress");
+      caseRef.current = updated;
+      getRepository().save(updated).catch(() => {});
+    }
     setPhase("draft");
   }, [analysis]);
 
@@ -337,6 +368,17 @@ function AnalyzeNotice() {
           objectType: "response",
           description: `Response draft generated (v1, ${draft.wordCount} words)`,
         });
+        // Persist case with final response
+        if (caseRef.current) {
+          const caseUpdate = updateCase(caseRef.current, {
+            finalResponse: draft.content,
+            responseVersioning: updated,
+            userObjective: userObjective,
+            userFacts: userFacts,
+          });
+          caseRef.current = caseUpdate;
+          getRepository().save(caseUpdate).catch(() => {});
+        }
       }
     }
   }, [draft, analysis, selectedStrategyIdx]);
