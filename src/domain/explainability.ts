@@ -280,7 +280,6 @@ export function explainReadiness(params: {
   steps.push({
     label: "Score",
     detail: `${params.score}/100 (heuristic-based, not statistically validated)`,
-    isVerified: false,
   });
 
   if (params.blockingCount > 0) {

@@ -51,7 +51,7 @@ function GuidePage() {
 }
 
 function H2({ children }: { children: React.ReactNode }) { return <h2 className="mt-10 text-xl font-bold text-foreground" style={{ fontFamily: "var(--font-serif)" }}>{children}</h2>; }
-function P({ children }: { children: React.ReactNode }) { return <p className="mt-4 text-sm leading-7 text-muted-foreground">{children}</p>; }
+function P({ children, className }: { children: React.ReactNode; className?: string }) { return <p className={"mt-4 text-sm leading-7 text-muted-foreground" + (className ? " " + className : "")}>{children}</p>; }
 function UL({ children }: { children: React.ReactNode }) { return <ul className="mt-4 space-y-2 pl-5 text-sm text-muted-foreground" style={{ listStyle: "disc" }}>{children}</ul>; }
 function Callout({ children, type = "info" }: { children: React.ReactNode; type?: "info" | "warning" | "success" }) {
   const cls = type === "warning" ? "border border-rule/70 bg-stamp/5 text-ink-soft" : type === "success" ? "border border-rule/70 bg-paper-deep/40 text-ink-soft" : "border border-rule/70 bg-paper-deep/40 text-ink-soft";

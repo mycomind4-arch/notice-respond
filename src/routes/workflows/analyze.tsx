@@ -125,7 +125,7 @@ function AnalyzeNotice() {
 
     const noticeCase = createCase("analyze");
     caseRef.current = updateCase(noticeCase, {
-      type: classification.type,
+      noticeType: classification.type,
       typeConfidence: classification.confidence,
       category: NOTICE_TYPE_META[classification.type]?.category || "other",
       agency: extraction.agency || undefined,
@@ -869,8 +869,7 @@ function AnalyzeNotice() {
 
             {analysis.strategies.map((strategy, idx) => {
               const stratNarration = buildStrategyNarration({
-                strategyType: strategy.type,
-                strategyLabel: STRATEGY_TYPE_LABELS[strategy.type],
+                label: STRATEGY_TYPE_LABELS[strategy.type],
                 description: strategy.description,
                 reason: strategy.reason,
                 confidence: strategy.confidence,
