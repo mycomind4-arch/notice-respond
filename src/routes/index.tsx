@@ -56,7 +56,8 @@ function CheckIcon() { return <svg className="h-3.5 w-3.5" fill="none" viewBox="
 function Hero() {
   return (
     <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, oklch(0.25 0.04 240) 0%, oklch(0.2 0.035 240) 60%, oklch(0.15 0.03 240) 100%)" }}>
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-12 md:py-28">
+      <HeroBackground />
+      <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-12 md:py-28">
         <div className="flex flex-col justify-center">
           <div className="postmark w-fit" style={{ borderColor: "rgba(16,185,129,.3)", color: "oklch(0.72 0.08 160)", background: "rgba(16,185,129,.05)" }}>Notice response</div>
           <h1 className="mt-4 text-4xl leading-[1.05] text-white sm:text-5xl md:mt-6 md:text-7xl" style={{ fontFamily: "var(--font-serif)" }}>
@@ -95,47 +96,167 @@ function Hero() {
   );
 }
 
+function HeroBackground() {
+  return (
+    <>
+      {/* Subtle green glow — government document feel */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 60% 40% at 75% 30%, color-mix(in oklab, var(--stamp) 8%, transparent) 0%, transparent 70%), radial-gradient(ellipse 50% 50% at 15% 85%, color-mix(in oklab, var(--ink) 8%, transparent) 0%, transparent 60%)`,
+        }}
+        aria-hidden
+      />
+      {/* Diagonal security-line pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: "repeating-linear-gradient(45deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 16px)",
+        }}
+        aria-hidden
+      />
+      {/* Faint grid lines */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "repeating-linear-gradient(0deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 48px), repeating-linear-gradient(90deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 48px)",
+        }}
+        aria-hidden
+      />
+      {/* Vignette */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse 100% 80% at 50% 40%, transparent 30%, color-mix(in oklab, oklch(0.1 0.03 240) 60%, transparent) 100%)",
+        }}
+        aria-hidden
+      />
+    </>
+  );
+}
+
 function NoticeIllustration() {
   return (
-    <div className="relative mx-auto hidden w-full max-w-md items-center justify-center py-4 lg:flex">
-      <div className="postmark-circle h-28 w-28 -right-4 top-2" aria-hidden>
-        <div className="text-center leading-tight">
-          Internal<br />Revenue<br />Service
+    <div className="relative mx-auto hidden w-full max-w-md flex-col items-center justify-center py-4 lg:flex">
+      {/* Notice card wrapper */}
+      <div className="relative w-full" style={{ maxWidth: "26rem" }}>
+        {/* Postmark circle behind */}
+        <div className="postmark-circle h-24 w-24 -right-6 top-0" aria-hidden>
+          <div className="text-center leading-tight">
+            Internal<br />Revenue<br />Service
+          </div>
         </div>
-      </div>
-      <div className="absolute inset-0 -rotate-3 rounded-2xl bg-paper-deep/20" aria-hidden />
-      <div className="envelope-card relative w-full rotate-1 p-6 bg-paper" style={{ animation: "float 6s ease-in-out infinite" }}>
-        <div className="flex items-start justify-between">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Notice
-            <div className="mt-1 font-sans text-sm normal-case tracking-normal text-foreground">
-              CP2000
-              <div className="text-xs text-muted-foreground">IRS — Notice of Underreported Income</div>
+
+        {/* "FILED" ink stamp overlay */}
+        <div
+          className="absolute -left-4 top-10 z-20 rotate-[-18deg] select-none"
+          aria-hidden
+        >
+          <div
+            className="rounded border-2 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em]"
+            style={{
+              color: "color-mix(in oklab, var(--stamp) 70%, transparent)",
+              borderColor: "color-mix(in oklab, var(--stamp) 50%, transparent)",
+              backgroundColor: "color-mix(in oklab, var(--stamp) 4%, transparent)",
+              boxShadow: "inset 0 0 0 1px color-mix(in oklab, var(--stamp) 20%, transparent)",
+            }}
+          >
+            ✓ Filed
+          </div>
+        </div>
+
+        {/* Shadow layer */}
+        <div className="absolute inset-0 -rotate-3 rounded-2xl bg-paper-deep/20" aria-hidden />
+
+        {/* Notice card */}
+        <div
+          className="envelope-card relative rotate-1 overflow-hidden p-6 bg-paper"
+          style={{ animation: "float 6s ease-in-out infinite", aspectRatio: "1.5 / 1" }}
+        >
+          {/* Inner security tint */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: "repeating-linear-gradient(45deg, var(--ink), var(--ink) 1px, transparent 1px, transparent 10px)",
+            }}
+            aria-hidden
+          />
+
+          <div className="relative">
+            <div className="flex items-start justify-between">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                Notice
+                <div className="mt-1 font-sans text-sm normal-case tracking-normal text-foreground">
+                  CP2000
+                  <div className="text-xs text-muted-foreground">IRS — Notice of Underreported Income</div>
+                </div>
+              </div>
+              {/* IRS stamp with perforation */}
+              <div className="relative rounded-sm border-2 border-dashed border-stamp bg-stamp/10 px-3 py-2 text-stamp shadow-sm">
+                <div className="font-serif text-sm leading-none italic">IRS</div>
+                <div className="mt-0.5 font-mono text-[8px] uppercase tracking-widest">official</div>
+                <div
+                  className="absolute inset-0 rounded-sm"
+                  style={{ boxShadow: "inset 0 0 4px color-mix(in oklab, var(--stamp) 12%, transparent)" }}
+                  aria-hidden
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 border-l-2 border-dashed border-rule pl-4">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Notice date</div>
+              <div className="mt-1 font-mono text-sm text-ink-soft">July 28, 2026</div>
+              <div className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Response deadline</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-stamp">September 26, 2026</div>
+            </div>
+
+            {/* Barcode strip */}
+            <div className="mt-4 flex items-end gap-[1px] h-5">
+              {Array.from({ length: 32 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-ink/80"
+                  style={{
+                    width: i % 3 === 0 ? "2px" : i % 2 === 0 ? "1px" : "3px",
+                    height: i % 5 === 0 ? "100%" : i % 3 === 0 ? "80%" : "60%",
+                  }}
+                />
+              ))}
+              <span className="ml-2 font-mono text-[8px] tracking-wider text-muted-foreground">CP2000 08126</span>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-dashed border-rule pt-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="font-mono uppercase tracking-widest">Notice #CP2000-08126</span>
+              </div>
+              <div className="postmark">3 pages · certified</div>
             </div>
           </div>
-          <div className="rounded-sm border-2 border-dashed border-stamp bg-stamp/10 px-3 py-2 text-stamp">
-            <div className="font-serif text-sm leading-none italic">IRS</div>
-            <div className="mt-0.5 font-mono text-[8px] uppercase tracking-widest">official</div>
-          </div>
         </div>
 
-        <div className="mt-8 border-l-2 border-dashed border-rule pl-4">
-          <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Notice date</div>
-          <div className="mt-1 font-mono text-sm text-ink-soft">July 28, 2026</div>
-          <div className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Response deadline</div>
-          <div className="mt-1 font-mono text-sm font-semibold text-stamp">September 26, 2026</div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-between border-t border-dashed border-rule pt-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-mono uppercase tracking-widest">Notice #CP2000-08126</span>
+        {/* Wax seal — government seal style */}
+        <div
+          className="absolute -bottom-5 -right-3 z-20 flex h-14 w-14 rotate-[-8deg] items-center justify-center rounded-full"
+          aria-hidden
+        >
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-full border-2"
+            style={{
+              background: "radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--stamp) 22%, var(--paper)), color-mix(in oklab, var(--stamp) 8%, var(--paper)))",
+              borderColor: "color-mix(in oklab, var(--stamp) 35%, transparent)",
+              boxShadow: "0 2px 8px -2px color-mix(in oklab, var(--stamp) 30%, transparent), inset 0 1px 2px color-mix(in oklab, var(--paper) 40%, transparent)",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M12 2L9 6H4l-2 4 2 4-2 4 2 4h5l3 4 3-4h5l2-4-2-4 2-4-2-4h-5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+              <path d="M12 8v8M9 12h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
           </div>
-          <div className="postmark">3 pages · certified</div>
         </div>
       </div>
 
       {/* Response status timeline */}
-      <div className="mt-6 w-full max-w-md space-y-2">
+      <div className="mt-8 w-full space-y-2" style={{ maxWidth: "26rem" }}>
         {[
           { label: "Notice received", done: true },
           { label: "Response prepared", done: true },

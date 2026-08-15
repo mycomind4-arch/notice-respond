@@ -43,7 +43,9 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
   --shadow-card: 0 1px 0 0 color-mix(in oklab, var(--ink) 8%, transparent),
-                 0 20px 40px -24px color-mix(in oklab, var(--ink) 18%, transparent);
+                 0 2px 4px -2px color-mix(in oklab, var(--ink) 6%, transparent),
+                 0 12px 24px -12px color-mix(in oklab, var(--ink) 12%, transparent),
+                 0 28px 56px -20px color-mix(in oklab, var(--ink) 18%, transparent);
   --shadow-stamp: 0 8px 24px -12px color-mix(in oklab, var(--stamp) 45%, transparent);
   --shadow-hover: 0 2px 0 0 color-mix(in oklab, var(--ink) 12%, transparent),
                   0 28px 48px -20px color-mix(in oklab, var(--ink) 22%, transparent);
@@ -158,6 +160,22 @@
   transform: rotate(-12deg);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Wax seal effect */
+@utility wax-seal {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%,
+    color-mix(in oklab, var(--stamp) 22%, var(--paper)) 0%,
+    color-mix(in oklab, var(--stamp) 10%, var(--paper)) 100%);
+  border: 2px solid color-mix(in oklab, var(--stamp) 35%, transparent);
+  box-shadow:
+    0 2px 8px -2px color-mix(in oklab, var(--stamp) 30%, transparent),
+    inset 0 1px 2px color-mix(in oklab, var(--paper) 40%, transparent),
+    inset 0 -1px 3px color-mix(in oklab, var(--stamp) 15%, transparent);
 }
 
 .progress-track { height: 6px; border-radius: 999px; background: var(--rule); overflow: hidden; }
