@@ -146,7 +146,7 @@ export function validateDraft(
   }
 
   // ── Check for placeholder text ──
-  const placeholders = draft.match(/\[[A-Z_]+\]/g) ?? [];
+  const placeholders = draft.match(/\[[A-Z_ ]+\]/g) ?? [];
   for (const placeholder of placeholders) {
     findings.push({
       check: `placeholder:${placeholder}`,

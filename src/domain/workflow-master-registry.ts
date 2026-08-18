@@ -66,7 +66,7 @@ export const WORKFLOW_REGISTRY: WorkflowRegistryEntry[] = [
     lifecycle: "functional",
     title: "Respond to an IRS CP2000 Notice",
     canonicalKeyword: "CP2000",
-    keywordCluster: ["CP2000", "IRS CP2000", "CP2000 notice", "respond to CP2000"],
+    keywordCluster: ["CP2000", "IRS CP2000", "CP2000 notice", "respond to CP2000", "CP2000 response", "CP2000 response letter", "how to respond to CP2000", "CP2000 discrepancy"],
     msv: 1900,
     cpc: null,
     competition: null,
