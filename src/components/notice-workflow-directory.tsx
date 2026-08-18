@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 
 export type NoticeWorkflow = {
   slug: string;
@@ -16,7 +15,7 @@ export type NoticeWorkflow = {
 export const NOTICE_WORKFLOWS: NoticeWorkflow[] = [
   {
     slug: "government-notice",
-    route: "/workflows/respond-to-a-government-notice",
+    route: "/respond-to-a-government-notice",
     title: "Respond to a government notice",
     searchIntent: "respond to government notice",
     category: "General government",
@@ -89,7 +88,7 @@ export const NOTICE_WORKFLOWS: NoticeWorkflow[] = [
     description: "Organize a Social Security notice, its deadline, stated decision or request, and the records you need for a written response or next review step.",
     bestFor: "Social Security notices, requests for information, and administrative decisions that require action.",
     steps: ["Upload the notice", "Record the notice date and response deadline", "Extract the stated reason or request", "Organize supporting evidence", "Prepare and review the response"],
-    documents: ["SSA notice", "Medical or work records when relevant", "Benefit records", "Prior correspondence"],
+    documents: ["SSA notice", "Benefit records", "Work or identity records when relevant", "Prior correspondence"],
   },
   {
     slug: "uscis-notice",
@@ -149,14 +148,9 @@ export function workflowCategories() {
 
 export function WorkflowCard({ workflow }: { workflow: NoticeWorkflow }) {
   return (
-    <Link
-      to={workflow.route}
-      className="group flex h-full flex-col rounded-xl border border-rule bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-md"
-    >
+    <Link to={workflow.route} className="group flex h-full flex-col rounded-xl border border-rule bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
-        <span className="rounded-full border border-rule bg-paper px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {workflow.category}
-        </span>
+        <span className="rounded-full border border-rule bg-paper px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{workflow.category}</span>
         <span className="text-muted-foreground transition-transform group-hover:translate-x-1">→</span>
       </div>
       <h3 className="mt-4 font-serif text-2xl leading-tight">{workflow.title}</h3>
@@ -171,92 +165,48 @@ export function WorkflowCard({ workflow }: { workflow: NoticeWorkflow }) {
 
 export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
   return (
-    <div className="min-h-screen">
-      <main>
-        <section className="border-b border-rule/60 bg-paper-deep/20">
-          <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← All Notice Respond workflows</Link>
-            <div className="mt-8 max-w-3xl">
-              <div className="postmark w-fit">{workflow.category}</div>
-              <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{workflow.title}</h1>
-              <p className="mt-5 text-base leading-7 text-ink-soft sm:text-lg">{workflow.description}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link to="/dashboard" className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link>
-                <Link to="/workflows/analyze" className="rounded-full border border-rule px-6 py-3 text-sm font-medium">Analyze a notice</Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_.8fr]">
-            <div>
-              <div className="font-mono text-xs uppercase tracking-[0.18em] text-stamp">Workflow</div>
-              <h2 className="mt-3 font-serif text-3xl sm:text-4xl">What happens here</h2>
-              <div className="mt-6 space-y-3">
-                {workflow.steps.map((step, index) => (
-                  <div key={step} className="flex gap-4 rounded-xl border border-rule bg-card p-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-deep font-mono text-xs text-stamp">{String(index + 1).padStart(2, "0")}</div>
-                    <div className="pt-1 text-sm leading-6 text-foreground">{step}</div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-6 text-sm leading-6 text-muted-foreground">{workflow.bestFor}</p>
-            </div>
-
-            <aside className="rounded-2xl border border-rule bg-card p-6 sm:p-7">
-              <div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Bring these documents</div>
-              <ul className="mt-4 space-y-3">
-                {workflow.documents.map((document) => (
-                  <li key={document} className="flex gap-3 text-sm leading-6">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stamp" />
-                    <span>{document}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-7 border-t border-rule/60 pt-6">
-                <div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">What the system tracks</div>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">Notice date, response deadline, reference number, agency instructions, supporting documents, response status, and mailing/proof records.</p>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="border-y border-rule/60 bg-paper-deep/30">
-          <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16">
-            <div className="postmark mx-auto w-fit">Ready when you are</div>
-            <h2 className="mt-4 font-serif text-3xl sm:text-4xl">Start with the document you received.</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.</p>
-            <Link to="/dashboard" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link>
-          </div>
-        </section>
-      </main>
-    </div>
+    <div className="min-h-screen"><main>
+      <section className="border-b border-rule/60 bg-paper-deep/20"><div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← All Notice Respond workflows</Link>
+        <div className="mt-8 max-w-3xl">
+          <div className="postmark w-fit">{workflow.category}</div>
+          <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{workflow.title}</h1>
+          <p className="mt-5 text-base leading-7 text-ink-soft sm:text-lg">{workflow.description}</p>
+          <div className="mt-7 flex flex-wrap gap-3"><Link to="/dashboard" className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link><Link to="/workflows/analyze" className="rounded-full border border-rule px-6 py-3 text-sm font-medium">Analyze a notice</Link></div>
+        </div>
+      </div></section>
+      <section><div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_.8fr]">
+        <div><div className="font-mono text-xs uppercase tracking-[0.18em] text-stamp">Workflow</div><h2 className="mt-3 font-serif text-3xl sm:text-4xl">What happens here</h2>
+          <div className="mt-6 space-y-3">{workflow.steps.map((step, index) => <div key={step} className="flex gap-4 rounded-xl border border-rule bg-card p-4"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-deep font-mono text-xs text-stamp">{String(index + 1).padStart(2, "0")}</div><div className="pt-1 text-sm leading-6 text-foreground">{step}</div></div>)}</div>
+          <p className="mt-6 text-sm leading-6 text-muted-foreground">{workflow.bestFor}</p>
+        </div>
+        <aside className="rounded-2xl border border-rule bg-card p-6 sm:p-7"><div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Bring these documents</div>
+          <ul className="mt-4 space-y-3">{workflow.documents.map((document) => <li key={document} className="flex gap-3 text-sm leading-6"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stamp" /><span>{document}</span></li>)}</ul>
+          <div className="mt-7 border-t border-rule/60 pt-6"><div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">What the system tracks</div><p className="mt-3 text-sm leading-6 text-muted-foreground">Notice date, response deadline, reference number, agency instructions, supporting documents, response status, and mailing/proof records.</p></div>
+        </aside>
+      </div></section>
+      <section className="border-y border-rule/60 bg-paper-deep/30"><div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16"><div className="postmark mx-auto w-fit">Ready when you are</div><h2 className="mt-4 font-serif text-3xl sm:text-4xl">Start with the document you received.</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.</p><Link to="/dashboard" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link></div></section>
+    </main></div>
   );
 }
 
 export function WorkflowHead({ workflow }: { workflow: NoticeWorkflow }) {
-  return {
-    meta: [
-      { title: `${workflow.title} | Notice Respond` },
-      { name: "description", content: `${workflow.description} Organize documents, deadlines, and the written response in one workflow.` },
-      { property: "og:title", content: `${workflow.title} | Notice Respond` },
-      { property: "og:description", content: workflow.description },
-      { property: "og:type", content: "website" },
-    ],
-  };
+  return { meta: [
+    { title: `${workflow.title} | Notice Respond` },
+    { name: "description", content: `${workflow.description} Organize documents, deadlines, and the written response in one workflow.` },
+    { property: "og:title", content: `${workflow.title} | Notice Respond` },
+    { property: "og:description", content: workflow.description },
+    { property: "og:type", content: "website" },
+  ] };
 }
 
-export function WorkflowStructuredData({ workflow }: { workflow: NoticeWorkflow }): ReactNode {
-  return {
-    type: "application/ld+json",
-    children: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      name: workflow.title,
-      description: workflow.description,
-      about: workflow.searchIntent,
-      isPartOf: { "@type": "WebSite", name: "Notice Respond" },
-    }),
-  };
+export function WorkflowStructuredData({ workflow }: { workflow: NoticeWorkflow }) {
+  return { type: "application/ld+json", children: JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: workflow.title,
+    description: workflow.description,
+    about: workflow.searchIntent,
+    isPartOf: { "@type": "WebSite", name: "Notice Respond" },
+  }) };
 }
