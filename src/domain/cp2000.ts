@@ -129,13 +129,30 @@ function extractProposedPenalty(text: string): string | null {
 function extractIncomeAmounts(text: string): { reported?: string; irsReported?: string } {
   const result: { reported?: string; irsReported?: string } = {};
   
-  // "You reported $X" pattern
-  const reportedMatch = text.match(/(?:you\s+reported|reported\s+(?:on|by|income))\s*:?\s*\$?\s*([\d,]+\.?\d*)/i);
-  if (reportedMatch) result.reported = `$${reportedMatch[1]}`;
+  // "You reported $X" or "You reported income of: $X" or "income you reported: $X"
+  const reportedPatterns = [
+    /you\s+reported\s+income\s*(?:of)?\s*:?\s*\$?\s*([\d,]+\.?\d*)/i,
+    /income\s+(?:you\s+)?reported\s*:?\s*\$?\s*([\d,]+\.?\d*)/i,
+    /you\s+reported.{0,20}?\$?\s*([\d,]+\.?\d*)/i,
+  ];
+  for (const pattern of reportedPatterns) {
+    const match = text.match(pattern);
+    if (match) { result.reported = `$${match[1]}`; break; }
+  }
   
-  // "We received $X" or "shown on information returns $X"
-  const irsMatch = text.match(/(?:we\s+received|information\s+returns?\s+(?:show|indicate|reported)|third.party\s+reported|shown\s+on)\s*:?\s*\$?\s*([\d,]+\.?\d*)/i);
-  if (irsMatch) result.irsReported = `$${irsMatch[1]}`;
+  // "We received $X" or "Income reported to us on Form W-2: $X"
+  // Require $ sign to avoid matching form numbers (W-2, 1099, etc.)
+  const irsPatterns = [
+    /income\s+reported\s+to\s+us.{0,30}?\$\s*([\d,]+\.?\d*)/i,
+    /we\s+received.{0,20}?\$\s*([\d,]+\.?\d*)/i,
+    /information\s+returns?\s+(?:show|indicate|reported).{0,20}?\$\s*([\d,]+\.?\d*)/i,
+    /shown\s+on.{0,20}?\$\s*([\d,]+\.?\d*)/i,
+    /reported\s+to\s+us.{0,30}?\$\s*([\d,]+\.?\d*)/i,
+  ];
+  for (const pattern of irsPatterns) {
+    const match = text.match(pattern);
+    if (match) { result.irsReported = `$${match[1]}`; break; }
+  }
   
   return result;
 }
@@ -342,34 +359,29 @@ export function generateCP2000Draft(params: {
   userFacts: string;
   userObjective: string;
 }): string {
-  const ref = `Re: Response to IRS Notice ${params.noticeNumber || "[Notice Number]"}`;
-  const taxYearLine = params.taxYear ? `Tax Year: ${params.taxYear}` : "";
-  const noticeDateLine = params.noticeDate ? `Notice Date: ${params.noticeDate}` : "";
-  const deadlineLine = params.responseDeadline
-    ? `Response Deadline: ${params.responseDeadline}`
-    : "Response Deadline: [Verify deadline on your notice]";
-  
-  const body = params.userFacts || "[Explain the income discrepancy and your supporting records here.]";
-  const objective = params.userObjective || "[State what you want the IRS to do.]";
-  
   const lines = [
-    ref,
-    taxYearLine,
-    noticeDateLine,
-    deadlineLine,
+    `CP2000 reference number: ${params.noticeNumber || "[Notice Number]"}`,
+    params.taxYear ? `Tax year: ${params.taxYear}` : "Tax year: [Verify on notice]",
+    params.noticeDate ? `Notice date: ${params.noticeDate}` : "",
+    params.responseDeadline
+      ? `Response deadline: ${params.responseDeadline}`
+      : "Response deadline: [Verify deadline on your notice]",
     "",
     "Dear Sir or Madam,",
     "",
     `I am writing in response to the CP2000 notice referenced above.${params.taxYear ? ` This response concerns the proposed changes for tax year ${params.taxYear}.` : ""}`,
     "",
-    objective,
+    "Requested correction:",
+    params.userObjective || "[State what you want the IRS to do]",
     "",
-    "The following information supports my response:",
+    "Mismatch explanation:",
+    params.userFacts || "[Explain the income discrepancy and your supporting records here.]",
     "",
-    body,
-    "",
-    "Please find enclosed the following supporting documentation:",
+    "Supporting records list:",
     "  [LIST ENCLOSED DOCUMENTS — W-2, 1099, return transcript, etc.]",
+    "",
+    "Attachments:",
+    "  [LIST ATTACHED DOCUMENTS]",
     "",
     "I respectfully request that you review this response and the enclosed documentation. If you require additional information, please contact me at your earliest convenience.",
     "",

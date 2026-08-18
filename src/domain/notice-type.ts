@@ -168,7 +168,10 @@ export function classifyNoticeType(text: string): { type: NoticeType; confidence
     return { type: "other", confidence: 0.1 };
   }
 
-  const scores: { type: NoticeType; confidence: number }[] = [];
+  // Generic/fallback types that should yield to specific types
+  const GENERIC_TYPES = new Set<NoticeType>(["irs_letter", "agency_action", "other"]);
+
+  const scores: { type: NoticeType; confidence: number; matchCount: number }[] = [];
 
   for (const entry of CLASSIFICATION_PATTERNS) {
     let matchCount = 0;
@@ -177,8 +180,13 @@ export function classifyNoticeType(text: string): { type: NoticeType; confidence
     }
     if (matchCount >= entry.minMatches) {
       // Confidence based on proportion of patterns matched
-      const confidence = Math.min(0.95, 0.4 + (matchCount / entry.patterns.length) * 0.5);
-      scores.push({ type: entry.type, confidence });
+      let confidence = Math.min(0.95, 0.4 + (matchCount / entry.patterns.length) * 0.5);
+      // Boost specific types: if a specific type matches, boost its confidence
+      // so it wins over generic types with many pattern matches
+      if (!GENERIC_TYPES.has(entry.type)) {
+        confidence = Math.min(0.98, confidence + 0.3);
+      }
+      scores.push({ type: entry.type, confidence, matchCount });
     }
   }
 
@@ -186,7 +194,11 @@ export function classifyNoticeType(text: string): { type: NoticeType; confidence
     return { type: "other", confidence: 0.2 };
   }
 
-  // Pick highest confidence, with tie-breaking by specificity
-  scores.sort((a, b) => b.confidence - a.confidence);
-  return scores[0];
+  // If a specific type matched, prefer it over generic types
+  const specific = scores.filter((s) => !GENERIC_TYPES.has(s.type));
+  const pool = specific.length > 0 ? specific : scores;
+
+  // Pick highest confidence, with tie-breaking by match count
+  pool.sort((a, b) => b.confidence - a.confidence || b.matchCount - a.matchCount);
+  return { type: pool[0].type, confidence: pool[0].confidence };
 }
