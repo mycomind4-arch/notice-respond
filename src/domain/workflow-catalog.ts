@@ -337,7 +337,7 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
       bestFor: "Taxpayers who received an IRS CP2000 underreported-income notice and need to reconcile the income discrepancy with supporting records.",
       steps: ["Upload the CP2000 notice", "Review extracted facts and the income discrepancy", "Add your facts and supporting records", "Choose your response objective", "Review and edit the response draft", "Approve and mail with proof of delivery"],
       documents: ["IRS CP2000 notice", "W-2 or 1099 forms", "Tax return or transcript", "Broker statements", "Corrected documents (W-2c, 1040X)"],
-      seoRoute: "/workflows/cp2000-response",
+      seoRoute: "/workflows/respond-to-cp2000-notice",
       seoTitle: "Respond to an IRS CP2000 notice",
       seoDescription: "Analyze your CP2000, reconcile the income discrepancy, and prepare a response with supporting evidence.",
     },

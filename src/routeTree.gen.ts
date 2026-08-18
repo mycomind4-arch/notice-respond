@@ -17,14 +17,27 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RespondToAGovernmentNoticeRouteImport } from './routes/respond-to-a-government-notice'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ResourcesIndexRouteImport } from './routes/resources/index'
 import { Route as ResourcesSlugRouteImport } from './routes/resources/$slug'
 import { Route as WorkflowsAgencyActionRouteImport } from './routes/workflows/agency-action'
 import { Route as WorkflowsAnalyzeRouteImport } from './routes/workflows/analyze'
 import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/court-summons'
+import { Route as WorkflowsCp2000ResponseRouteImport } from './routes/workflows/cp2000-response'
 import { Route as WorkflowsFileAppealRouteImport } from './routes/workflows/file-appeal'
 import { Route as WorkflowsIrsNoticeRouteImport } from './routes/workflows/irs-notice'
+import { Route as WorkflowsRespondToABenefitsNoticeRouteImport } from './routes/workflows/respond-to-a-benefits-notice'
+import { Route as WorkflowsRespondToACourtSummonsRouteImport } from './routes/workflows/respond-to-a-court-summons'
+import { Route as WorkflowsRespondToADmvNoticeRouteImport } from './routes/workflows/respond-to-a-dmv-notice'
+import { Route as WorkflowsRespondToAPermitCorrectionNoticeRouteImport } from './routes/workflows/respond-to-a-permit-correction-notice'
+import { Route as WorkflowsRespondToATaxNoticeRouteImport } from './routes/workflows/respond-to-a-tax-notice'
+import { Route as WorkflowsRespondToAUscisNoticeRouteImport } from './routes/workflows/respond-to-a-uscis-notice'
+import { Route as WorkflowsRespondToAnAgencyActionRouteImport } from './routes/workflows/respond-to-an-agency-action'
+import { Route as WorkflowsRespondToAnIrsNoticeRouteImport } from './routes/workflows/respond-to-an-irs-notice'
+import { Route as WorkflowsRespondToAnSsaNoticeRouteImport } from './routes/workflows/respond-to-an-ssa-notice'
+import { Route as WorkflowsRespondToCodeEnforcementNoticeRouteImport } from './routes/workflows/respond-to-code-enforcement-notice'
+import { Route as WorkflowsRespondToCp2000NoticeRouteImport } from './routes/workflows/respond-to-cp2000-notice'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -66,6 +79,12 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RespondToAGovernmentNoticeRoute =
+  RespondToAGovernmentNoticeRouteImport.update({
+    id: '/respond-to-a-government-notice',
+    path: '/respond-to-a-government-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -96,6 +115,11 @@ const WorkflowsCourtSummonsRoute = WorkflowsCourtSummonsRouteImport.update({
   path: '/workflows/court-summons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkflowsCp2000ResponseRoute = WorkflowsCp2000ResponseRouteImport.update({
+  id: '/workflows/cp2000-response',
+  path: '/workflows/cp2000-response',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkflowsFileAppealRoute = WorkflowsFileAppealRouteImport.update({
   id: '/workflows/file-appeal',
   path: '/workflows/file-appeal',
@@ -106,6 +130,72 @@ const WorkflowsIrsNoticeRoute = WorkflowsIrsNoticeRouteImport.update({
   path: '/workflows/irs-notice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkflowsRespondToABenefitsNoticeRoute =
+  WorkflowsRespondToABenefitsNoticeRouteImport.update({
+    id: '/workflows/respond-to-a-benefits-notice',
+    path: '/workflows/respond-to-a-benefits-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToACourtSummonsRoute =
+  WorkflowsRespondToACourtSummonsRouteImport.update({
+    id: '/workflows/respond-to-a-court-summons',
+    path: '/workflows/respond-to-a-court-summons',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToADmvNoticeRoute =
+  WorkflowsRespondToADmvNoticeRouteImport.update({
+    id: '/workflows/respond-to-a-dmv-notice',
+    path: '/workflows/respond-to-a-dmv-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToAPermitCorrectionNoticeRoute =
+  WorkflowsRespondToAPermitCorrectionNoticeRouteImport.update({
+    id: '/workflows/respond-to-a-permit-correction-notice',
+    path: '/workflows/respond-to-a-permit-correction-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToATaxNoticeRoute =
+  WorkflowsRespondToATaxNoticeRouteImport.update({
+    id: '/workflows/respond-to-a-tax-notice',
+    path: '/workflows/respond-to-a-tax-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToAUscisNoticeRoute =
+  WorkflowsRespondToAUscisNoticeRouteImport.update({
+    id: '/workflows/respond-to-a-uscis-notice',
+    path: '/workflows/respond-to-a-uscis-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToAnAgencyActionRoute =
+  WorkflowsRespondToAnAgencyActionRouteImport.update({
+    id: '/workflows/respond-to-an-agency-action',
+    path: '/workflows/respond-to-an-agency-action',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToAnIrsNoticeRoute =
+  WorkflowsRespondToAnIrsNoticeRouteImport.update({
+    id: '/workflows/respond-to-an-irs-notice',
+    path: '/workflows/respond-to-an-irs-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToAnSsaNoticeRoute =
+  WorkflowsRespondToAnSsaNoticeRouteImport.update({
+    id: '/workflows/respond-to-an-ssa-notice',
+    path: '/workflows/respond-to-an-ssa-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToCodeEnforcementNoticeRoute =
+  WorkflowsRespondToCodeEnforcementNoticeRouteImport.update({
+    id: '/workflows/respond-to-code-enforcement-notice',
+    path: '/workflows/respond-to-code-enforcement-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkflowsRespondToCp2000NoticeRoute =
+  WorkflowsRespondToCp2000NoticeRouteImport.update({
+    id: '/workflows/respond-to-cp2000-notice',
+    path: '/workflows/respond-to-cp2000-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,13 +206,26 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
+  '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
+  '/workflows/respond-to-a-court-summons': typeof WorkflowsRespondToACourtSummonsRoute
+  '/workflows/respond-to-a-dmv-notice': typeof WorkflowsRespondToADmvNoticeRoute
+  '/workflows/respond-to-a-permit-correction-notice': typeof WorkflowsRespondToAPermitCorrectionNoticeRoute
+  '/workflows/respond-to-a-tax-notice': typeof WorkflowsRespondToATaxNoticeRoute
+  '/workflows/respond-to-a-uscis-notice': typeof WorkflowsRespondToAUscisNoticeRoute
+  '/workflows/respond-to-an-agency-action': typeof WorkflowsRespondToAnAgencyActionRoute
+  '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
+  '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
+  '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -134,13 +237,26 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
+  '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
+  '/workflows/respond-to-a-court-summons': typeof WorkflowsRespondToACourtSummonsRoute
+  '/workflows/respond-to-a-dmv-notice': typeof WorkflowsRespondToADmvNoticeRoute
+  '/workflows/respond-to-a-permit-correction-notice': typeof WorkflowsRespondToAPermitCorrectionNoticeRoute
+  '/workflows/respond-to-a-tax-notice': typeof WorkflowsRespondToATaxNoticeRoute
+  '/workflows/respond-to-a-uscis-notice': typeof WorkflowsRespondToAUscisNoticeRoute
+  '/workflows/respond-to-an-agency-action': typeof WorkflowsRespondToAnAgencyActionRoute
+  '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
+  '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
+  '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources': typeof ResourcesIndexRoute
 }
 export interface FileRoutesById {
@@ -153,13 +269,26 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
+  '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
+  '/workflows/respond-to-a-court-summons': typeof WorkflowsRespondToACourtSummonsRoute
+  '/workflows/respond-to-a-dmv-notice': typeof WorkflowsRespondToADmvNoticeRoute
+  '/workflows/respond-to-a-permit-correction-notice': typeof WorkflowsRespondToAPermitCorrectionNoticeRoute
+  '/workflows/respond-to-a-tax-notice': typeof WorkflowsRespondToATaxNoticeRoute
+  '/workflows/respond-to-a-uscis-notice': typeof WorkflowsRespondToAUscisNoticeRoute
+  '/workflows/respond-to-an-agency-action': typeof WorkflowsRespondToAnAgencyActionRoute
+  '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
+  '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
+  '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
 export interface FileRouteTypes {
@@ -173,13 +302,26 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/privacy'
+    | '/respond-to-a-government-notice'
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
+    | '/workflows/respond-to-a-benefits-notice'
+    | '/workflows/respond-to-a-court-summons'
+    | '/workflows/respond-to-a-dmv-notice'
+    | '/workflows/respond-to-a-permit-correction-notice'
+    | '/workflows/respond-to-a-tax-notice'
+    | '/workflows/respond-to-a-uscis-notice'
+    | '/workflows/respond-to-an-agency-action'
+    | '/workflows/respond-to-an-irs-notice'
+    | '/workflows/respond-to-an-ssa-notice'
+    | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp2000-notice'
     | '/resources/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -191,13 +333,26 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/privacy'
+    | '/respond-to-a-government-notice'
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
+    | '/workflows/respond-to-a-benefits-notice'
+    | '/workflows/respond-to-a-court-summons'
+    | '/workflows/respond-to-a-dmv-notice'
+    | '/workflows/respond-to-a-permit-correction-notice'
+    | '/workflows/respond-to-a-tax-notice'
+    | '/workflows/respond-to-a-uscis-notice'
+    | '/workflows/respond-to-an-agency-action'
+    | '/workflows/respond-to-an-irs-notice'
+    | '/workflows/respond-to-an-ssa-notice'
+    | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp2000-notice'
     | '/resources'
   id:
     | '__root__'
@@ -209,13 +364,26 @@ export interface FileRouteTypes {
     | '/faq'
     | '/pricing'
     | '/privacy'
+    | '/respond-to-a-government-notice'
     | '/terms'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
+    | '/workflows/respond-to-a-benefits-notice'
+    | '/workflows/respond-to-a-court-summons'
+    | '/workflows/respond-to-a-dmv-notice'
+    | '/workflows/respond-to-a-permit-correction-notice'
+    | '/workflows/respond-to-a-tax-notice'
+    | '/workflows/respond-to-a-uscis-notice'
+    | '/workflows/respond-to-an-agency-action'
+    | '/workflows/respond-to-an-irs-notice'
+    | '/workflows/respond-to-an-ssa-notice'
+    | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp2000-notice'
     | '/resources/'
   fileRoutesById: FileRoutesById
 }
@@ -228,13 +396,26 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  RespondToAGovernmentNoticeRoute: typeof RespondToAGovernmentNoticeRoute
   TermsRoute: typeof TermsRoute
   ResourcesSlugRoute: typeof ResourcesSlugRoute
   WorkflowsAgencyActionRoute: typeof WorkflowsAgencyActionRoute
   WorkflowsAnalyzeRoute: typeof WorkflowsAnalyzeRoute
   WorkflowsCourtSummonsRoute: typeof WorkflowsCourtSummonsRoute
+  WorkflowsCp2000ResponseRoute: typeof WorkflowsCp2000ResponseRoute
   WorkflowsFileAppealRoute: typeof WorkflowsFileAppealRoute
   WorkflowsIrsNoticeRoute: typeof WorkflowsIrsNoticeRoute
+  WorkflowsRespondToABenefitsNoticeRoute: typeof WorkflowsRespondToABenefitsNoticeRoute
+  WorkflowsRespondToACourtSummonsRoute: typeof WorkflowsRespondToACourtSummonsRoute
+  WorkflowsRespondToADmvNoticeRoute: typeof WorkflowsRespondToADmvNoticeRoute
+  WorkflowsRespondToAPermitCorrectionNoticeRoute: typeof WorkflowsRespondToAPermitCorrectionNoticeRoute
+  WorkflowsRespondToATaxNoticeRoute: typeof WorkflowsRespondToATaxNoticeRoute
+  WorkflowsRespondToAUscisNoticeRoute: typeof WorkflowsRespondToAUscisNoticeRoute
+  WorkflowsRespondToAnAgencyActionRoute: typeof WorkflowsRespondToAnAgencyActionRoute
+  WorkflowsRespondToAnIrsNoticeRoute: typeof WorkflowsRespondToAnIrsNoticeRoute
+  WorkflowsRespondToAnSsaNoticeRoute: typeof WorkflowsRespondToAnSsaNoticeRoute
+  WorkflowsRespondToCodeEnforcementNoticeRoute: typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  WorkflowsRespondToCp2000NoticeRoute: typeof WorkflowsRespondToCp2000NoticeRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
 }
 
@@ -296,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/respond-to-a-government-notice': {
+      id: '/respond-to-a-government-notice'
+      path: '/respond-to-a-government-notice'
+      fullPath: '/respond-to-a-government-notice'
+      preLoaderRoute: typeof RespondToAGovernmentNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -338,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsCourtSummonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/cp2000-response': {
+      id: '/workflows/cp2000-response'
+      path: '/workflows/cp2000-response'
+      fullPath: '/workflows/cp2000-response'
+      preLoaderRoute: typeof WorkflowsCp2000ResponseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/file-appeal': {
       id: '/workflows/file-appeal'
       path: '/workflows/file-appeal'
@@ -352,6 +547,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsIrsNoticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/respond-to-a-benefits-notice': {
+      id: '/workflows/respond-to-a-benefits-notice'
+      path: '/workflows/respond-to-a-benefits-notice'
+      fullPath: '/workflows/respond-to-a-benefits-notice'
+      preLoaderRoute: typeof WorkflowsRespondToABenefitsNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-a-court-summons': {
+      id: '/workflows/respond-to-a-court-summons'
+      path: '/workflows/respond-to-a-court-summons'
+      fullPath: '/workflows/respond-to-a-court-summons'
+      preLoaderRoute: typeof WorkflowsRespondToACourtSummonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-a-dmv-notice': {
+      id: '/workflows/respond-to-a-dmv-notice'
+      path: '/workflows/respond-to-a-dmv-notice'
+      fullPath: '/workflows/respond-to-a-dmv-notice'
+      preLoaderRoute: typeof WorkflowsRespondToADmvNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-a-permit-correction-notice': {
+      id: '/workflows/respond-to-a-permit-correction-notice'
+      path: '/workflows/respond-to-a-permit-correction-notice'
+      fullPath: '/workflows/respond-to-a-permit-correction-notice'
+      preLoaderRoute: typeof WorkflowsRespondToAPermitCorrectionNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-a-tax-notice': {
+      id: '/workflows/respond-to-a-tax-notice'
+      path: '/workflows/respond-to-a-tax-notice'
+      fullPath: '/workflows/respond-to-a-tax-notice'
+      preLoaderRoute: typeof WorkflowsRespondToATaxNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-a-uscis-notice': {
+      id: '/workflows/respond-to-a-uscis-notice'
+      path: '/workflows/respond-to-a-uscis-notice'
+      fullPath: '/workflows/respond-to-a-uscis-notice'
+      preLoaderRoute: typeof WorkflowsRespondToAUscisNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-an-agency-action': {
+      id: '/workflows/respond-to-an-agency-action'
+      path: '/workflows/respond-to-an-agency-action'
+      fullPath: '/workflows/respond-to-an-agency-action'
+      preLoaderRoute: typeof WorkflowsRespondToAnAgencyActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-an-irs-notice': {
+      id: '/workflows/respond-to-an-irs-notice'
+      path: '/workflows/respond-to-an-irs-notice'
+      fullPath: '/workflows/respond-to-an-irs-notice'
+      preLoaderRoute: typeof WorkflowsRespondToAnIrsNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-an-ssa-notice': {
+      id: '/workflows/respond-to-an-ssa-notice'
+      path: '/workflows/respond-to-an-ssa-notice'
+      fullPath: '/workflows/respond-to-an-ssa-notice'
+      preLoaderRoute: typeof WorkflowsRespondToAnSsaNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-code-enforcement-notice': {
+      id: '/workflows/respond-to-code-enforcement-notice'
+      path: '/workflows/respond-to-code-enforcement-notice'
+      fullPath: '/workflows/respond-to-code-enforcement-notice'
+      preLoaderRoute: typeof WorkflowsRespondToCodeEnforcementNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/respond-to-cp2000-notice': {
+      id: '/workflows/respond-to-cp2000-notice'
+      path: '/workflows/respond-to-cp2000-notice'
+      fullPath: '/workflows/respond-to-cp2000-notice'
+      preLoaderRoute: typeof WorkflowsRespondToCp2000NoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -364,13 +636,29 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  RespondToAGovernmentNoticeRoute: RespondToAGovernmentNoticeRoute,
   TermsRoute: TermsRoute,
   ResourcesSlugRoute: ResourcesSlugRoute,
   WorkflowsAgencyActionRoute: WorkflowsAgencyActionRoute,
   WorkflowsAnalyzeRoute: WorkflowsAnalyzeRoute,
   WorkflowsCourtSummonsRoute: WorkflowsCourtSummonsRoute,
+  WorkflowsCp2000ResponseRoute: WorkflowsCp2000ResponseRoute,
   WorkflowsFileAppealRoute: WorkflowsFileAppealRoute,
   WorkflowsIrsNoticeRoute: WorkflowsIrsNoticeRoute,
+  WorkflowsRespondToABenefitsNoticeRoute:
+    WorkflowsRespondToABenefitsNoticeRoute,
+  WorkflowsRespondToACourtSummonsRoute: WorkflowsRespondToACourtSummonsRoute,
+  WorkflowsRespondToADmvNoticeRoute: WorkflowsRespondToADmvNoticeRoute,
+  WorkflowsRespondToAPermitCorrectionNoticeRoute:
+    WorkflowsRespondToAPermitCorrectionNoticeRoute,
+  WorkflowsRespondToATaxNoticeRoute: WorkflowsRespondToATaxNoticeRoute,
+  WorkflowsRespondToAUscisNoticeRoute: WorkflowsRespondToAUscisNoticeRoute,
+  WorkflowsRespondToAnAgencyActionRoute: WorkflowsRespondToAnAgencyActionRoute,
+  WorkflowsRespondToAnIrsNoticeRoute: WorkflowsRespondToAnIrsNoticeRoute,
+  WorkflowsRespondToAnSsaNoticeRoute: WorkflowsRespondToAnSsaNoticeRoute,
+  WorkflowsRespondToCodeEnforcementNoticeRoute:
+    WorkflowsRespondToCodeEnforcementNoticeRoute,
+  WorkflowsRespondToCp2000NoticeRoute: WorkflowsRespondToCp2000NoticeRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
 }
 export const routeTree = rootRouteImport
