@@ -24,6 +24,7 @@ import { Route as ResourcesSlugRouteImport } from './routes/resources/$slug'
 import { Route as WorkflowsAgencyActionRouteImport } from './routes/workflows/agency-action'
 import { Route as WorkflowsAnalyzeRouteImport } from './routes/workflows/analyze'
 import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/court-summons'
+import { Route as WorkflowsCp14ResponseRouteImport } from './routes/workflows/cp14-response'
 import { Route as WorkflowsCp2000ResponseRouteImport } from './routes/workflows/cp2000-response'
 import { Route as WorkflowsFileAppealRouteImport } from './routes/workflows/file-appeal'
 import { Route as WorkflowsIrsNoticeRouteImport } from './routes/workflows/irs-notice'
@@ -37,6 +38,7 @@ import { Route as WorkflowsRespondToAnAgencyActionRouteImport } from './routes/w
 import { Route as WorkflowsRespondToAnIrsNoticeRouteImport } from './routes/workflows/respond-to-an-irs-notice'
 import { Route as WorkflowsRespondToAnSsaNoticeRouteImport } from './routes/workflows/respond-to-an-ssa-notice'
 import { Route as WorkflowsRespondToCodeEnforcementNoticeRouteImport } from './routes/workflows/respond-to-code-enforcement-notice'
+import { Route as WorkflowsRespondToCp14NoticeRouteImport } from './routes/workflows/respond-to-cp14-notice'
 import { Route as WorkflowsRespondToCp2000NoticeRouteImport } from './routes/workflows/respond-to-cp2000-notice'
 
 const IndexRoute = IndexRouteImport.update({
@@ -115,6 +117,11 @@ const WorkflowsCourtSummonsRoute = WorkflowsCourtSummonsRouteImport.update({
   path: '/workflows/court-summons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkflowsCp14ResponseRoute = WorkflowsCp14ResponseRouteImport.update({
+  id: '/workflows/cp14-response',
+  path: '/workflows/cp14-response',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkflowsCp2000ResponseRoute = WorkflowsCp2000ResponseRouteImport.update({
   id: '/workflows/cp2000-response',
   path: '/workflows/cp2000-response',
@@ -190,6 +197,12 @@ const WorkflowsRespondToCodeEnforcementNoticeRoute =
     path: '/workflows/respond-to-code-enforcement-notice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const WorkflowsRespondToCp14NoticeRoute =
+  WorkflowsRespondToCp14NoticeRouteImport.update({
+    id: '/workflows/respond-to-cp14-notice',
+    path: '/workflows/respond-to-cp14-notice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const WorkflowsRespondToCp2000NoticeRoute =
   WorkflowsRespondToCp2000NoticeRouteImport.update({
     id: '/workflows/respond-to-cp2000-notice',
@@ -212,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -225,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
   '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
@@ -243,6 +258,7 @@ export interface FileRoutesByTo {
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -256,6 +272,7 @@ export interface FileRoutesByTo {
   '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
   '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources': typeof ResourcesIndexRoute
 }
@@ -275,6 +292,7 @@ export interface FileRoutesById {
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
+  '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
@@ -288,6 +306,7 @@ export interface FileRoutesById {
   '/workflows/respond-to-an-irs-notice': typeof WorkflowsRespondToAnIrsNoticeRoute
   '/workflows/respond-to-an-ssa-notice': typeof WorkflowsRespondToAnSsaNoticeRoute
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
@@ -308,6 +327,7 @@ export interface FileRouteTypes {
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -321,6 +341,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-an-irs-notice'
     | '/workflows/respond-to-an-ssa-notice'
     | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
     | '/resources/'
   fileRoutesByTo: FileRoutesByTo
@@ -339,6 +360,7 @@ export interface FileRouteTypes {
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -352,6 +374,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-an-irs-notice'
     | '/workflows/respond-to-an-ssa-notice'
     | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
     | '/resources'
   id:
@@ -370,6 +393,7 @@ export interface FileRouteTypes {
     | '/workflows/agency-action'
     | '/workflows/analyze'
     | '/workflows/court-summons'
+    | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
@@ -383,6 +407,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-an-irs-notice'
     | '/workflows/respond-to-an-ssa-notice'
     | '/workflows/respond-to-code-enforcement-notice'
+    | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
     | '/resources/'
   fileRoutesById: FileRoutesById
@@ -402,6 +427,7 @@ export interface RootRouteChildren {
   WorkflowsAgencyActionRoute: typeof WorkflowsAgencyActionRoute
   WorkflowsAnalyzeRoute: typeof WorkflowsAnalyzeRoute
   WorkflowsCourtSummonsRoute: typeof WorkflowsCourtSummonsRoute
+  WorkflowsCp14ResponseRoute: typeof WorkflowsCp14ResponseRoute
   WorkflowsCp2000ResponseRoute: typeof WorkflowsCp2000ResponseRoute
   WorkflowsFileAppealRoute: typeof WorkflowsFileAppealRoute
   WorkflowsIrsNoticeRoute: typeof WorkflowsIrsNoticeRoute
@@ -415,6 +441,7 @@ export interface RootRouteChildren {
   WorkflowsRespondToAnIrsNoticeRoute: typeof WorkflowsRespondToAnIrsNoticeRoute
   WorkflowsRespondToAnSsaNoticeRoute: typeof WorkflowsRespondToAnSsaNoticeRoute
   WorkflowsRespondToCodeEnforcementNoticeRoute: typeof WorkflowsRespondToCodeEnforcementNoticeRoute
+  WorkflowsRespondToCp14NoticeRoute: typeof WorkflowsRespondToCp14NoticeRoute
   WorkflowsRespondToCp2000NoticeRoute: typeof WorkflowsRespondToCp2000NoticeRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
 }
@@ -526,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsCourtSummonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/cp14-response': {
+      id: '/workflows/cp14-response'
+      path: '/workflows/cp14-response'
+      fullPath: '/workflows/cp14-response'
+      preLoaderRoute: typeof WorkflowsCp14ResponseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/cp2000-response': {
       id: '/workflows/cp2000-response'
       path: '/workflows/cp2000-response'
@@ -617,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsRespondToCodeEnforcementNoticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/respond-to-cp14-notice': {
+      id: '/workflows/respond-to-cp14-notice'
+      path: '/workflows/respond-to-cp14-notice'
+      fullPath: '/workflows/respond-to-cp14-notice'
+      preLoaderRoute: typeof WorkflowsRespondToCp14NoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/respond-to-cp2000-notice': {
       id: '/workflows/respond-to-cp2000-notice'
       path: '/workflows/respond-to-cp2000-notice'
@@ -642,6 +683,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsAgencyActionRoute: WorkflowsAgencyActionRoute,
   WorkflowsAnalyzeRoute: WorkflowsAnalyzeRoute,
   WorkflowsCourtSummonsRoute: WorkflowsCourtSummonsRoute,
+  WorkflowsCp14ResponseRoute: WorkflowsCp14ResponseRoute,
   WorkflowsCp2000ResponseRoute: WorkflowsCp2000ResponseRoute,
   WorkflowsFileAppealRoute: WorkflowsFileAppealRoute,
   WorkflowsIrsNoticeRoute: WorkflowsIrsNoticeRoute,
@@ -658,6 +700,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRespondToAnSsaNoticeRoute: WorkflowsRespondToAnSsaNoticeRoute,
   WorkflowsRespondToCodeEnforcementNoticeRoute:
     WorkflowsRespondToCodeEnforcementNoticeRoute,
+  WorkflowsRespondToCp14NoticeRoute: WorkflowsRespondToCp14NoticeRoute,
   WorkflowsRespondToCp2000NoticeRoute: WorkflowsRespondToCp2000NoticeRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
 }
