@@ -18,6 +18,23 @@ import { recommendStrategies, STRATEGY_TYPE_LABELS } from "@/domain/strategy";
 import { detectContradictions, contradictionSummary } from "@/domain/contradiction";
 import { detectMissingInfo, missingInfoSummary } from "@/domain/missing-info";
 
+// Gold-standard CP14 intelligence
+import { analyzeCP14Discrepancies, type CP14DiscrepancyResult } from "@/domain/cp14-discrepancy";
+import { buildCP14EvidenceChecklist, type CP14EvidenceChecklistResult } from "@/domain/cp14-evidence";
+import { generateCP14Strategy, CP14_STRATEGY_POSITION_LABELS, type CP14ResponseStrategy } from "@/domain/cp14-strategy";
+import { validateCP14Draft } from "@/domain/cp14-validation";
+import { createCP14Case, setCP14CaseAnalysis, setCP14CaseStrategy, setCP14CaseDraft, setCP14CaseValidation, setCP14CaseUserInput, setCP14CaseResearch, type CP14Case } from "@/domain/cp14-case";
+import { getCP14ResearchPack } from "@/domain/cp14-research";
+
+// Security
+import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
+
+// Draft provenance
+import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-provenance";
+
+// Wire CP14 domain packs into factory registry
+import "@/domain/cp14-packs";
+
 export const Route = createFileRoute("/workflows/cp14-response")({
   head: () => {
     const def = getWorkflowById("cp14-response")!;
@@ -66,25 +83,89 @@ function CP14Response() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mailingFunnelState, setMailingFunnelState] = useState<MailingFunnelState | null>(null);
 
+  // Gold-standard state
+  const [cp14Case, setCP14Case] = useState<CP14Case | null>(null);
+  const [discrepancyResult, setDiscrepancyResult] = useState<CP14DiscrepancyResult | null>(null);
+  const [evidenceChecklist, setEvidenceChecklist] = useState<CP14EvidenceChecklistResult | null>(null);
+  const [cp14Strategy, setCP14Strategy] = useState<CP14ResponseStrategy | null>(null);
+  const [securityWarning, setSecurityWarning] = useState<string | null>(null);
+  const [draftProvenance, setDraftProvenance] = useState<DraftProvenance | null>(null);
+
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
+
+  // ── Build the gold-standard CP14 pipeline from extraction ──
+  const buildGoldStandardPipeline = useCallback((extraction: CP14Extraction) => {
+    // 1. Create case model
+    let case_ = createCP14Case(extraction);
+
+    // 2. Run discrepancy analysis
+    const discrepancies = analyzeCP14Discrepancies({ extraction });
+    setDiscrepancyResult(discrepancies);
+
+    // 3. Build evidence checklist
+    const checklist = buildCP14EvidenceChecklist({
+      extraction,
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+    });
+    setEvidenceChecklist(checklist);
+
+    // 4. Attach analysis to case
+    case_ = setCP14CaseAnalysis(case_, {
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+      evidence: checklist.items,
+    });
+
+    // 5. Attach research
+    const researchPack = getCP14ResearchPack();
+    case_ = setCP14CaseResearch(case_, researchPack);
+
+    // 6. Generate strategy
+    const strategy = generateCP14Strategy({
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+      evidence: checklist.items,
+      hasDeadline: !!(extraction.paymentDeadline ?? extraction.responseDeadline),
+      extractionConfident: extraction.isCP14,
+      installmentOption: extraction.installmentOption,
+    });
+    setCP14Strategy(strategy);
+    case_ = setCP14CaseStrategy(case_, strategy);
+
+    setCP14Case(case_);
+  }, []);
 
   // ── Document upload and extraction ──
   const handleFileUpload = useCallback(async (file: File) => {
     update((s) => setProcessing(s, true));
     setExtractionError(null);
-    
+
     try {
+      // Security validation on the file itself
+      const fileValidation = validateFilename(file.name);
+      if (!fileValidation.valid) {
+        setExtractionError(`File validation failed: ${fileValidation.errors.join(", ")}`);
+        return;
+      }
+      const sizeValidation = validateFileSize(file.size);
+      if (!sizeValidation.valid) {
+        setExtractionError(sizeValidation.error ?? "File size validation failed");
+        return;
+      }
+      const mimeValidation = validateMimeType(file.type);
+      if (!mimeValidation.valid) {
+        setExtractionError(mimeValidation.error ?? "File type not allowed");
+        return;
+      }
+
       // Read file as text (for now — PDF extraction would use pdf.js)
       let text = "";
       if (file.type === "application/pdf") {
-        // For PDF, we need pdf.js or server extraction
-        // For now, read as text if possible, otherwise show instructions
         try {
           const buffer = await file.arrayBuffer();
-          // Simple PDF text extraction: look for text between BT and ET markers
           const decoder = new TextDecoder("latin1");
           const raw = decoder.decode(buffer);
-          // Extract text from PDF streams (basic)
           const textMatches = raw.match(/\(([^)]+)\)/g);
           if (textMatches) {
             text = textMatches.map(m => m.slice(1, -1)).join(" ");
@@ -93,11 +174,11 @@ function CP14Response() {
           text = "";
         }
       } else if (file.type.startsWith("image/")) {
-        text = ""; // Image OCR would go here
+        text = "";
       } else {
         text = await file.text();
       }
-      
+
       const upload: DocumentUpload = {
         fileName: file.name,
         fileSize: file.size,
@@ -105,14 +186,27 @@ function CP14Response() {
         rawText: text,
         uploadedAt: new Date().toISOString(),
       };
-      
+
       update((s) => setUpload(s, upload));
-      
-      // Run CP14 extraction
+
+      // Security check on extracted text
       if (text && text.length > 20) {
+        const contentClassification = classifyContent(text);
+        if (contentClassification.detectedInjectionPatterns.length > 0) {
+          setSecurityWarning(`Security notice: ${contentClassification.detectedInjectionPatterns.length} potential prompt injection pattern(s) detected in document content. The content will be treated as DATA, not instructions.`);
+        } else {
+          setSecurityWarning(null);
+        }
+        const textValidation = validateTextInput(text);
+        text = textValidation.sanitized;
+
+        // Run CP14 extraction
         const extraction = extractCP14(text);
         setCP14Extraction(extraction);
-        
+
+        // Build gold-standard pipeline
+        buildGoldStandardPipeline(extraction);
+
         const classification = classifyNoticeType(text);
         update((s) => setExtraction(s, {
           noticeType: classification.type,
@@ -131,22 +225,35 @@ function CP14Response() {
     } finally {
       update((s) => setProcessing(s, false));
     }
-  }, [update]);
+  }, [update, buildGoldStandardPipeline]);
 
   const handlePasteText = useCallback((text: string) => {
+    // Security validation on pasted text
+    const contentClassification = classifyContent(text);
+    if (contentClassification.detectedInjectionPatterns.length > 0) {
+      setSecurityWarning(`Security notice: ${contentClassification.detectedInjectionPatterns.length} potential prompt injection pattern(s) detected in document content. The content will be treated as DATA, not instructions.`);
+    } else {
+      setSecurityWarning(null);
+    }
+    const textValidation = validateTextInput(text);
+    const sanitizedText = textValidation.sanitized;
+
     const upload: DocumentUpload = {
       fileName: "Pasted text",
-      fileSize: text.length,
+      fileSize: sanitizedText.length,
       fileType: "text/plain",
-      rawText: text,
+      rawText: sanitizedText,
       uploadedAt: new Date().toISOString(),
     };
     update((s) => setUpload(s, upload));
-    
-    const extraction = extractCP14(text);
+
+    const extraction = extractCP14(sanitizedText);
     setCP14Extraction(extraction);
-    
-    const classification = classifyNoticeType(text);
+
+    // Build gold-standard pipeline
+    buildGoldStandardPipeline(extraction);
+
+    const classification = classifyNoticeType(sanitizedText);
     update((s) => setExtraction(s, {
       noticeType: classification.type,
       classificationConfidence: classification.confidence,
@@ -155,50 +262,97 @@ function CP14Response() {
       agency: "IRS",
       referenceNumber: extraction.noticeNumber ?? undefined,
       noticeDate: extraction.noticeDate ?? undefined,
-      rawText: text,
+      rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+  }, [update, buildGoldStandardPipeline]);
 
-  // ── Draft generation ──
+  // ── Draft generation (uses two-pass validation) ──
   const handleGenerateDraft = useCallback(() => {
     const draft = generateCP14Draft({
       noticeNumber: cp14Extraction?.noticeNumber ?? "",
       taxYear: cp14Extraction?.taxYear ?? null,
       noticeDate: cp14Extraction?.noticeDate ?? null,
-      responseDeadline: cp14Extraction?.responseDeadline ?? null,
+      responseDeadline: cp14Extraction?.paymentDeadline ?? cp14Extraction?.responseDeadline ?? null,
       balanceDue: cp14Extraction?.balanceDue ?? null,
       totalDue: cp14Extraction?.totalDue ?? null,
       userFacts: state.userFacts,
       userObjective: state.userObjective,
     });
-    
+
     update((s) => setDraft(s, draft));
-    
-    // Run validation
-    const validation = validateDraft(draft, state.extractedFacts, definition, {
-      expectedNoticeNumber: cp14Extraction?.noticeNumber ?? undefined,
-      expectedTaxYear: cp14Extraction?.taxYear ?? undefined,
-      expectedDeadline: cp14Extraction?.responseDeadline ?? undefined,
-      expectedAmounts: [cp14Extraction?.balanceDue, cp14Extraction?.totalDue].filter(Boolean) as string[],
-    });
-    update((s) => setDraftValidation(s, validation));
-  }, [cp14Extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update]);
+
+    // Use two-pass CP14 validation if we have a case model
+    if (cp14Case && cp14Extraction) {
+      // Rebuild strategy with user facts/objective now available
+      let case_ = setCP14CaseUserInput(cp14Case, state.userFacts, state.userObjective);
+      if (discrepancyResult) {
+        const strategy = generateCP14Strategy({
+          discrepancies: discrepancyResult.discrepancies,
+          findings: discrepancyResult.findings,
+          evidence: evidenceChecklist?.items ?? [],
+          userFacts: state.userFacts,
+          userObjective: state.userObjective,
+          hasDeadline: !!(cp14Extraction.paymentDeadline ?? cp14Extraction.responseDeadline),
+          extractionConfident: cp14Extraction.isCP14,
+          installmentOption: cp14Extraction.installmentOption,
+        });
+        setCP14Strategy(strategy);
+        case_ = setCP14CaseStrategy(case_, strategy);
+      }
+      case_ = setCP14CaseDraft(case_, { content: draft, wordCount: draft.split(/\s+/).length, unresolvedPlaceholders: [] });
+
+      // Run the two-pass validation
+      const cp14Validation = validateCP14Draft(case_);
+      case_ = setCP14CaseValidation(case_, cp14Validation);
+      setCP14Case(case_);
+
+      // Bridge CP14ValidationResult → DraftValidationResult for WorkflowState
+      const allFindings = cp14Validation.allFindings.map(f => ({
+        check: f.check,
+        passed: f.passed,
+        detail: f.detail,
+        severity: f.severity === "block" ? "error" as const : f.severity,
+      }));
+      const bridgedValidation = {
+        findings: allFindings,
+        passed: cp14Validation.passed,
+        errors: cp14Validation.errors + cp14Validation.blocks,
+        warnings: cp14Validation.warnings,
+      };
+      update((s) => setDraftValidation(s, bridgedValidation));
+
+      // Build draft provenance
+      const provenance = buildDraftProvenance(draft, state.extractedFacts, []);
+      setDraftProvenance(provenance);
+    } else {
+      // Fallback: generic validation
+      const validation = validateDraft(draft, state.extractedFacts, definition, {
+        expectedNoticeNumber: cp14Extraction?.noticeNumber ?? undefined,
+        expectedTaxYear: cp14Extraction?.taxYear ?? undefined,
+        expectedDeadline: cp14Extraction?.responseDeadline ?? undefined,
+        expectedAmounts: [cp14Extraction?.balanceDue, cp14Extraction?.totalDue].filter(Boolean) as string[],
+      });
+      update((s) => setDraftValidation(s, validation));
+
+      const provenance = buildDraftProvenance(draft, state.extractedFacts, []);
+      setDraftProvenance(provenance);
+    }
+  }, [cp14Case, cp14Extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update, discrepancyResult, evidenceChecklist]);
 
   // ── Step navigation ──
   const canContinue = canAdvance(state, definition);
-  
+
   const next = () => {
     if (state.phase === "draft" && !state.draft) {
       handleGenerateDraft();
     }
     if (state.phase === "checkout" || state.phase === "submitted") {
-      // MailingFunnel handles checkout and submission internally
       return;
     }
     update((s) => advanceStep(s, definition));
   };
-  
+
   const back = () => update((s) => retreatStep(s, definition));
 
   // ── Analysis helpers ──
@@ -247,7 +401,7 @@ function CP14Response() {
               <div className="postmark w-fit">2 · Upload</div>
               <h2 className="mt-4 font-serif text-3xl">Upload your CP14 notice</h2>
               <p className="mt-3 text-muted-foreground">Upload the CP14 notice PDF, or paste the notice text below. We'll extract key information for your review.</p>
-              
+
               <label className="upload-zone mt-6 block cursor-pointer">
                 <svg className="mx-auto text-muted-foreground" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                 <span className="mt-3 block font-medium text-foreground">Upload CP14 notice</span>
@@ -279,6 +433,12 @@ function CP14Response() {
                 </div>
               )}
 
+              {securityWarning && (
+                <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                  <span className="font-medium">⚠ Security:</span> {securityWarning}
+                </div>
+              )}
+
               <div className="mt-6 border-t border-rule/60 pt-4">
                 <label className="input-label">Or paste notice text</label>
                 <textarea
@@ -300,7 +460,7 @@ function CP14Response() {
               <div className="postmark w-fit">3 · Review</div>
               <h2 className="mt-4 font-serif text-3xl">Review extracted information</h2>
               <p className="mt-3 text-muted-foreground">We extracted the following from your notice. Verify each item — this information will be used to prepare your response.</p>
-              
+
               {cp14Extraction && (
                 <div className="mt-6 space-y-4">
                   {/* Classification */}
@@ -313,6 +473,13 @@ function CP14Response() {
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">Confidence: {(cp14Extraction.classificationConfidence * 100).toFixed(0)}%</p>
                   </div>
+
+                  {/* Security warning (persistent in extraction view) */}
+                  {securityWarning && (
+                    <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                      <span className="font-medium">⚠ Security:</span> {securityWarning}
+                    </div>
+                  )}
 
                   {/* Warnings */}
                   {cp14Extraction.warnings.length > 0 && (
@@ -332,9 +499,18 @@ function CP14Response() {
                       <div className="font-mono text-xs uppercase tracking-widest text-stamp">Extracted Facts</div>
                       <dl className="mt-3 space-y-2">
                         {cp14Extraction.facts.map((fact) => (
-                          <div key={fact.id} className="flex items-start justify-between gap-4 border-b border-rule/30 pb-2 last:border-0">
-                            <dt className="text-sm font-medium text-foreground">{fact.label}</dt>
-                            <dd className="text-sm text-muted-foreground">{fact.value || "—"}</dd>
+                          <div key={fact.id} className="border-b border-rule/30 pb-2 last:border-0">
+                            <div className="flex items-start justify-between gap-4">
+                              <dt className="text-sm font-medium text-foreground">{fact.label}</dt>
+                              <dd className="text-sm text-muted-foreground">{fact.value || "—"}</dd>
+                            </div>
+                            {fact.sourceExcerpt && (
+                              <details className="mt-1">
+                                <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                                  Source: "{fact.sourceExcerpt}" · Method: {fact.extractionMethod}
+                                </summary>
+                              </details>
+                            )}
                           </div>
                         ))}
                       </dl>
@@ -342,6 +518,90 @@ function CP14Response() {
                   ) : (
                     <div className="rounded-lg border border-rule/60 p-4 text-sm text-muted-foreground">
                       No structured facts were extracted. You can enter facts manually in the next step.
+                    </div>
+                  )}
+
+                  {/* CP14 Discrepancy Analysis */}
+                  {discrepancyResult && discrepancyResult.discrepancies.length > 0 && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-destructive">Discrepancy Analysis</div>
+                      <ul className="mt-2 space-y-2">
+                        {discrepancyResult.discrepancies.map((d, i) => (
+                          <li key={i} className="text-sm text-destructive">
+                            <span className="font-medium">{d.type.replace(/_/g, " ")}:</span> {d.description}
+                            {d.difference && <span className="ml-1">(difference: {d.difference})</span>}
+                            <ul className="mt-1 ml-4 space-y-0.5 text-xs text-muted-foreground">
+                              <li><strong>Evidence needed:</strong> {d.evidenceNeeded.join("; ")}</li>
+                              <li><strong>Confidence:</strong> {d.confidence}</li>
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* CP14 Findings */}
+                  {discrepancyResult && discrepancyResult.findings.length > 0 && (
+                    <div className="rounded-lg border border-rule/60 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-stamp">Findings ({discrepancyResult.totalIssues} total)</div>
+                      <ul className="mt-2 space-y-1">
+                        {discrepancyResult.findings.map((f, i) => (
+                          <li key={i} className="text-sm">
+                            <span className={`font-medium ${f.severity === "critical" ? "text-destructive" : f.severity === "high" ? "text-amber-700" : "text-muted-foreground"}`}>
+                              [{f.severity}]
+                            </span>{" "}
+                            <span className="text-foreground">{f.statement}</span>
+                            {f.recommendedAction && (
+                              <span className="block text-xs text-muted-foreground mt-0.5">→ {f.recommendedAction}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Evidence Checklist */}
+                  {evidenceChecklist && evidenceChecklist.items.length > 0 && (
+                    <div className="rounded-lg border border-rule/60 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-stamp">Evidence Checklist</div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Required: {evidenceChecklist.requiredCount} · Missing: {evidenceChecklist.missingCount} · Ready: {evidenceChecklist.ready ? "✓" : "✗"}
+                      </div>
+                      <ul className="mt-2 space-y-1">
+                        {evidenceChecklist.items.map((item, i) => (
+                          <li key={i} className="text-sm flex items-start gap-2">
+                            <span className={item.state === "missing" ? "text-amber-600" : item.state === "provided" ? "text-emerald-600" : "text-muted-foreground"}>
+                              {item.state === "missing" ? "○" : "●"}
+                            </span>
+                            <div>
+                              <span className="font-medium text-foreground">{item.label}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">({item.requirement})</span>
+                              <p className="text-xs text-muted-foreground">{item.purpose}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Deadline Analysis */}
+                  {cp14Case && (
+                    <div className="rounded-lg border border-rule/60 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-stamp">Deadline Analysis</div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-foreground">
+                          {cp14Case.deadline.parsed ?? "No deadline found"}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          cp14Case.deadline.certainty === "confirmed" ? "bg-emerald-50 text-emerald-700" :
+                          cp14Case.deadline.certainty === "derived" ? "bg-amber-50 text-amber-700" :
+                          cp14Case.deadline.certainty === "missing" ? "bg-red-50 text-red-700" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {cp14Case.deadline.certainty}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Source: {cp14Case.deadline.source}</p>
                     </div>
                   )}
 
@@ -356,7 +616,7 @@ function CP14Response() {
                       </ul>
                     </div>
                   )}
-                  
+
                   {missingInfo.length > 0 && (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                       <div className="font-mono text-xs uppercase tracking-widest text-amber-700">Missing Information</div>
@@ -369,7 +629,7 @@ function CP14Response() {
                   )}
                 </div>
               )}
-              
+
               {!cp14Extraction && !state.isProcessing && (
                 <div className="mt-6 rounded-md border border-rule/60 p-4 text-sm text-muted-foreground">
                   No document has been processed yet. Go back to upload your CP14 notice.
@@ -388,10 +648,10 @@ function CP14Response() {
                 className="input-field mt-6 min-h-48"
                 value={state.userFacts}
                 onChange={(e) => update((s) => setUserFacts(s, e.target.value))}
-                placeholder="Example: I already paid this balance on [date] via [method]. The payment of $X was made for tax year [year]. I have enclosed the payment confirmation and bank statement…"
+                placeholder="Example: I paid the balance of $X on [date] via [payment method]. The payment was processed and my account shows $0 balance. / I have an installment agreement (Form 9465) approved on [date] for $X/month. / The balance appears incorrect because I filed an amended return (1040-X) on [date] correcting the amount…"
               />
               <div className="mt-4 rounded-md border border-rule/70 bg-paper-deep/40 p-3 text-sm text-muted-foreground">
-                <strong>Tip:</strong> Include specific amounts, dates, payer names, and form numbers. Reference the documents you'll attach as evidence.
+                <strong>Tip:</strong> Include specific amounts, dates, payment confirmations, and form numbers. Reference the documents you'll attach as evidence.
               </div>
             </div>
           )}
@@ -402,9 +662,56 @@ function CP14Response() {
               <div className="postmark w-fit">5 · Objective</div>
               <h2 className="mt-4 font-serif text-3xl">What do you want the response to accomplish?</h2>
               <p className="mt-3 text-muted-foreground">State your objective clearly. This guides the response strategy.</p>
-              
-              {/* Strategy suggestions */}
-              {strategies.length > 0 && (
+
+              {/* CP14-specific strategy (discrepancy-aware) */}
+              {cp14Strategy && (
+                <div className="mt-4 rounded-lg border border-rule/60 bg-card p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Response Strategy</div>
+                  <div className="mt-2 text-sm">
+                    <span className="font-medium text-foreground">Position: {CP14_STRATEGY_POSITION_LABELS[cp14Strategy.position]}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">Confidence: {cp14Strategy.confidence}</span>
+                  </div>
+                  {cp14Strategy.issues.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Issues to address:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp14Strategy.issues.map((issue, i) => (
+                          <li key={i} className="text-sm text-foreground">• {issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {cp14Strategy.requestedActions.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Recommended actions:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp14Strategy.requestedActions.map((action, i) => (
+                          <li key={i} className="text-sm text-foreground">• {action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {cp14Strategy.riskFlags.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-amber-700">Risk flags:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp14Strategy.riskFlags.map((risk, i) => (
+                          <li key={i} className="text-sm text-amber-800">⚠ {risk}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => update((s) => setUserObjective(s, CP14_STRATEGY_POSITION_LABELS[cp14Strategy.position] + (cp14Strategy.requestedActions.length > 0 ? `: ${cp14Strategy.requestedActions[0]}` : "")))}
+                    className="mt-3 rounded-full border border-rule px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    Use this strategy
+                  </button>
+                </div>
+              )}
+
+              {/* Generic strategy suggestions (fallback) */}
+              {strategies.length > 0 && !cp14Strategy && (
                 <div className="mt-4 space-y-2">
                   <div className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Suggested strategies based on the notice type</div>
                   {strategies.slice(0, 4).map((strat) => (
@@ -419,7 +726,37 @@ function CP14Response() {
                   ))}
                 </div>
               )}
-              
+
+              {/* Research sources */}
+              {cp14Case?.research.sources && cp14Case.research.sources.length > 0 && (
+                <div className="mt-4 rounded-lg border border-rule/60 p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Authoritative Sources</div>
+                  <ul className="mt-2 space-y-1">
+                    {cp14Case.research.sources.slice(0, 5).map((source, i) => (
+                      <li key={i} className="text-sm">
+                        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          {source.title}
+                        </a>
+                        <span className="ml-1 text-xs text-muted-foreground">— {source.organization}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {cp14Case.research.knownFacts.length > 0 && (
+                    <div className="mt-3 border-t border-rule/30 pt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Key facts from IRS sources:</div>
+                      <ul className="mt-1 space-y-1">
+                        {cp14Case.research.knownFacts.slice(0, 4).map((fact, i) => (
+                          <li key={i} className="text-xs text-muted-foreground">
+                            <span className="font-medium">"{fact.fact}"</span>
+                            {fact.interpretation && <span className="block italic">{fact.interpretation}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <textarea
                 className="input-field mt-6 min-h-40"
                 value={state.userObjective}
@@ -435,7 +772,7 @@ function CP14Response() {
               <div className="postmark w-fit">6 · Draft</div>
               <h2 className="mt-4 font-serif text-3xl">Your response letter</h2>
               <p className="mt-3 text-muted-foreground">Review every fact, name, date, and statement. This is editable — change anything. We've validated the draft against the extracted facts.</p>
-              
+
               {state.draftValidation && !state.draftValidation.passed && (
                 <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
                   <div className="font-mono text-xs uppercase tracking-widest text-amber-700">
@@ -450,18 +787,43 @@ function CP14Response() {
                   </ul>
                 </div>
               )}
-              
+
               {state.draftValidation?.passed && (
                 <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
                   ✓ Draft passed all validation checks.
                 </div>
               )}
-              
+
               <textarea
                 className="input-field mt-6 min-h-72 font-mono text-sm leading-6"
                 value={state.draft}
                 onChange={(e) => update((s) => setDraft(s, e.target.value))}
               />
+
+              {/* Draft provenance */}
+              {draftProvenance && (
+                <div className="mt-4 rounded-lg border border-rule/60 p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Draft Provenance</div>
+                  <div className="mt-2 flex gap-4 text-xs">
+                    <span className="text-emerald-600">✓ Supported: {draftProvenance.supported}</span>
+                    <span className="text-amber-600">⚠ Unsupported: {draftProvenance.unsupported}</span>
+                    <span className="text-destructive">✗ Blocking: {draftProvenance.blocking}</span>
+                    <span className={draftProvenance.safeForApproval ? "text-emerald-600" : "text-destructive"}>
+                      {draftProvenance.safeForApproval ? "✓ Safe for approval" : "✗ Not safe for approval"}
+                    </span>
+                  </div>
+                  {draftProvenance.assertions.filter(a => a.support === "unsupported" || a.support === "placeholder").length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {draftProvenance.assertions.filter(a => a.support === "unsupported" || a.support === "placeholder").map((a, i) => (
+                        <li key={i} className={`text-sm ${a.blocking ? "text-destructive" : "text-amber-700"}`}>
+                          {a.blocking ? "✗" : "⚠"} {a.reason ?? a.text}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleGenerateDraft}
                 className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
@@ -495,16 +857,18 @@ function CP14Response() {
             <div>
               <div className="postmark w-fit">8 · Documents</div>
               <h2 className="mt-4 font-serif text-3xl">Add supporting documents</h2>
-              <p className="mt-3 text-muted-foreground">Attach any documents referenced in your response — W-2s, 1099s, return transcripts, corrected forms, etc.</p>
+              <p className="mt-3 text-muted-foreground">Attach any documents referenced in your response — payment confirmations, return transcripts, installment forms, prior correspondence, etc.</p>
               <label className="upload-zone mt-6 block cursor-pointer">
                 <svg className="mx-auto text-muted-foreground" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                 <span className="mt-3 block font-medium text-foreground">Add attachments</span>
                 <span className="mt-1 block text-xs text-muted-foreground">Forms, receipts, evidence, prior correspondence</span>
                 <input type="file" accept="application/pdf,image/jpeg,image/png" multiple className="sr-only" />
               </label>
-              <div className="mt-4 text-sm text-muted-foreground">
-                Required evidence: {definition.evidence.filter(e => e.required).map(e => e.label).join(", ")}
-              </div>
+              {evidenceChecklist && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  Required evidence: {evidenceChecklist.items.filter(e => e.requirement === "required").map(e => e.label).join(", ")}
+                </div>
+              )}
             </div>
           )}
 
@@ -575,15 +939,11 @@ function CP14Response() {
           {/* ── Navigation ── */}
           {state.phase !== "checkout" && state.phase !== "submitted" && (
             <div className="mt-8 flex items-center justify-between">
-              <button onClick={back} disabled={state.step === 0} className="text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30">
+              <button onClick={back} disabled={state.step === 0} className="rounded-full border border-rule px-5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
                 ← Back
               </button>
-              <button
-                onClick={next}
-                disabled={!canContinue}
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none"
-              >
-                Continue →
+              <button onClick={next} disabled={!canContinue} className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-40 transition-colors">
+                {state.phase === "mailing" ? "Continue to checkout" : "Continue →"}
               </button>
             </div>
           )}
