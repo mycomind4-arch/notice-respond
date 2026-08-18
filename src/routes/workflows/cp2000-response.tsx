@@ -18,6 +18,17 @@ import { detectContradictions, contradictionSummary } from "@/domain/contradicti
 import { detectMissingInfo, missingInfoSummary } from "@/domain/missing-info";
 import { MailingFunnel, type MailingFunnelState } from "@/components/mailing-funnel";
 
+// P0-2: CP2000 gold-standard intelligence
+import { analyzeCP2000Discrepancies, type DiscrepancyResult } from "@/domain/cp2000-discrepancy";
+import { buildCP2000EvidenceChecklist, type EvidenceChecklistResult } from "@/domain/cp2000-evidence";
+import { generateCP2000Strategy, STRATEGY_POSITION_LABELS, type CP2000ResponseStrategy } from "@/domain/cp2000-strategy";
+import { validateCP2000Draft } from "@/domain/cp2000-validation";
+import { createCP2000Case, setCaseAnalysis, setCaseStrategy, setCaseDraft, setCaseValidation, setCaseUserInput, setCaseResearch, type CP2000Case } from "@/domain/cp2000-case";
+import { getCP2000ResearchPack } from "@/domain/cp2000-research";
+
+// P0-3: Security
+import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
+
 export const Route = createFileRoute("/workflows/cp2000-response")({
   head: () => {
     const def = getWorkflowById("cp2000-response")!;
@@ -65,8 +76,56 @@ function CP2000Response() {
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mailingFunnelState, setMailingFunnelState] = useState<MailingFunnelState | null>(null);
+  // P0-2: Gold-standard pipeline state
+  const [cp2000Case, setCP2000Case] = useState<CP2000Case | null>(null);
+  const [discrepancyResult, setDiscrepancyResult] = useState<DiscrepancyResult | null>(null);
+  const [evidenceChecklist, setEvidenceChecklist] = useState<EvidenceChecklistResult | null>(null);
+  const [cp2000Strategy, setCP2000Strategy] = useState<CP2000ResponseStrategy | null>(null);
+  const [securityWarning, setSecurityWarning] = useState<string | null>(null);
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
+
+  // ── P0-2: Build the gold-standard CP2000 pipeline from extraction ──
+  const buildGoldStandardPipeline = useCallback((extraction: CP2000Extraction) => {
+    // 1. Create case model
+    let case_ = createCP2000Case(extraction);
+
+    // 2. Run discrepancy analysis
+    const discrepancies = analyzeCP2000Discrepancies({ extraction });
+    setDiscrepancyResult(discrepancies);
+
+    // 3. Build evidence checklist
+    const checklist = buildCP2000EvidenceChecklist({
+      extraction,
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+    });
+    setEvidenceChecklist(checklist);
+
+    // 4. Attach analysis to case
+    case_ = setCaseAnalysis(case_, {
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+      evidence: checklist.items,
+    });
+
+    // 5. Attach research
+    const researchPack = getCP2000ResearchPack();
+    case_ = setCaseResearch(case_, researchPack);
+
+    // 6. Generate strategy (will be refined when user provides facts/objective)
+    const strategy = generateCP2000Strategy({
+      discrepancies: discrepancies.discrepancies,
+      findings: discrepancies.findings,
+      evidence: checklist.items,
+      hasDeadline: !!extraction.responseDeadline,
+      extractionConfident: extraction.isCP2000,
+    });
+    setCP2000Strategy(strategy);
+    case_ = setCaseStrategy(case_, strategy);
+
+    setCP2000Case(case_);
+  }, []);
 
   // ── Document upload and extraction ──
   const handleFileUpload = useCallback(async (file: File) => {
@@ -74,6 +133,23 @@ function CP2000Response() {
     setExtractionError(null);
     
     try {
+      // P0-3: Security validation on the file itself
+      const fileValidation = validateFilename(file.name);
+      if (!fileValidation.valid) {
+        setExtractionError(`File validation failed: ${fileValidation.errors.join(", ")}`);
+        return;
+      }
+      const sizeValidation = validateFileSize(file.size);
+      if (!sizeValidation.valid) {
+        setExtractionError(sizeValidation.error ?? "File size validation failed");
+        return;
+      }
+      const mimeValidation = validateMimeType(file.type);
+      if (!mimeValidation.valid) {
+        setExtractionError(mimeValidation.error ?? "File type not allowed");
+        return;
+      }
+
       // Read file as text (for now — PDF extraction would use pdf.js)
       let text = "";
       if (file.type === "application/pdf") {
@@ -108,10 +184,23 @@ function CP2000Response() {
       
       update((s) => setUpload(s, upload));
       
-      // Run CP2000 extraction
+      // P0-3: Security check on extracted text
       if (text && text.length > 20) {
+        const contentClassification = classifyContent(text);
+        if (contentClassification.detectedInjectionPatterns.length > 0) {
+          setSecurityWarning(`Security notice: ${contentClassification.detectedInjectionPatterns.length} potential prompt injection pattern(s) detected in document content. The content will be treated as DATA, not instructions.`);
+        } else {
+          setSecurityWarning(null);
+        }
+        const textValidation = validateTextInput(text);
+        text = textValidation.sanitized;
+
+        // Run CP2000 extraction
         const extraction = extractCP2000(text);
         setCP2000Extraction(extraction);
+
+        // P0-2: Build gold-standard pipeline
+        buildGoldStandardPipeline(extraction);
         
         const classification = classifyNoticeType(text);
         update((s) => setExtraction(s, {
@@ -131,22 +220,35 @@ function CP2000Response() {
     } finally {
       update((s) => setProcessing(s, false));
     }
-  }, [update]);
+  }, [update, buildGoldStandardPipeline]);
 
   const handlePasteText = useCallback((text: string) => {
+    // P0-3: Security validation on pasted text
+    const contentClassification = classifyContent(text);
+    if (contentClassification.detectedInjectionPatterns.length > 0) {
+      setSecurityWarning(`Security notice: ${contentClassification.detectedInjectionPatterns.length} potential prompt injection pattern(s) detected in document content. The content will be treated as DATA, not instructions.`);
+    } else {
+      setSecurityWarning(null);
+    }
+    const textValidation = validateTextInput(text);
+    const sanitizedText = textValidation.sanitized;
+
     const upload: DocumentUpload = {
       fileName: "Pasted text",
-      fileSize: text.length,
+      fileSize: sanitizedText.length,
       fileType: "text/plain",
-      rawText: text,
+      rawText: sanitizedText,
       uploadedAt: new Date().toISOString(),
     };
     update((s) => setUpload(s, upload));
-    
-    const extraction = extractCP2000(text);
+
+    const extraction = extractCP2000(sanitizedText);
     setCP2000Extraction(extraction);
-    
-    const classification = classifyNoticeType(text);
+
+    // P0-2: Build gold-standard pipeline
+    buildGoldStandardPipeline(extraction);
+
+    const classification = classifyNoticeType(sanitizedText);
     update((s) => setExtraction(s, {
       noticeType: classification.type,
       classificationConfidence: classification.confidence,
@@ -155,12 +257,12 @@ function CP2000Response() {
       agency: "IRS",
       referenceNumber: extraction.noticeNumber ?? undefined,
       noticeDate: extraction.noticeDate ?? undefined,
-      rawText: text,
+      rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+  }, [update, buildGoldStandardPipeline]);
 
-  // ── Draft generation ──
+  // ── Draft generation (P0-2: uses two-pass validation) ──
   const handleGenerateDraft = useCallback(() => {
     const draft = generateCP2000Draft({
       noticeNumber: cp2000Extraction?.noticeNumber ?? "",
@@ -173,14 +275,54 @@ function CP2000Response() {
     
     update((s) => setDraft(s, draft));
     
-    // Run validation
-    const validation = validateDraft(draft, state.extractedFacts, definition, {
-      expectedNoticeNumber: cp2000Extraction?.noticeNumber ?? undefined,
-      expectedTaxYear: cp2000Extraction?.taxYear ?? undefined,
-      expectedDeadline: cp2000Extraction?.responseDeadline ?? undefined,
-    });
-    update((s) => setDraftValidation(s, validation));
-  }, [cp2000Extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update]);
+    // P0-2: Use two-pass CP2000 validation if we have a case model
+    if (cp2000Case && cp2000Extraction) {
+      // Rebuild strategy with user facts/objective now available
+      let case_ = setCaseUserInput(cp2000Case, state.userFacts, state.userObjective);
+      if (discrepancyResult) {
+        const strategy = generateCP2000Strategy({
+          discrepancies: discrepancyResult.discrepancies,
+          findings: discrepancyResult.findings,
+          evidence: evidenceChecklist?.items ?? [],
+          userFacts: state.userFacts,
+          userObjective: state.userObjective,
+          hasDeadline: !!cp2000Extraction.responseDeadline,
+          extractionConfident: cp2000Extraction.isCP2000,
+        });
+        setCP2000Strategy(strategy);
+        case_ = setCaseStrategy(case_, strategy);
+      }
+      case_ = setCaseDraft(case_, { content: draft, wordCount: draft.split(/\s+/).length, unresolvedPlaceholders: [] });
+      
+      // Run the two-pass validation
+      const cp2000Validation = validateCP2000Draft(case_);
+      case_ = setCaseValidation(case_, cp2000Validation);
+      setCP2000Case(case_);
+      
+      // Bridge CP2000ValidationResult → DraftValidationResult for WorkflowState
+      const allFindings = cp2000Validation.allFindings.map(f => ({
+        check: f.check,
+        passed: f.passed,
+        detail: f.detail,
+        severity: f.severity === "block" ? "error" as const : f.severity,
+      }));
+      const bridgedValidation = {
+        findings: allFindings,
+        passed: cp2000Validation.passed,
+        errors: cp2000Validation.errors + cp2000Validation.blocks,
+        warnings: cp2000Validation.warnings,
+      };
+      update((s) => setDraftValidation(s, bridgedValidation));
+    } else {
+      // Fallback: generic validation (for when case model isn't built yet)
+      const validation = validateDraft(draft, state.extractedFacts, definition, {
+        expectedNoticeNumber: cp2000Extraction?.noticeNumber ?? undefined,
+        expectedTaxYear: cp2000Extraction?.taxYear ?? undefined,
+        expectedDeadline: cp2000Extraction?.responseDeadline ?? undefined,
+      });
+      update((s) => setDraftValidation(s, validation));
+    }
+  }, [cp2000Case, cp2000Extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update, discrepancyResult, evidenceChecklist]);
 
   // ── Step navigation ──
   const canContinue = canAdvance(state, definition);
@@ -276,6 +418,12 @@ function CP2000Response() {
                 </div>
               )}
 
+              {securityWarning && (
+                <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                  <span className="font-medium">⚠ Security:</span> {securityWarning}
+                </div>
+              )}
+
               <div className="mt-6 border-t border-rule/60 pt-4">
                 <label className="input-label">Or paste notice text</label>
                 <textarea
@@ -342,7 +490,71 @@ function CP2000Response() {
                     </div>
                   )}
 
-                  {/* Contradictions and Missing Info */}
+                  {/* P1-4: CP2000 Discrepancy Analysis */}
+                  {discrepancyResult && discrepancyResult.discrepancies.length > 0 && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-destructive">Discrepancy Analysis</div>
+                      <ul className="mt-2 space-y-2">
+                        {discrepancyResult.discrepancies.map((d, i) => (
+                          <li key={i} className="text-sm text-destructive">
+                            <span className="font-medium">{d.type.replace(/_/g, " ")}:</span> {d.description}
+                            {d.difference && <span className="ml-1">(difference: {d.difference})</span>}
+                            <ul className="mt-1 ml-4 space-y-0.5 text-xs text-muted-foreground">
+                              <li><strong>Evidence needed:</strong> {d.evidenceNeeded.join("; ")}</li>
+                              <li><strong>Confidence:</strong> {d.confidence}</li>
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* P1-5: Evidence Checklist */}
+                  {evidenceChecklist && evidenceChecklist.items.length > 0 && (
+                    <div className="rounded-lg border border-rule/60 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-stamp">Evidence Checklist</div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Required: {evidenceChecklist.requiredCount} · Missing: {evidenceChecklist.missingCount} · Ready: {evidenceChecklist.ready ? "✓" : "✗"}
+                      </div>
+                      <ul className="mt-2 space-y-1">
+                        {evidenceChecklist.items.map((item, i) => (
+                          <li key={i} className="text-sm flex items-start gap-2">
+                            <span className={item.state === "missing" ? "text-amber-600" : item.state === "provided" ? "text-emerald-600" : "text-muted-foreground"}>
+                              {item.state === "missing" ? "○" : "●"}
+                            </span>
+                            <div>
+                              <span className="font-medium text-foreground">{item.label}</span>
+                              <span className="ml-2 text-xs text-muted-foreground">({item.requirement})</span>
+                              <p className="text-xs text-muted-foreground">{item.purpose}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* P1-6: Deadline certainty */}
+                  {cp2000Case && (
+                    <div className="rounded-lg border border-rule/60 p-4">
+                      <div className="font-mono text-xs uppercase tracking-widest text-stamp">Deadline Analysis</div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-foreground">
+                          {cp2000Case.deadline.parsed ?? "No deadline found"}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          cp2000Case.deadline.certainty === "confirmed" ? "bg-emerald-50 text-emerald-700" :
+                          cp2000Case.deadline.certainty === "derived" ? "bg-amber-50 text-amber-700" :
+                          cp2000Case.deadline.certainty === "missing" ? "bg-red-50 text-red-700" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {cp2000Case.deadline.certainty}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Source: {cp2000Case.deadline.source}</p>
+                    </div>
+                  )}
+
+                  {/* Contradictions and Missing Info (generic) */}
                   {contradictions.length > 0 && (
                     <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
                       <div className="font-mono text-xs uppercase tracking-widest text-destructive">Contradictions</div>
@@ -400,8 +612,55 @@ function CP2000Response() {
               <h2 className="mt-4 font-serif text-3xl">What do you want the response to accomplish?</h2>
               <p className="mt-3 text-muted-foreground">State your objective clearly. This guides the response strategy.</p>
               
-              {/* Strategy suggestions */}
-              {strategies.length > 0 && (
+              {/* P1-7: CP2000-specific strategy (discrepancy-aware) */}
+              {cp2000Strategy && (
+                <div className="mt-4 rounded-lg border border-rule/60 bg-card p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Response Strategy</div>
+                  <div className="mt-2 text-sm">
+                    <span className="font-medium text-foreground">Position: {STRATEGY_POSITION_LABELS[cp2000Strategy.position]}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">Confidence: {cp2000Strategy.confidence}</span>
+                  </div>
+                  {cp2000Strategy.issues.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Issues to address:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp2000Strategy.issues.map((issue, i) => (
+                          <li key={i} className="text-sm text-foreground">• {issue}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {cp2000Strategy.requestedActions.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Recommended actions:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp2000Strategy.requestedActions.map((action, i) => (
+                          <li key={i} className="text-sm text-foreground">• {action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {cp2000Strategy.riskFlags.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-amber-700">Risk flags:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp2000Strategy.riskFlags.map((risk, i) => (
+                          <li key={i} className="text-sm text-amber-800">⚠ {risk}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => update((s) => setUserObjective(s, STRATEGY_POSITION_LABELS[cp2000Strategy.position] + (cp2000Strategy.requestedActions.length > 0 ? `: ${cp2000Strategy.requestedActions[0]}` : "")))}
+                    className="mt-3 rounded-full border border-rule px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    Use this strategy
+                  </button>
+                </div>
+              )}
+
+              {/* Generic strategy suggestions (fallback) */}
+              {strategies.length > 0 && !cp2000Strategy && (
                 <div className="mt-4 space-y-2">
                   <div className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Suggested strategies based on the notice type</div>
                   {strategies.slice(0, 4).map((strat) => (
