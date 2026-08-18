@@ -201,3 +201,39 @@ export function validateDeadline(deadline: Deadline): {
 
   return { warnings, errors };
 }
+
+/* ── Derived Deadline with Provenance ── */
+
+export function createDerivedDeadline(params: {
+  type?: DeadlineType;
+  startDate: string;
+  daysWindow: number;
+  businessDays?: boolean;
+  calculationMethod: string;
+  sourceExcerpt: string;
+  notes?: string;
+}): Deadline {
+  const date = computeDeadlineDate(params.startDate, params.daysWindow, params.businessDays);
+  return createDeadline({
+    type: params.type ?? "response",
+    date,
+    rawText: params.sourceExcerpt,
+    certainty: "calculated",
+    calculationMethod: params.calculationMethod,
+    startDate: params.startDate,
+    daysWindow: params.daysWindow,
+    businessDays: params.businessDays ?? false,
+    sourceExcerpt: params.sourceExcerpt,
+    notes: params.notes,
+  });
+}
+
+/* ── Deadline Certainty Labels ── */
+
+export const CERTAINTY_LABELS: Record<DeadlineCertainty, string> = {
+  explicit: "Confirmed — stated in the notice",
+  calculated: "Derived — computed from notice date + documented rule",
+  inferred: "Inferred — based on incomplete information, verify manually",
+  ambiguous: "Ambiguous — unclear deadline language, verify with agency",
+  missing: "Missing — no deadline found in the notice",
+};

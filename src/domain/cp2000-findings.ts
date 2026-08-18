@@ -1,17 +1,26 @@
 /* ═══════════════════════════════════════════════════════════
-   CP2000 FINDINGS — structured analysis output.
+   CP2000 FINDINGS — CP2000-specific finding types using the
+   shared Finding model from finding.ts.
 
-   A Finding is a single conclusion the system has reached,
-   traceable back to extracted facts. The system NEVER
-   generates findings without supporting facts.
+   Domain-specific finding types remain here. The generic
+   Finding structure (supportingFacts, confidence, severity,
+   provenance) is shared.
 
    ═══════════════════════════════════════════════════════════ */
 
-import type { NoticeFact } from "./fact";
+export {
+  createFinding,
+  findingSummary,
+  resolveFinding,
+  type Finding,
+  type FindingSeverity,
+  type FindingConfidence,
+  type ProvenanceRef,
+} from "./finding";
 
-// ── Finding Types ─────────────────────────────────────────────
+// ── CP2000-Specific Finding Types ────────────────────────────
 
-export type FindingType =
+export type CP2000FindingType =
   | "income_mismatch"
   | "duplicate_income"
   | "wrong_tax_year"
@@ -25,69 +34,3 @@ export type FindingType =
   | "proposed_change"
   | "missing_info"
   | "classification_warning";
-
-export type FindingSeverity = "critical" | "high" | "medium" | "low" | "info";
-
-export type FindingConfidence = "high" | "medium" | "low";
-
-// ── Finding ───────────────────────────────────────────────────
-
-export interface Finding {
-  id: string;
-  type: FindingType;
-  severity: FindingSeverity;
-  statement: string;
-  supportingFacts: string[];
-  sourceReferences: string[];
-  confidence: FindingConfidence;
-  recommendedAction: string;
-  unresolved: boolean;
-}
-
-export function createFinding(params: {
-  type: FindingType;
-  severity: FindingSeverity;
-  statement: string;
-  supportingFacts: string[];
-  sourceReferences?: string[];
-  confidence: FindingConfidence;
-  recommendedAction: string;
-  unresolved?: boolean;
-}): Finding {
-  if (params.supportingFacts.length === 0) {
-    throw new Error("Finding requires at least one supporting fact");
-  }
-  return {
-    id: crypto.randomUUID(),
-    type: params.type,
-    severity: params.severity,
-    statement: params.statement,
-    supportingFacts: params.supportingFacts,
-    sourceReferences: params.sourceReferences ?? [],
-    confidence: params.confidence,
-    recommendedAction: params.recommendedAction,
-    unresolved: params.unresolved ?? true,
-  };
-}
-
-// ── Finding Summary ───────────────────────────────────────────
-
-export function findingSummary(findings: Finding[]): {
-  total: number;
-  critical: number;
-  high: number;
-  medium: number;
-  low: number;
-  info: number;
-  unresolved: number;
-} {
-  return {
-    total: findings.length,
-    critical: findings.filter((f) => f.severity === "critical").length,
-    high: findings.filter((f) => f.severity === "high").length,
-    medium: findings.filter((f) => f.severity === "medium").length,
-    low: findings.filter((f) => f.severity === "low").length,
-    info: findings.filter((f) => f.severity === "info").length,
-    unresolved: findings.filter((f) => f.unresolved).length,
-  };
-}

@@ -87,6 +87,8 @@ export interface CP2000ValidationResult {
   passed: boolean;
   errors: number;
   warnings: number;
+  blocks: number;
+  blocked: boolean;
 }
 
 // ── CP2000 Case ──────────────────────────────────────────────

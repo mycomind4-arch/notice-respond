@@ -360,11 +360,11 @@ export function generateCP2000Draft(params: {
   userObjective: string;
 }): string {
   const lines = [
-    `CP2000 reference number: ${params.noticeNumber || "[Notice Number]"}`,
-    params.taxYear ? `Tax year: ${params.taxYear}` : "Tax year: [Verify on notice]",
-    params.noticeDate ? `Notice date: ${params.noticeDate}` : "",
+    `Re: CP2000 Notice ${params.noticeNumber || "[Notice Number]"}`,
+    params.taxYear ? `Tax Year: ${params.taxYear}` : "Tax year: [Verify on notice]",
+    params.noticeDate ? `Notice Date: ${params.noticeDate}` : "",
     params.responseDeadline
-      ? `Response deadline: ${params.responseDeadline}`
+      ? `Response Deadline: ${params.responseDeadline}`
       : "Response deadline: [Verify deadline on your notice]",
     "",
     "Dear Sir or Madam,",

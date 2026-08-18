@@ -240,7 +240,7 @@ export function validateRequirementCompleteness(
       detail: draftHasEnclosure
         ? "Draft references enclosed/attached documentation"
         : "Draft does not reference the enclosed documentation — add a list of enclosed evidence",
-      severity: "warning",
+      severity: "block",
       validator: "requirement",
     });
   }
@@ -281,7 +281,7 @@ export function validateRequirementCompleteness(
       check: "unresolved_issues",
       passed: false,
       detail: `${unresolvedDiscrepancies.length} unresolved discrepancy(ies) remain. These should be resolved or explicitly noted in the response.`,
-      severity: "warning",
+      severity: "block",
       validator: "requirement",
     });
   }
@@ -312,8 +312,10 @@ export function validateCP2000Draft(case_: CP2000Case): CP2000ValidationResult {
       requirementFindings: [],
       allFindings: [],
       passed: false,
-      errors: 1,
+      errors: 0,
       warnings: 0,
+      blocks: 1,
+      blocked: true,
     };
   }
 
@@ -332,13 +334,16 @@ export function validateCP2000Draft(case_: CP2000Case): CP2000ValidationResult {
   const allFindings = [...factualFindings, ...requirementFindings];
   const errors = allFindings.filter((f) => f.severity === "error" && !f.passed).length;
   const warnings = allFindings.filter((f) => f.severity === "warning" && !f.passed).length;
+  const blocks = allFindings.filter((f) => f.severity === "block" && !f.passed).length;
 
   return {
     factualFindings,
     requirementFindings,
     allFindings,
-    passed: errors === 0,
+    passed: errors === 0 && blocks === 0,
     errors,
     warnings,
+    blocks,
+    blocked: blocks > 0,
   };
 }

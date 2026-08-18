@@ -256,3 +256,212 @@ export const FIXTURES = [
   { id: "adversarial_gibberish", name: "Adversarial: Gibberish", text: FIXTURE_ADVERSARIAL_GIBBERISH },
   { id: "adversarial_injection", name: "Adversarial: Injection", text: FIXTURE_ADVERSARIAL_INJECTION },
 ];
+
+// ── EXPANDED ADVERSARIAL FIXTURES ──────────────────────────────
+
+// Partial extraction — notice has some fields but not all
+export const FIXTURE_PARTIAL_EXTRACTION = `
+Internal Revenue Service
+Notice CP2000-2024-77777-G
+Tax Year 2023
+We are proposing changes to your 2023 return.
+You reported: $35,000
+`;
+
+// Missing tax year — no year found
+export const FIXTURE_MISSING_TAX_YEAR = `
+Internal Revenue Service
+Notice CP2000-2024-88888-H
+Notice Date: April 10, 2024
+You reported income of: $40,000
+Income reported to us on Form W-2: $48,000
+Proposed increase in tax: $1,600
+Respond by June 10, 2024.
+`;
+
+// Missing proposed amount — no tax increase found
+export const FIXTURE_MISSING_AMOUNT = `
+Internal Revenue Service
+CP2000-2024-22222-J
+Tax Year 2023
+Notice Date: May 1, 2024
+You reported: $42,000
+Income reported to us on Form 1099-NEC: $50,000
+Please respond by July 1, 2024.
+`;
+
+// Contradictory notice fields — two different tax years mentioned
+export const FIXTURE_CONTRADICTORY_YEARS = `
+Internal Revenue Service
+Notice CP2000-2024-66666-K
+Tax Year 2022
+Notice Date: March 1, 2024
+
+We are proposing changes to your 2023 tax return.
+You reported income of: $30,000 for tax year 2022.
+Income reported to us: $35,000 for tax year 2023.
+`;
+
+// OCR corruption — garbled text with recognizable patterns
+export const FIXTURE_OCR_CORRUPTION = `
+Interna1 Revenue Service
+N0tice CP2000-2024-54321-L
+N0tice Date: M@rch 15, 2024
+T@x Year 2023
+
+We are propos!ng changes to y0ur 2023 t@x return.
+You rep0rted inc0me 0f: \$45,OOO
+Inc0me rep0rted to us 0n F0rm W-2: \$52,OOO
+Pr0p0sed increase in t@x: \$1,2OO
+Please resp0nd by M@y 14, 2024.
+`;
+
+// Multi-page notice — longer text with page markers
+export const FIXTURE_MULTI_PAGE = `
+=== PAGE 1 ===
+Internal Revenue Service
+Department of the Treasury
+Notice CP2000-2024-11111-M
+Notice Date: February 15, 2024
+Tax Year 2022
+
+We are proposing changes to your 2022 tax return based on income reported to us.
+
+=== PAGE 2 ===
+Income Summary:
+You reported income of: $55,000
+Income reported to us on Form W-2: $62,000
+Proposed increase in tax: $1,400
+Estimated penalty: $280
+
+=== PAGE 3 ===
+If you agree, sign and return the response form.
+If you disagree, send documentation.
+Please respond by April 15, 2024.
+
+Send your response to:
+IRS — Automated Underreporter
+P.O. Box 9019
+Holtsville, NY 11742-9019
+`;
+
+// Malformed dates — unparseable date formats
+export const FIXTURE_MALFORMED_DATES = `
+Internal Revenue Service
+CP2000-2024-44444-N
+Tax Year 2023
+Notice Date: 13/45/2024
+Please respond by: someday soon
+You reported: $40,000
+Income reported to us on Form W-2: $50,000
+`;
+
+// Ambiguous deadline — "within 30 days" without clear start
+export const FIXTURE_AMBIGUOUS_DEADLINE = `
+Internal Revenue Service
+Notice CP2000-2024-33333-P
+Notice Date: June 1, 2024
+Tax Year 2023
+
+You reported income of: $38,000
+Income reported to us on Form 1099-INT: $1,200
+Proposed increase in tax: $240
+
+Please respond within 30 days.
+`;
+
+// Impossible dates — date in the past or impossible range
+export const FIXTURE_IMPOSSIBLE_DATE = `
+Internal Revenue Service
+CP2000-2024-22222-Q
+Tax Year 2023
+Notice Date: January 1, 2025
+Please respond by January 1, 2020.
+You reported: $40,000
+Income reported to us: $48,000
+`;
+
+// Duplicate evidence — same income item reported twice
+export const FIXTURE_DUPLICATE_INCOME = `
+Internal Revenue Service
+Notice CP2000-2024-99999-R
+Tax Year 2023
+Notice Date: March 1, 2024
+
+You reported income of: $50,000
+Income reported to us on Form W-2: $25,000
+Income reported to us on Form W-2: $25,000
+Proposed increase in tax: $0
+
+Please respond by May 1, 2024.
+`;
+
+// Very large document — stress test (many lines)
+export const FIXTURE_VERY_LARGE = `
+Internal Revenue Service
+Notice CP2000-2024-00001-S
+Tax Year 2023
+Notice Date: July 1, 2024
+
+You reported income of: $45,000
+Income reported to us on Form W-2: $52,000
+Proposed increase in tax: $1,200
+Please respond by August 30, 2024.
+` + "Lorem ipsum dolor sit amet. ".repeat(500);
+
+// Draft with fabricated citation
+export const FIXTURE_DRAFT_FABRICATED_CITATION = `Re: CP2000-2024-33333-F
+Notice Date: July 1, 2024
+Response Deadline: August 30, 2024
+
+Dear Internal Revenue Service,
+
+I am writing to correct errors in the notice referenced above.
+
+According to IRC §6501(a), the statute of limitations has expired on this assessment. The IRS Publication 999 states that all CP2000 notices must be responded to within 90 days, not 30 days.
+
+The following information was identified from the notice:
+  • Notice Number: CP2000-2024-33333-F
+  • Tax Year: 2023
+  • Income You Reported: $42,000
+  • Income Reported to IRS: $50,000
+
+I guarantee this will be resolved in my favor.
+
+Sincerely,
+[YOUR NAME]`;
+
+// Draft claiming certainty when evidence is incomplete
+export const FIXTURE_DRAFT_FALSE_CERTAINTY = `Re: CP2000-2024-33333-F
+Notice Date: July 1, 2024
+
+Dear Internal Revenue Service,
+
+I am writing to respond to the notice referenced above.
+
+I am absolutely certain that the IRS amount of $50,000 is wrong. Without question, my records show $42,000. The correct tax is $0.
+
+The following information was identified from the notice:
+  • Notice Number: CP2000-2024-33333-F
+  • Tax Year: 2023
+
+Sincerely,
+John Smith`;
+
+// Draft with invented deadline
+export const FIXTURE_DRAFT_INVENTED_DEADLINE = `Re: CP2000-2024-33333-F
+Notice Date: July 1, 2024
+Response Deadline: December 31, 2024
+
+Dear Internal Revenue Service,
+
+I am writing to respond to the notice referenced above. The response deadline is December 31, 2024.
+
+The following information was identified from the notice:
+  • Notice Number: CP2000-2024-33333-F
+  • Tax Year: 2023
+  • Income You Reported: $42,000
+  • Income Reported to IRS: $50,000
+
+Sincerely,
+John Smith`;

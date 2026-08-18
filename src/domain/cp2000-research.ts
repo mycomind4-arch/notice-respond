@@ -1,147 +1,161 @@
 /* ═══════════════════════════════════════════════════════════
    CP2000 RESEARCH PACK — authoritative IRS sources.
 
-   Every source here is a REAL, VERIFIABLE IRS publication
-   or official resource. NO fabricated citations.
+   Every source here is a REAL, VERIFIED IRS publication
+   or official resource. URLs were verified against live
+   IRS.gov content on 2026-08-18.
 
    The pack separates SOURCE FACT (what the IRS says) from
-   MODEL INTERPRETATION (what the system infers).
+   INTERPRETATION (what the system infers) from
+   USER-SPECIFIC ANALYSIS (what applies to this case).
 
    ═══════════════════════════════════════════════════════════ */
 
-// ── Source Types ──────────────────────────────────────────────
-
-export type IRSSourceType =
-  | "irs_publication"
-  | "irs_notice"
-  | "irs_form_instructions"
-  | "irs_website"
-  | "irs_faq"
-  | "tax_code";
-
-export interface IRSSource {
-  id: string;
-  type: IRSSourceType;
-  title: string;
-  url: string;
-  description: string;
-  /** What this source is authoritative for */
-  covers: string[];
-}
+import {
+  createSource,
+  createCitation,
+  type AuthoritativeSource,
+  type SourceCitation,
+  type ResearchPack,
+} from "./source-provenance";
 
 // ── Verified IRS Sources for CP2000 ──────────────────────────
 
-export const CP2000_SOURCES: IRSSource[] = [
-  {
-    id: "irs-cp2000-page",
-    type: "irs_website",
-    title: "IRS — Understanding Your CP2000 Notice",
+export const CP2000_SOURCES: AuthoritativeSource[] = [
+  createSource({
+    type: "government_website",
+    title: "Understanding Your CP2000 Series Notice",
     url: "https://www.irs.gov/individuals/understanding-your-cp2000-notice",
-    description: "Official IRS page explaining the CP2000 notice, what it means, and how to respond.",
-    covers: ["cp2000_overview", "response_process", "what_cp2000_means"],
-  },
-  {
-    id: "irs-cp2000-response",
-    type: "irs_website",
-    title: "IRS — Responding to a CP2000 Notice",
-    url: "https://www.irs.gov/individuals/understanding-your-cp2000-notice",
-    description: "Instructions from the IRS on how to respond to a CP2000, including timelines and documentation.",
-    covers: ["response_deadline", "documentation_requirements", "how_to_respond"],
-  },
-  {
-    id: "irs-pub-1",
-    type: "irs_publication",
-    title: "IRS Publication 1 — Your Rights as a Taxpayer",
+    organization: "Internal Revenue Service (IRS)",
+    description: "Official IRS page explaining the CP2000 notice, what it means, what to do, and how to respond.",
+    covers: ["cp2000_overview", "response_process", "what_cp2000_means", "how_to_respond", "response_deadline"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_publication",
+    title: "Publication 5181 — Tax Return Reviews By Mail (CP2000, Letter 2030, CP2501, Letter 2531)",
+    url: "https://www.irs.gov/pub/irs-pdf/p5181.pdf",
+    organization: "Internal Revenue Service (IRS)",
+    description: "IRS publication detailing the CP2000 review process and how to respond by mail.",
+    covers: ["cp2000_process", "response_by_mail", "documentation_requirements"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_publication",
+    title: "Publication 1 — Your Rights as a Taxpayer",
     url: "https://www.irs.gov/pub/irs-pdf/p1.pdf",
+    organization: "Internal Revenue Service (IRS)",
     description: "Describes taxpayer rights including the right to appeal and the right to finality.",
     covers: ["taxpayer_rights", "appeal_rights"],
-  },
-  {
-    id: "irs-pub-5",
-    type: "irs_publication",
-    title: "IRS Publication 5 — Taxpayer Information and Education",
-    url: "https://www.irs.gov/pub/irs-pdf/p1.pdf",
-    description: "General taxpayer information about IRS notices and correspondence.",
-    covers: ["notice_overview", "taxpayer_options"],
-  },
-  {
-    id: "irs-form-1040-instructions",
-    type: "irs_form_instructions",
-    title: "IRS Form 1040 Instructions",
-    url: "https://www.irs.gov/instructions/i1040",
-    description: "Instructions for Form 1040, including how to report income from W-2s and 1099s.",
-    covers: ["income_reporting", "form_1040"],
-  },
-  {
-    id: "irs-underreporter-program",
-    type: "irs_website",
-    title: "IRS — Automated Underreporter (AUR) Program",
-    url: "https://www.irs.gov/individuals/understanding-your-cp2000-notice",
-    description: "Overview of the IRS Automated Underreporter program that generates CP2000 notices.",
-    covers: ["aur_process", "how_cp2000_generated"],
-  },
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_publication",
+    title: "Publication 5 — Your Appeal Rights and How to Prepare a Protest If You Don't Agree",
+    url: "https://www.irs.gov/pub/irs-pdf/p5.pdf",
+    organization: "Internal Revenue Service (IRS)",
+    description: "IRS publication on appeal rights when you disagree with an IRS determination.",
+    covers: ["appeal_rights", "protest_process"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_publication",
+    title: "Notice 746 — Information About Your Notice, Penalty and Interest",
+    url: "https://www.irs.gov/pub/irs-pdf/n746.pdf",
+    organization: "Internal Revenue Service (IRS)",
+    description: "IRS notice explaining penalty and interest information.",
+    covers: ["penalties", "interest"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_publication",
+    title: "Publication 594 — The IRS Collection Process",
+    url: "https://www.irs.gov/pub/irs-pdf/p594.pdf",
+    organization: "Internal Revenue Service (IRS)",
+    description: "Overview of the IRS collection process if taxes remain unpaid.",
+    covers: ["collection_process", "what_happens_after_no_response"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
+  createSource({
+    type: "government_website",
+    title: "Taxpayer Advocate Service — Notice CP2000",
+    url: "https://www.taxpayeradvocate.irs.gov/notices/cp-2000/",
+    organization: "Taxpayer Advocate Service (TAS)",
+    description: "Independent taxpayer advocate information about CP2000 notices.",
+    covers: ["cp2000_overview", "taxpayer_advocate", "get_help"],
+    verificationStatus: "verified",
+    verifiedAt: "2026-08-18T00:00:00Z",
+  }),
 ];
 
-// ── Source Citations ─────────────────────────────────────────
-
-export interface SourceCitation {
-  sourceId: string;
-  /** What the source says (verbatim or paraphrased from official text) */
-  fact: string;
-  /** What the system interprets from this fact */
-  interpretation: string;
-  /** Whether the interpretation is the source's own statement or system inference */
-  isSourceStatement: boolean;
-}
-
 // ── Known Facts from IRS Sources ─────────────────────────────
-// These are paraphrased from official IRS guidance, not invented.
+// Verified against the live IRS CP2000 page on 2026-08-18.
 
 export const CP2000_KNOWN_FACTS: SourceCitation[] = [
-  {
-    sourceId: "irs-cp2000-page",
-    fact: "A CP2000 notice is generated by the IRS Automated Underreporter (AUR) program when income reported to the IRS by third parties does not match the income reported on your tax return.",
-    interpretation: "The CP2000 is a proposal, not a bill. It is based on a comparison of your return against third-party information returns.",
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "The income or payment information we received from third parties, such as employers or financial institutions, doesn't match what you reported on your tax return.",
+    interpretation: "The CP2000 is generated by comparing your tax return against third-party information returns (W-2s, 1099s, etc.). It is a proposal, not a bill.",
+    userSpecificAnalysis: "Your CP2000 was likely triggered because an income amount reported by a payer differs from what appears on your tax return.",
     isSourceStatement: true,
-  },
-  {
-    sourceId: "irs-cp2000-response",
-    fact: "The IRS requests a response within 30 days of the notice date if you agree or disagree with the proposed changes.",
-    interpretation: "A 30-day response window is typical, but the actual deadline on the notice controls. Always verify the specific date on your notice.",
-    isSourceStatement: false,
-  },
-  {
-    sourceId: "irs-cp2000-page",
-    fact: "If you agree with the proposed changes, you can sign and return the response form included with the notice.",
-    interpretation: "Agreement can be indicated by signing the response form. No additional documentation is needed if you fully agree.",
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "The notice explains proposed changes to your tax return and information we used to determine them. This notice isn't a bill and your response may be required.",
+    interpretation: "The CP2000 proposes changes but does not automatically assess tax. A response is needed if you disagree.",
     isSourceStatement: true,
-  },
-  {
-    sourceId: "irs-cp2000-response",
-    fact: "If you disagree, you should send documentation that supports the income you reported on your tax return.",
-    interpretation: "Disagreement requires supporting evidence. Simply stating disagreement without documentation is insufficient.",
-    isSourceStatement: false,
-  },
-  {
-    sourceId: "irs-pub-1",
-    fact: "Taxpayers have the right to appeal a decision and the right to finality.",
-    interpretation: "If the IRS applies the proposed changes after you disagree, you may have appeal rights. This is a general taxpayer right, not specific to CP2000.",
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "Reply to the notice by the date listed.",
+    interpretation: "The specific response deadline is printed on the notice. The system must extract this date, not assume a standard period.",
     isSourceStatement: true,
-  },
-  {
-    sourceId: "irs-cp2000-page",
-    fact: "If you do not respond, the IRS will process the proposed changes and send a bill.",
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "If a response form is included in your notice, complete and sign it. State whether you agree or disagree with the notice and include any supporting documentation.",
+    interpretation: "Agreement requires signing the response form. Disagreement requires supporting documentation.",
+    isSourceStatement: true,
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "If you agree with the notice and don't have other income, credits, or expenses to report, follow the notice's instructions. You don't need to amend your return.",
+    interpretation: "If you fully agree and have nothing additional to report, you don't need to file an amended return — just follow the notice instructions.",
+    isSourceStatement: true,
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "If you don't reply or we can't resolve the discrepancy, we may send another notice and a bill.",
     interpretation: "Failure to respond may result in automatic assessment. Responding before the deadline is critical.",
-    isSourceStatement: false,
-  },
+    isSourceStatement: true,
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[0].id,
+    fact: "You can reply to your notice by uploading, faxing, or mailing your response.",
+    interpretation: "The IRS accepts responses by upload (digital), fax, or mail. Mailing is one valid option but not the only one.",
+    isSourceStatement: true,
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[1].id,
+    fact: "Publication 5181 covers the tax return review process for CP2000, Letter 2030, CP2501, and Letter 2531.",
+    interpretation: "This publication is the authoritative IRS guidance for the CP2000 response process.",
+    isSourceStatement: true,
+  }),
+  createCitation({
+    sourceId: CP2000_SOURCES[2].id,
+    fact: "Taxpayers have the right to appeal a decision and the right to finality.",
+    interpretation: "If the IRS applies the proposed changes after you disagree, you may have appeal rights under Publication 5.",
+    isSourceStatement: true,
+  }),
 ];
 
 // ── Research Pack ────────────────────────────────────────────
-
-export interface ResearchPack {
-  sources: IRSSource[];
-  knownFacts: SourceCitation[];
-}
 
 export function getCP2000ResearchPack(): ResearchPack {
   return {
@@ -150,15 +164,8 @@ export function getCP2000ResearchPack(): ResearchPack {
   };
 }
 
-// ── Citation Helper ──────────────────────────────────────────
+// ── Citation Helpers ─────────────────────────────────────────
 
-export function citeSource(sourceId: string): IRSSource | undefined {
+export function citeCP2000Source(sourceId: string): AuthoritativeSource | undefined {
   return CP2000_SOURCES.find((s) => s.id === sourceId);
-}
-
-export function getFactsForTopic(topic: string): SourceCitation[] {
-  return CP2000_KNOWN_FACTS.filter((f) => {
-    const source = citeSource(f.sourceId);
-    return source?.covers.includes(topic);
-  });
 }

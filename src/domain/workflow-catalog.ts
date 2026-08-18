@@ -272,7 +272,7 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
       outputSections: ["CP2000 summary", "amounts at issue", "deadline", "reconciliation", "evidence gaps", "contradictions", "response strategy"],
     },
     drafting: {
-      requiredSections: ["CP2000 reference number", "tax year", "mismatch explanation", "supporting records list", "requested correction", "attachments"],
+      requiredSections: ["Re:", "tax year", "mismatch explanation", "supporting records list", "requested correction", "attachments"],
       forbiddenBehavior: ["invent tax positions", "invent income records", "state a tax conclusion without evidence", "claim to provide tax advice", "fabricate IRS mailing addresses"],
       validationChecks: [
         "every amount in the draft reconciles to a source document or is explicitly marked as unverified",
