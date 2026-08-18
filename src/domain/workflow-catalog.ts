@@ -482,6 +482,72 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
       seoDescription: "Verify your CP14 balance due, prepare a payment or dispute response, and mail with proof of delivery.",
     },
   },
+  {
+    id: "cp504-response",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to an IRS CP504 Notice (Intent to Levy)",
+    description: "Analyze a CP504 Intent to Levy notice, identify your Collection Due Process hearing rights, verify the balance, and prepare a response to protect your assets from levy.",
+    disclaimer: "Notice Respond is a document and correspondence tool, not a law firm, CPA firm, or tax professional.",
+    searchIntent: {
+      primary: "respond to IRS CP504 notice",
+      secondary: ["CP504 response", "IRS intent to levy", "CP504 CDP hearing", "IRS levy notice response"],
+      canonicalPath: "/workflows/cp504-response",
+      informationalEntryPoints: ["CP504", "intent to levy", "IRS levy notice", "CP504 meaning"],
+      actionIntents: ["respond to CP504", "request CDP hearing", "CP504 response letter", "stop IRS levy"],
+    },
+    documents: [
+      { name: "IRS CP504 notice", identifiers: ["CP504", "Intent to Levy", "Final Notice"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["noticeNumber", "noticeDate", "responseDeadline", "cdpHearingDeadline", "taxYear", "balanceDue", "penaltyAmount", "interestAmount", "totalDue", "levyType", "responseAddress", "contactPhone", "cdpRightsNotice"] },
+    ],
+    deadlines: [
+      { id: "cp504-cdp-hearing", label: "Collection Due Process hearing deadline (30 days from notice)", trigger: "notice date + 30 days", sourcePriority: ["uploaded CP504", "official IRS source"], notes: ["The CP504 gives you 30 days to request a CDP hearing. This is a hard deadline — do not miss it.", "If the deadline is not on the notice, contact the IRS or a tax professional immediately."] },
+      { id: "cp504-response", label: "Response deadline", trigger: "date stated on CP504 notice", sourcePriority: ["uploaded CP504", "official IRS source"], notes: ["Do not infer a deadline if the notice does not provide one."] },
+    ],
+    requirements: [
+      { id: "cp504-cdp-or-pay", label: "Request a CDP hearing or pay the balance", type: "response", source: "CP504 + supporting records", required: true },
+      { id: "cp504-address", label: "Use the response address shown on the notice", type: "recipient", source: "CP504", required: true },
+      { id: "cp504-attachments", label: "Attach supporting documentation (tax returns, financial statements, payment records)", type: "document", source: "CP504 instructions", required: false },
+    ],
+    evidence: [
+      { id: "tax-records", label: "Tax returns and transcripts", purpose: "Verify the balance and tax year", required: true, examples: ["tax return", "return transcript", "account transcript"] },
+      { id: "payment-records", label: "Payment records", purpose: "Show payments already made", required: false, examples: ["payment confirmations", "bank statements", "canceled checks"] },
+      { id: "financial-statement", label: "Financial statement (Form 433-F or 433-A)", purpose: "Support installment agreement or offer in compromise", required: false, examples: ["Form 433-F", "Form 433-A", "income/expense statement"] },
+      { id: "prior-correspondence", label: "Prior IRS correspondence", purpose: "Show prior notices and responses", required: false, examples: ["CP14", "CP501", "CP503", "prior response letters"] },
+    ],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify CP504", "extract CDP hearing deadline", "identify levy type", "verify balance due", "identify CDP rights", "identify missing evidence", "prepare response strategy"], outputSections: ["notice summary", "CDP hearing deadline", "levy type", "balance due", "evidence gaps", "response strategy"] },
+    drafting: { requiredSections: ["date", "IRS address", "reference number", "CDP hearing request", "factual explanation", "supporting records list", "attachments list", "signature"], forbiddenBehavior: ["invent facts", "invent tax conclusions", "state uncertainty as fact", "claim legal representation"], validationChecks: ["every factual claim traceable to user evidence", "CDP hearing request present", "recipient matches notice"] },
+    submission: { methods: ["mail"], recipientRules: ["use address from the notice unless user explicitly overrides after review"], proofRequirements: ["mailing record", "tracking when selected", "final approved document"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: {
+      steps: sharedSteps,
+      reviewChecks: sharedReviewChecks,
+      disclaimerText: "Notice Respond provides document preparation and mailing assistance. It is not a law firm, CPA firm, or tax professional and does not provide legal or tax advice. A CP504 notice has a strict 30-day deadline for requesting a CDP hearing — do not delay.",
+      mailOptions: sharedMailOptions,
+    },
+    seo: {
+      title: "Respond to an IRS CP504 Notice (Intent to Levy) — Notice Respond",
+      description: "Analyze your CP504 Intent to Levy notice, identify your Collection Due Process hearing rights, verify the balance, and prepare a response to protect your assets.",
+      canonical: "/workflows/cp504-response",
+      openGraph: { title: "Respond to an IRS CP504 Notice", description: "Protect your assets from IRS levy — prepare a CP504 response with CDP hearing rights, evidence, and mailing proof." },
+      faq: [
+        { question: "What is a CP504 notice?", answer: "A CP504 is an IRS Notice of Intent to Levy. It tells you that the IRS plans to seize your assets (bank accounts, wages, or property) to satisfy an unpaid tax balance. You have 30 days to request a Collection Due Process (CDP) hearing." },
+        { question: "How long do I have to respond to a CP504?", answer: "You have 30 days from the date of the notice to request a Collection Due Process (CDP) hearing. This is a strict deadline. If you miss it, the IRS can proceed with the levy." },
+        { question: "What is a CDP hearing?", answer: "A Collection Due Process (CDP) hearing is your right under IRC section 6330 to challenge the IRS's collection actions before an independent appeals officer. You can propose alternatives like an installment agreement or offer in compromise." },
+        { question: "What happens if I don't respond to a CP504?", answer: "If you don't request a CDP hearing within 30 days, the IRS can proceed with the levy after that period. They can seize funds from your bank account, garnish your wages, or seize property." },
+      ],
+    },
+    directory: {
+      category: "Tax notices",
+      bestFor: "Taxpayers who received a CP504 Intent to Levy notice and need to request a CDP hearing or respond before the 30-day deadline.",
+      steps: ["Upload the CP504 notice", "Review the CDP hearing deadline and levy type", "Verify the balance due", "Gather supporting documents", "Prepare and mail the response"],
+      documents: ["CP504 notice", "Tax returns and transcripts", "Payment records", "Financial statement (Form 433-F)", "Prior IRS correspondence"],
+      seoRoute: "/workflows/respond-to-cp504-notice",
+      seoTitle: "Respond to an IRS CP504 notice",
+      seoDescription: "Protect your assets from IRS levy — prepare a CP504 response requesting a CDP hearing, verify the balance, and mail with proof of delivery.",
+    },
+  },
 ];
 
 export const workflowById = Object.fromEntries(

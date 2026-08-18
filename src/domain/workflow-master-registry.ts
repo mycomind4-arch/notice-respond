@@ -1113,6 +1113,28 @@ export const WORKFLOW_REGISTRY: WorkflowRegistryEntry[] = [
     priority: "low",
     researchRequired: true,
   },
+  {
+    id: "cp504-response",
+    vertical: "notice-respond",
+    category: "Tax",
+    engine: "document-action",
+    lifecycle: "functional",
+    title: "Respond to an IRS CP504 Notice (Intent to Levy)",
+    canonicalKeyword: "CP504 response",
+    keywordCluster: ["CP504", "IRS intent to levy", "CP504 CDP hearing", "IRS levy notice"],
+    msv: 1900,
+    cpc: 13,
+    competition: "medium",
+    seoUrl: "/workflows/cp504-response",
+    repo: "notice-respond",
+    productStatus: "functional",
+    testStatus: "passing",
+    deploymentStatus: "production",
+    factoryReuseScore: 0.85,
+    implementationDifficulty: 2,
+    priority: "high",
+    researchRequired: false,
+  },
 ];
 
 // ── Registry Lookups ──────────────────────────────────────────

@@ -26,6 +26,7 @@ import { Route as WorkflowsAnalyzeRouteImport } from './routes/workflows/analyze
 import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/court-summons'
 import { Route as WorkflowsCp14ResponseRouteImport } from './routes/workflows/cp14-response'
 import { Route as WorkflowsCp2000ResponseRouteImport } from './routes/workflows/cp2000-response'
+import { Route as WorkflowsCp504ResponseRouteImport } from './routes/workflows/cp504-response'
 import { Route as WorkflowsFileAppealRouteImport } from './routes/workflows/file-appeal'
 import { Route as WorkflowsIrsNoticeRouteImport } from './routes/workflows/irs-notice'
 import { Route as WorkflowsRespondToABenefitsNoticeRouteImport } from './routes/workflows/respond-to-a-benefits-notice'
@@ -125,6 +126,11 @@ const WorkflowsCp14ResponseRoute = WorkflowsCp14ResponseRouteImport.update({
 const WorkflowsCp2000ResponseRoute = WorkflowsCp2000ResponseRouteImport.update({
   id: '/workflows/cp2000-response',
   path: '/workflows/cp2000-response',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowsCp504ResponseRoute = WorkflowsCp504ResponseRouteImport.update({
+  id: '/workflows/cp504-response',
+  path: '/workflows/cp504-response',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsFileAppealRoute = WorkflowsFileAppealRouteImport.update({
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
+  '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
   '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
+  '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
   '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
@@ -294,6 +302,7 @@ export interface FileRoutesById {
   '/workflows/court-summons': typeof WorkflowsCourtSummonsRoute
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
+  '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
   '/workflows/irs-notice': typeof WorkflowsIrsNoticeRoute
   '/workflows/respond-to-a-benefits-notice': typeof WorkflowsRespondToABenefitsNoticeRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/workflows/court-summons'
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
+    | '/workflows/cp504-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
     | '/workflows/respond-to-a-benefits-notice'
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/workflows/court-summons'
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
+    | '/workflows/cp504-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
     | '/workflows/respond-to-a-benefits-notice'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/workflows/court-summons'
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
+    | '/workflows/cp504-response'
     | '/workflows/file-appeal'
     | '/workflows/irs-notice'
     | '/workflows/respond-to-a-benefits-notice'
@@ -429,6 +441,7 @@ export interface RootRouteChildren {
   WorkflowsCourtSummonsRoute: typeof WorkflowsCourtSummonsRoute
   WorkflowsCp14ResponseRoute: typeof WorkflowsCp14ResponseRoute
   WorkflowsCp2000ResponseRoute: typeof WorkflowsCp2000ResponseRoute
+  WorkflowsCp504ResponseRoute: typeof WorkflowsCp504ResponseRoute
   WorkflowsFileAppealRoute: typeof WorkflowsFileAppealRoute
   WorkflowsIrsNoticeRoute: typeof WorkflowsIrsNoticeRoute
   WorkflowsRespondToABenefitsNoticeRoute: typeof WorkflowsRespondToABenefitsNoticeRoute
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsCp2000ResponseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/cp504-response': {
+      id: '/workflows/cp504-response'
+      path: '/workflows/cp504-response'
+      fullPath: '/workflows/cp504-response'
+      preLoaderRoute: typeof WorkflowsCp504ResponseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/file-appeal': {
       id: '/workflows/file-appeal'
       path: '/workflows/file-appeal'
@@ -685,6 +705,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCourtSummonsRoute: WorkflowsCourtSummonsRoute,
   WorkflowsCp14ResponseRoute: WorkflowsCp14ResponseRoute,
   WorkflowsCp2000ResponseRoute: WorkflowsCp2000ResponseRoute,
+  WorkflowsCp504ResponseRoute: WorkflowsCp504ResponseRoute,
   WorkflowsFileAppealRoute: WorkflowsFileAppealRoute,
   WorkflowsIrsNoticeRoute: WorkflowsIrsNoticeRoute,
   WorkflowsRespondToABenefitsNoticeRoute:
