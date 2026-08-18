@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { noticeRespondCatalog } from "@/domain/workflow-catalog";
+import type { MasterWorkflowDefinition } from "@/domain/workflow-definition";
 
 export type NoticeWorkflow = {
   slug: string;
@@ -10,9 +12,15 @@ export type NoticeWorkflow = {
   bestFor: string;
   steps: string[];
   documents: string[];
+  lifecycle?: string;
+  canonicalPath?: string;
 };
 
-export const NOTICE_WORKFLOWS: NoticeWorkflow[] = [
+/* ── SEO-only entries (no interactive workflow yet) ── */
+/* These are informational landing pages. When they get a full
+   catalog entry with a workflow route, they should be removed
+   from this list and derived from the catalog instead. */
+const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
   {
     slug: "government-notice",
     route: "/respond-to-a-government-notice",
@@ -23,17 +31,6 @@ export const NOTICE_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Official letters, requests for information, compliance notices, and general agency correspondence.",
     steps: ["Upload the notice", "Extract the agency, reference number, dates, and requested action", "Organize supporting documents", "Prepare and review the response", "Mail and keep the proof"],
     documents: ["Notice or letter", "Attachments", "Supporting records", "Prior agency correspondence"],
-  },
-  {
-    slug: "irs-notice",
-    route: "/workflows/respond-to-an-irs-notice",
-    title: "Respond to an IRS notice",
-    searchIntent: "respond to IRS notice",
-    category: "Tax notices",
-    description: "Organize an IRS notice, response date, notice number, disputed facts, and supporting records before you send a written reply.",
-    bestFor: "IRS notices and letters where the notice instructions call for a written response or supporting documentation.",
-    steps: ["Identify the notice number and issue", "Capture the response date and mailing instructions", "Compare the notice with your records", "Prepare the response and attachments", "Send with a retained mailing record"],
-    documents: ["IRS notice or letter", "Tax return excerpts", "Payment records", "Supporting statements or forms"],
   },
   {
     slug: "tax-notice",
@@ -112,29 +109,47 @@ export const NOTICE_WORKFLOWS: NoticeWorkflow[] = [
     steps: ["Upload the notice", "Capture the decision and deadline", "Organize records for each issue", "Draft the response or review request", "Keep proof of what was submitted"],
     documents: ["Benefits notice", "Eligibility records", "Payment statements", "Supporting correspondence"],
   },
-  {
-    slug: "court-summons",
-    route: "/workflows/respond-to-a-court-summons",
-    title: "Respond to a court summons",
-    searchIntent: "respond to court summons",
-    category: "Court & formal actions",
-    description: "Organize a summons, case number, service information, deadlines, and supporting documents so you can understand the required next step.",
-    bestFor: "Civil summonses and other formal court papers where a response deadline is stated in the documents.",
-    steps: ["Upload the summons", "Capture case and service information", "Identify the stated deadline", "Organize relevant documents", "Prepare the next step for professional review or filing"],
-    documents: ["Summons", "Complaint or petition", "Court attachments", "Prior correspondence"],
-  },
-  {
-    slug: "agency-action",
-    route: "/workflows/respond-to-an-agency-action",
-    title: "Respond to an agency action",
-    searchIntent: "respond to agency action",
-    category: "Court & formal actions",
-    description: "Work through a formal agency action by organizing the decision, deadlines, evidence, and response path before drafting.",
-    bestFor: "Administrative decisions, enforcement actions, compliance determinations, and formal agency correspondence.",
-    steps: ["Upload the action", "Identify the agency decision and deadlines", "Build the supporting record", "Choose the response path", "Prepare the written submission"],
-    documents: ["Agency decision", "Notice of action", "Supporting records", "Prior agency correspondence"],
-  },
 ];
+
+function catalogToDirectoryEntry(def: MasterWorkflowDefinition): NoticeWorkflow | null {
+  if (!def.directory) return null;
+  return {
+    slug: def.id,
+    route: def.directory.seoRoute ?? def.searchIntent.canonicalPath,
+    title: def.directory.seoTitle ?? def.title,
+    searchIntent: def.searchIntent.primary,
+    category: def.directory.category,
+    description: def.directory.seoDescription ?? def.description,
+    bestFor: def.directory.bestFor,
+    steps: def.directory.steps,
+    documents: def.directory.documents,
+    lifecycle: def.lifecycle,
+    canonicalPath: def.searchIntent.canonicalPath,
+  };
+}
+
+function buildWorkflowList(): NoticeWorkflow[] {
+  const entries: NoticeWorkflow[] = [];
+  const seenSlugs = new Set<string>();
+
+  for (const def of noticeRespondCatalog) {
+    const entry = catalogToDirectoryEntry(def);
+    if (entry) {
+      entries.push(entry);
+      seenSlugs.add(entry.slug);
+    }
+  }
+
+  for (const entry of SEO_ONLY_WORKFLOWS) {
+    if (!seenSlugs.has(entry.slug)) {
+      entries.push(entry);
+    }
+  }
+
+  return entries;
+}
+
+export const NOTICE_WORKFLOWS: NoticeWorkflow[] = buildWorkflowList();
 
 export function workflowCategories() {
   const groups = new Map<string, NoticeWorkflow[]>();
@@ -172,7 +187,11 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
           <div className="postmark w-fit">{workflow.category}</div>
           <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{workflow.title}</h1>
           <p className="mt-5 text-base leading-7 text-ink-soft sm:text-lg">{workflow.description}</p>
-          <div className="mt-7 flex flex-wrap gap-3"><Link to="/dashboard" className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link><Link to="/workflows/analyze" className="rounded-full border border-rule px-6 py-3 text-sm font-medium">Analyze a notice</Link></div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            {workflow.canonicalPath && <Link to={workflow.canonicalPath} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link>}
+            <Link to="/dashboard" className="rounded-full border border-rule px-6 py-3 text-sm font-medium">Dashboard</Link>
+            <Link to="/workflows/analyze" className="rounded-full border border-rule px-6 py-3 text-sm font-medium">Analyze a notice</Link>
+          </div>
         </div>
       </div></section>
       <section><div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_.8fr]">
@@ -185,7 +204,13 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
           <div className="mt-7 border-t border-rule/60 pt-6"><div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">What the system tracks</div><p className="mt-3 text-sm leading-6 text-muted-foreground">Notice date, response deadline, reference number, agency instructions, supporting documents, response status, and mailing/proof records.</p></div>
         </aside>
       </div></section>
-      <section className="border-y border-rule/60 bg-paper-deep/30"><div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16"><div className="postmark mx-auto w-fit">Ready when you are</div><h2 className="mt-4 font-serif text-3xl sm:text-4xl">Start with the document you received.</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.</p><Link to="/dashboard" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link></div></section>
+      <section className="border-y border-rule/60 bg-paper-deep/30"><div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16"><div className="postmark mx-auto w-fit">Ready when you are</div><h2 className="mt-4 font-serif text-3xl sm:text-4xl">Start with the document you received.</h2><p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.</p>
+          <div className="mt-6 flex justify-center gap-3">
+            {workflow.canonicalPath && <Link to={workflow.canonicalPath} className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Start this workflow →</Link>}
+            <Link to="/dashboard" className="inline-flex rounded-full border border-rule px-6 py-3 text-sm font-medium">Dashboard</Link>
+          </div>
+        </div>
+      </section>
     </main></div>
   );
 }
@@ -201,12 +226,20 @@ export function WorkflowHead({ workflow }: { workflow: NoticeWorkflow }) {
 }
 
 export function WorkflowStructuredData({ workflow }: { workflow: NoticeWorkflow }) {
-  return { type: "application/ld+json", children: JSON.stringify({
+  const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: workflow.title,
     description: workflow.description,
     about: workflow.searchIntent,
     isPartOf: { "@type": "WebSite", name: "Notice Respond" },
-  }) };
+  };
+  if (workflow.canonicalPath) {
+    data["potentialAction"] = {
+      "@type": "Action",
+      name: "Start workflow",
+      target: workflow.canonicalPath,
+    };
+  }
+  return { type: "application/ld+json", children: JSON.stringify(data) };
 }

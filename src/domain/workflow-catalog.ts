@@ -1,6 +1,6 @@
-import type { MasterWorkflowDefinition } from "./workflow-definition";
+import type { MasterWorkflowDefinition, CapabilityPack, UXMetadata, SEOMetadata } from "./workflow-definition";
 
-const sharedCapabilities = [
+const sharedCapabilities: CapabilityPack[] = [
   "document-classification",
   "fact-extraction",
   "deadline-analysis",
@@ -14,7 +14,7 @@ const sharedCapabilities = [
   "submission",
   "mailing",
   "proof",
-] as const;
+];
 
 const sharedQualityGate = {
   documentRecognition: false,
@@ -26,6 +26,33 @@ const sharedQualityGate = {
   submissionReadiness: true,
   proofReady: true,
 };
+
+const sharedSteps: UXMetadata["steps"] = [
+  { id: "intro", label: "Start" },
+  { id: "document", label: "Notice" },
+  { id: "facts", label: "Facts" },
+  { id: "objective", label: "Objective" },
+  { id: "draft", label: "Draft" },
+  { id: "review", label: "Review" },
+  { id: "attachments", label: "Documents" },
+  { id: "recipient", label: "Recipient" },
+  { id: "mailing", label: "Mail" },
+  { id: "checkout", label: "Checkout" },
+  { id: "done", label: "Done" },
+];
+
+const sharedReviewChecks = [
+  "I reviewed every factual statement in this draft.",
+  "Names, dates, notice numbers, and amounts are correct.",
+  "I reviewed the uploaded notice and agency instructions.",
+  "I understand Notice Respond is not providing legal or tax advice.",
+];
+
+const sharedMailOptions = [
+  { id: "standard", label: "Standard", price: "$4.99", desc: "3–7 business days · Tracking included" },
+  { id: "certified", label: "Certified", price: "$14.94", desc: "Delivery tracking + confirmation · 3–7 days" },
+  { id: "registered", label: "Registered", price: "$32.49", desc: "Secure handling + tracking · 5–10 days" },
+];
 
 export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
   {
@@ -60,6 +87,22 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
     submission: { methods: ["mail"], recipientRules: ["use address from the notice unless user explicitly overrides after review"], proofRequirements: ["mailing record", "tracking when selected", "final approved document"] },
     capabilities: [...sharedCapabilities],
     qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Notice Respond provides document preparation and mailing assistance. It is not a law firm, CPA firm, or tax professional and does not provide legal or tax advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to an IRS Notice — Notice Respond",
+      description: "Guided workflow to organize an IRS notice, prepare a written response, and mail it with proof of delivery.",
+      canonical: "/workflows/irs-notice",
+      openGraph: { title: "Respond to an IRS Notice", description: "Organize an IRS notice, prepare a written response, and mail it with proof of delivery." },
+    },
+    directory: {
+      category: "Tax notices",
+      bestFor: "IRS notices and letters where the notice instructions call for a written response or supporting documentation.",
+      steps: ["Identify the notice number and issue", "Capture the response date and mailing instructions", "Compare the notice with your records", "Prepare the response and attachments", "Send with a retained mailing record"],
+      documents: ["IRS notice or letter", "Tax return excerpts", "Payment records", "Supporting statements or forms"],
+      seoRoute: "/workflows/respond-to-an-irs-notice",
+      seoTitle: "Respond to an IRS notice",
+      seoDescription: "Organize an IRS notice, response date, notice number, disputed facts, and supporting records before you send a written reply.",
+    },
   },
   {
     id: "court-summons",
@@ -84,6 +127,20 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
     submission: { methods: ["mail", "user-directed filing"], recipientRules: ["use the court address and filing instructions from the governing documents"], proofRequirements: ["final filing copy", "mailing record", "tracking when selected"] },
     capabilities: [...sharedCapabilities],
     qualityGate: { ...sharedQualityGate, documentRecognition: false },
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Notice Respond is not a law firm and does not provide legal advice. Court filings have strict deadlines and procedural requirements.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a Court Summons — Notice Respond",
+      description: "Analyze a summons, surface deadlines and filing instructions, organize exhibits, and prepare a response package.",
+    },
+    directory: {
+      category: "Court & formal actions",
+      bestFor: "Civil summonses and other formal court papers where a response deadline is stated in the documents.",
+      steps: ["Upload the summons", "Capture case and service information", "Identify the stated deadline", "Organize relevant documents", "Prepare the next step for professional review or filing"],
+      documents: ["Summons", "Complaint or petition", "Court attachments", "Prior correspondence"],
+      seoRoute: "/workflows/respond-to-a-court-summons",
+      seoTitle: "Respond to a court summons",
+      seoDescription: "Organize a summons, case number, service information, deadlines, and supporting documents so you can understand the required next step.",
+    },
   },
   {
     id: "agency-action",
@@ -108,6 +165,20 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
     submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
     capabilities: [...sharedCapabilities],
     qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Agency responses may have strict deadlines and specific formatting requirements. Notice Respond is not a law firm.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to an Agency Action — Notice Respond",
+      description: "Respond to a regulatory or administrative agency action with source-linked facts, deadlines, evidence, and a reviewable response.",
+    },
+    directory: {
+      category: "Court & formal actions",
+      bestFor: "Administrative decisions, enforcement actions, compliance determinations, and formal agency correspondence.",
+      steps: ["Upload the action", "Identify the agency decision and deadlines", "Build the supporting record", "Choose the response path", "Prepare the written submission"],
+      documents: ["Agency decision", "Notice of action", "Supporting records", "Prior agency correspondence"],
+      seoRoute: "/workflows/respond-to-an-agency-action",
+      seoTitle: "Respond to an agency action",
+      seoDescription: "Work through a formal agency action by organizing the decision, deadlines, evidence, and response path before drafting.",
+    },
   },
   {
     id: "file-appeal",
@@ -117,46 +188,178 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
     description: "Turn a denial or decision into a structured appeal package with facts, evidence, deadline analysis, and a reviewed response.",
     disclaimer: "Appeal procedures and deadlines vary. Notice Respond is not a law firm and does not provide legal advice.",
     searchIntent: {
-      primary: "write an appeal letter",
-      secondary: ["appeal a government decision", "reconsideration letter", "denied claim appeal"],
+      primary: "file an appeal",
+      secondary: ["appeal letter", "appeal a denial", "appeal a decision"],
       canonicalPath: "/workflows/file-appeal",
-      informationalEntryPoints: ["appeal letter", "appeal letter sample", "how to appeal a decision"],
-      actionIntents: ["write an appeal letter", "appeal a decision", "prepare an appeal"],
+      informationalEntryPoints: ["how to file an appeal", "appeal process"],
+      actionIntents: ["file an appeal", "write an appeal letter", "mail an appeal"],
     },
-    documents: [{ name: "Denial or decision", identifiers: ["denial", "decision", "determination", "ruling"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["decisionMaker", "decisionDate", "deadline", "reason", "appealInstructions", "recipient"] }],
-    deadlines: [{ id: "appeal-deadline", label: "Appeal deadline", trigger: "explicit deadline or official appeal rule", sourcePriority: ["decision document", "official agency/court source"] }],
-    requirements: [{ id: "appeal-ground", label: "Identify grounds or factual basis for appeal", type: "response", source: "decision + user evidence", required: true }],
-    evidence: [{ id: "appeal-evidence", label: "Evidence supporting the appeal", purpose: "Support the requested reversal or reconsideration", required: true, examples: ["records", "correspondence", "photographs", "receipts", "prior decisions"] }],
+    documents: [{ name: "Denial or decision letter", identifiers: ["denial", "decision", "determination", "notice of decision"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "decisionDate", "appealDeadline", "appealMethod", "reasons", "referenceNumber"] }],
+    deadlines: [{ id: "appeal-deadline", label: "Appeal deadline", trigger: "explicit deadline in decision OR controlling appeal rule", sourcePriority: ["uploaded decision", "official appeal rules"], notes: ["Appeal deadlines are often short and strict."] }],
+    requirements: [{ id: "appeal-grounds", label: "State grounds for appeal", type: "response", source: "decision document + user facts", required: true }, { id: "appeal-method", label: "Use the appeal method specified in the decision", type: "format", source: "uploaded decision", required: true }],
+    evidence: [{ id: "appeal-evidence", label: "Supporting evidence for appeal grounds", purpose: "Demonstrate why the decision should be reconsidered", required: false, examples: ["records", "correspondence", "photographs", "expert statements"] }],
     analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify decision", "extract appeal deadline", "identify reasons for denial", "map facts to denial reasons", "identify missing support", "construct appeal strategy"], outputSections: ["decision summary", "deadline", "reasons", "evidence", "gaps", "appeal strategy"] },
     drafting: { requiredSections: ["recipient", "decision reference", "grounds", "supporting facts", "evidence", "requested outcome", "attachments"], forbiddenBehavior: ["invent legal authority", "invent facts", "guarantee outcome"], validationChecks: ["each denial reason addressed", "facts trace to evidence", "deadline and submission method verified"] },
     submission: { methods: ["mail", "user-directed submission"], recipientRules: ["use appeal instructions in the decision unless verified otherwise"], proofRequirements: ["final appeal", "mailing record", "delivery tracking when selected"] },
     capabilities: [...sharedCapabilities],
     qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Appeals often have short deadlines and specific requirements. Review the appeal instructions from the agency or court. Notice Respond is not a law firm.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "File an Appeal — Notice Respond",
+      description: "Turn a denial or decision into a structured appeal package with facts, evidence, deadline analysis, and a reviewed response.",
+    },
   },
   {
     id: "cp2000-response",
     vertical: "notice-respond",
-    lifecycle: "blueprint",
-    title: "Respond to an IRS CP2000",
-    description: "Analyze a CP2000 mismatch notice, compare the notice against supporting tax records, identify what needs to be explained, and prepare a response package.",
-    disclaimer: "This workflow is a blueprint until its CP2000-specific extraction, research, and validation tests are complete. It is not tax advice.",
+    lifecycle: "functional",
+    title: "Respond to an IRS CP2000 Notice",
+    description: "Analyze a CP2000 underreported-income notice, compare the notice against your tax records, identify the income discrepancy, and prepare a response package with supporting evidence.",
+    disclaimer: "Notice Respond is a document and correspondence tool, not a CPA firm or tax professional. It does not provide tax advice.",
     searchIntent: {
-      primary: "CP2000 response",
-      secondary: ["CP2000 response letter", "respond to CP2000", "CP2000 notice deadline"],
+      primary: "respond to CP2000",
+      secondary: [
+        "CP2000 response",
+        "CP2000 response letter",
+        "CP2000 notice response",
+        "CP2000 response deadline",
+        "how to respond to CP2000",
+        "CP2000 documentation",
+        "dispute CP2000",
+        "CP2000 income discrepancy",
+        "what is CP2000",
+      ],
       canonicalPath: "/workflows/cp2000-response",
-      informationalEntryPoints: ["what is CP2000", "CP2000 notice", "CP2000 meaning"],
-      actionIntents: ["CP2000 response", "respond to CP2000", "CP2000 response letter"],
+      informationalEntryPoints: ["what is CP2000", "CP2000 notice", "CP2000 meaning", "IRS CP2000"],
+      actionIntents: ["respond to CP2000", "CP2000 response letter", "dispute CP2000", "CP2000 income discrepancy response"],
     },
-    documents: [{ name: "IRS CP2000 notice", identifiers: ["CP2000", "Automated Underreporter"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["noticeDate", "responseDeadline", "taxYear", "proposedChange", "reportedIncome", "incomeSource", "responseAddress"] }, { name: "Supporting tax record", identifiers: ["W-2", "1099", "return"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["payer", "taxYear", "incomeAmount", "withholding"] }],
-    deadlines: [{ id: "cp2000-response", label: "CP2000 response deadline", trigger: "date stated on CP2000 notice", sourcePriority: ["uploaded CP2000", "official IRS source"] }],
-    requirements: [{ id: "cp2000-reconcile", label: "Explain or document the income mismatch", type: "response", source: "CP2000 + supporting tax records", required: true }, { id: "cp2000-address", label: "Use the response address shown on the notice", type: "recipient", source: "CP2000", required: true }],
-    evidence: [{ id: "income-records", label: "Income reporting records", purpose: "Reconcile the discrepancy identified by the notice", required: true, examples: ["W-2", "1099", "broker statement", "return transcript"] }],
-    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify CP2000", "extract tax year and amounts", "extract deadline", "compare notice amounts to uploaded records", "identify unresolved mismatches", "prepare response strategy"], outputSections: ["CP2000 summary", "amounts at issue", "deadline", "reconciliation", "evidence gaps", "response strategy"] },
-    drafting: { requiredSections: ["CP2000 reference", "mismatch explanation", "supporting records", "requested correction", "attachments"], forbiddenBehavior: ["invent tax positions", "invent income records", "state a tax conclusion without evidence"], validationChecks: ["every amount reconciles to a source", "deadline comes from the notice", "response address matches the notice"] },
-    submission: { methods: ["mail"], recipientRules: ["use the exact response address on the CP2000 unless a verified source indicates otherwise"], proofRequirements: ["approved response", "mailing record", "tracking when selected"] },
+    documents: [
+      { name: "IRS CP2000 notice", identifiers: ["CP2000", "Automated Underreporter", "Underreported Income"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["noticeNumber", "noticeDate", "responseDeadline", "taxYear", "proposedChange", "reportedIncome", "irsReportedIncome", "incomeSource", "payerName", "responseAddress", "contactPhone", "proposedTaxIncrease", "proposedPenalty", "requestedAction"] },
+      { name: "Supporting tax record", identifiers: ["W-2", "1099", "return", "transcript", "K-1"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["payerName", "taxYear", "incomeAmount", "withholding"] },
+    ],
+    deadlines: [
+      { id: "cp2000-response", label: "CP2000 response deadline", trigger: "date stated on CP2000 notice", sourcePriority: ["uploaded CP2000", "official IRS source"], notes: ["The CP2000 notice typically states a response deadline. Do not infer a deadline if the notice does not provide one.", "If no deadline is present, the user should contact the IRS or consult a tax professional."] },
+    ],
+    requirements: [
+      { id: "cp2000-reconcile", label: "Explain or document the income mismatch", type: "response", source: "CP2000 + supporting tax records", required: true },
+      { id: "cp2000-address", label: "Use the response address shown on the notice", type: "recipient", source: "CP2000", required: true },
+      { id: "cp2000-attachments", label: "Attach supporting documentation for claimed positions", type: "document", source: "CP2000 instructions", required: true },
+    ],
+    evidence: [
+      { id: "income-records", label: "Income reporting records", purpose: "Reconcile the discrepancy identified by the notice", required: true, examples: ["W-2", "1099-INT", "1099-DIV", "1099-B", "broker statement", "return transcript", "K-1"] },
+      { id: "prior-correspondence", label: "Prior IRS correspondence", purpose: "Establish context and prior communications about this tax year", required: false, examples: ["prior notices", "response letters", "IRS account transcript"] },
+      { id: "corrected-documents", label: "Corrected or amended documents", purpose: "Show that an error was already corrected or an amended return was filed", required: false, examples: ["1040X", "corrected W-2c", "corrected 1099"] },
+    ],
+    analysis: {
+      capabilities: [...sharedCapabilities],
+      orderedChecks: [
+        "classify document as CP2000",
+        "confirm CP2000 identifiers",
+        "extract tax year and amounts",
+        "extract response deadline",
+        "compare notice amounts to user-provided records",
+        "identify income discrepancy details",
+        "identify unresolved mismatches",
+        "identify missing evidence",
+        "surface contradictions between notice and user records",
+        "prepare response strategy",
+      ],
+      outputSections: ["CP2000 summary", "amounts at issue", "deadline", "reconciliation", "evidence gaps", "contradictions", "response strategy"],
+    },
+    drafting: {
+      requiredSections: ["CP2000 reference number", "tax year", "mismatch explanation", "supporting records list", "requested correction", "attachments"],
+      forbiddenBehavior: ["invent tax positions", "invent income records", "state a tax conclusion without evidence", "claim to provide tax advice", "fabricate IRS mailing addresses"],
+      validationChecks: [
+        "every amount in the draft reconciles to a source document or is explicitly marked as unverified",
+        "response deadline comes from the notice or is explicitly marked unknown",
+        "response address matches the notice",
+        "notice number is consistent between extraction and draft",
+        "no unsupported factual assertions about tax law",
+        "all required sections present",
+      ],
+    },
+    submission: {
+      methods: ["mail"],
+      recipientRules: ["use the exact response address printed on the CP2000 notice unless a verified source indicates otherwise"],
+      proofRequirements: ["approved response document", "mailing record", "tracking when selected"],
+    },
     capabilities: [...sharedCapabilities],
-    qualityGate: { ...sharedQualityGate, documentRecognition: false, draftValidation: false },
+    qualityGate: {
+      documentRecognition: true,
+      factGrounding: true,
+      deadlineVerification: true,
+      requirementCoverage: true,
+      evidenceGrounding: true,
+      draftValidation: true,
+      submissionReadiness: true,
+      proofReady: true,
+    },
+    ux: {
+      steps: [
+        { id: "intro", label: "Start" },
+        { id: "document", label: "Upload" },
+        { id: "extraction", label: "Review" },
+        { id: "facts", label: "Facts" },
+        { id: "objective", label: "Objective" },
+        { id: "draft", label: "Draft" },
+        { id: "review", label: "Review" },
+        { id: "attachments", label: "Documents" },
+        { id: "recipient", label: "Recipient" },
+        { id: "mailing", label: "Mail" },
+        { id: "checkout", label: "Checkout" },
+        { id: "done", label: "Done" },
+      ],
+      reviewChecks: [
+        "I reviewed every factual statement in this draft.",
+        "The notice number, tax year, and amounts are correct.",
+        "Every amount in the draft is supported by my records or marked as unverified.",
+        "I reviewed the uploaded CP2000 and the response address.",
+        "I understand Notice Respond is not providing tax advice.",
+      ],
+      disclaimerText: "Notice Respond is a document and correspondence tool, not a CPA firm or tax professional. It does not provide tax advice.",
+      mailOptions: sharedMailOptions,
+    },
+    seo: {
+      title: "Respond to an IRS CP2000 Notice — Notice Respond",
+      description: "Analyze your CP2000 underreported-income notice, compare it against your tax records, and prepare a response with supporting evidence. Mail with proof of delivery.",
+      canonical: "/workflows/cp2000-response",
+      openGraph: { title: "Respond to an IRS CP2000 Notice", description: "Analyze your CP2000, reconcile income discrepancies, and prepare a response with proof of delivery." },
+      faq: [
+        { question: "What is a CP2000 notice?", answer: "A CP2000 is an Automated Underreporter proposal from the IRS. It shows income reported to the IRS by third parties (employers, banks, brokerages) that does not match the income reported on your tax return. It proposes changes to your tax liability but is not a bill." },
+        { question: "How long do I have to respond to a CP2000?", answer: "The CP2000 notice itself states a response deadline — typically 30 days from the notice date. The deadline on your specific notice controls. If you cannot find a deadline, contact the IRS or a tax professional." },
+        { question: "What documents should I gather?", answer: "Gather the tax records that correspond to the income the IRS says was underreported: W-2s, 1099s, broker statements, return transcripts, and any corrected documents. These records help you reconcile the discrepancy." },
+        { question: "Does Notice Respond provide tax advice?", answer: "No. Notice Respond is a document preparation and mailing tool. It helps you organize the notice, compare it with your records, and prepare a written response. It does not provide tax advice or determine the correct tax outcome." },
+        { question: "What happens after I approve my response?", answer: "Once you review and approve your response, Notice Respond prepares a physical mailing through the MailMyPDF integration. You choose the mail type, and a mailing record with tracking is preserved as proof." },
+      ],
+    },
+    directory: {
+      category: "Tax notices",
+      bestFor: "Taxpayers who received an IRS CP2000 underreported-income notice and need to reconcile the income discrepancy with supporting records.",
+      steps: ["Upload the CP2000 notice", "Review extracted facts and the income discrepancy", "Add your facts and supporting records", "Choose your response objective", "Review and edit the response draft", "Approve and mail with proof of delivery"],
+      documents: ["IRS CP2000 notice", "W-2 or 1099 forms", "Tax return or transcript", "Broker statements", "Corrected documents (W-2c, 1040X)"],
+      seoRoute: "/workflows/cp2000-response",
+      seoTitle: "Respond to an IRS CP2000 notice",
+      seoDescription: "Analyze your CP2000, reconcile the income discrepancy, and prepare a response with supporting evidence.",
+    },
   },
 ];
 
-export const workflowById = Object.fromEntries(noticeRespondCatalog.map((workflow) => [workflow.id, workflow])) as Record<string, MasterWorkflowDefinition>;
+export const workflowById = Object.fromEntries(
+  noticeRespondCatalog.map((workflow) => [workflow.id, workflow]),
+) as Record<string, MasterWorkflowDefinition>;
+
+export function getWorkflowById(id: string): MasterWorkflowDefinition | undefined {
+  return workflowById[id];
+}
+
+export function getWorkflowByPath(path: string): MasterWorkflowDefinition | undefined {
+  return noticeRespondCatalog.find((w) => w.searchIntent.canonicalPath === path);
+}
+
+export function getFunctionalWorkflows(): MasterWorkflowDefinition[] {
+  return noticeRespondCatalog.filter((w) => w.lifecycle !== "blueprint");
+}
+
+export function getAuthorityWorkflows(): MasterWorkflowDefinition[] {
+  return noticeRespondCatalog.filter((w) => w.lifecycle === "authority");
+}

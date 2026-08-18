@@ -83,6 +83,26 @@ export interface WorkflowQualityGate {
   proofReady: boolean;
 }
 
+export interface SEOMetadata {
+  title: string;
+  description: string;
+  canonical?: string;
+  openGraph?: { title: string; description: string };
+  faq?: { question: string; answer: string }[];
+}
+
+export interface UXStepDef {
+  id: string;
+  label: string;
+}
+
+export interface UXMetadata {
+  steps: UXStepDef[];
+  reviewChecks: string[];
+  disclaimerText: string;
+  mailOptions?: { id: string; label: string; price: string; desc: string }[];
+}
+
 export interface MasterWorkflowDefinition {
   id: string;
   vertical: string;
@@ -100,4 +120,17 @@ export interface MasterWorkflowDefinition {
   submission: WorkflowSubmissionPlan;
   capabilities: CapabilityPack[];
   qualityGate: WorkflowQualityGate;
+  seo?: SEOMetadata;
+  directory?: DirectoryEntry;
+  ux?: UXMetadata;
+}
+
+export interface DirectoryEntry {
+  category: string;
+  bestFor: string;
+  steps: string[];
+  documents: string[];
+  seoRoute?: string;
+  seoTitle?: string;
+  seoDescription?: string;
 }
