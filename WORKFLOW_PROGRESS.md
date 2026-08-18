@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-08-18
 **Total Workflows in Registry:** 47
-**Total Workflows in Catalog (Production):** 7
+**Total Workflows in Catalog (Production):** 8
 
 ## Status Table
 
@@ -15,13 +15,14 @@
 | agency-action | Respond to Agency Action | document-action | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | file-appeal | File an Appeal | appeal | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | cp504-response | Respond to IRS CP504 (Intent to Levy) | document-action | notice-respond | FUNCTIONAL | ✅ 29 tests | ✅ Full | ✅ Generic | — | ✅ Production |
+| transunion-dispute | Dispute TransUnion Credit Report | dispute | dispute-mail | FUNCTIONAL | ✅ 26 tests | ✅ Full | ✅ Generic | — | ✅ Production |
 
 ### Blueprint Workflows (in registry, not yet implemented)
 
 | Phase | Workflows | Status |
 |-------|-----------|--------|
 | A — IRS/Tax | CP504, IRS penalty, IRS audit, IRS deficiency, IRS levy, state tax, tax assessment | BLUEPRINT |
-| B — Credit/Dispute | TransUnion, Experian, Equifax, credit report, hard inquiry, collection, medical collection, debt validation, debt collection, creditor | BLUEPRINT |
+| B — Credit/Dispute | ~~TransUnion~~, Experian, Equifax, credit report, hard inquiry, collection, medical collection, debt validation, debt collection, creditor | IN PROGRESS |
 | C — Insurance | Claim denial, health, auto, home, roof, workers comp, disability, life, underpayment, reconsideration | BLUEPRINT |
 | D — Records | Public records, FOIA, police, court, criminal, arrest, military, birth, marriage | BLUEPRINT |
 | E — Immigration | I-797, I-797C, RFE, NOID, USCIS rejection, USCIS denial, evidence, biometrics, interview | BLUEPRINT |
