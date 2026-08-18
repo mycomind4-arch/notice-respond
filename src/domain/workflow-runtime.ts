@@ -174,7 +174,19 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
       return state.userFacts.trim().length > 0;
     case "objective":
       return state.userObjective.trim().length > 0;
+    case "draft":
+      // P0: A draft with blocking validation errors must NOT advance to review.
+      // If validation has run and failed (errors > 0), block.
+      // If validation hasn't run yet (null), allow (route generates draft + validation together).
+      if (state.draftValidation && !state.draftValidation.passed) {
+        return false;
+      }
+      return true;
     case "review":
+      // P0: Review also checks validation passed — no mailing without clean validation.
+      if (state.draftValidation && !state.draftValidation.passed) {
+        return false;
+      }
       return state.reviewChecks.every(Boolean);
     case "recipient":
       if (!state.mailing) return false;
