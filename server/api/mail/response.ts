@@ -51,7 +51,16 @@ export default defineEventHandler(async (event) => {
 
   // Read the form data using the standard Web FormData API
   // (works on Cloudflare Workers, Node, Bun — all Nitro presets)
-  const formData = await readFormData(event);
+  let formData: FormData | null;
+  try {
+    formData = await readFormData(event);
+  } catch {
+    throw createError({
+      statusCode: 400,
+      statusMessage:
+        "Invalid request body. Expected multipart/form-data with a file and recipient fields.",
+    });
+  }
   if (!formData) {
     throw createError({
       statusCode: 400,
