@@ -1,12 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import { NOTICE_WORKFLOWS, WorkflowCard, workflowCategories } from "@/components/notice-workflow-directory";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Notice Respond — Respond to government notices with confidence" },
-      { name: "description", content: "Prepare, review, send, and track responses to IRS notices, court summonses, agency actions, and appeals. Guided workflows, AI-assisted drafting, physical mail with proof of delivery. Not a law firm." },
+      { title: "Notice Respond — Government Notice Response Workflows" },
+      {
+        name: "description",
+        content: "Find the right workflow for an IRS notice, government letter, code enforcement notice, permit correction, DMV notice, SSA notice, USCIS notice, benefits notice, court summons, or agency action.",
+      },
+      { property: "og:title", content: "Notice Respond — Government Notice Response Workflows" },
+      { property: "og:description", content: "A directory of specialized workflows for understanding, preparing, and documenting responses to official notices." },
+      { property: "og:type", content: "website" },
     ],
     links: [{ rel: "canonical", href: "/" }],
     scripts: [
@@ -14,489 +21,120 @@ export const Route = createFileRoute("/")({
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Service",
+          "@type": "WebSite",
           name: "Notice Respond",
-          description: "Prepare and send responses to government notices with guided workflows, AI-assisted drafting, and physical mail with proof of delivery.",
-          areaServed: "US",
-          offers: [
-            { "@type": "Offer", name: "Standard mail (1-2 pages)", price: "4.99", priceCurrency: "USD" },
-            { "@type": "Offer", name: "Certified mail (1-2 pages)", price: "14.94", priceCurrency: "USD" },
-            { "@type": "Offer", name: "Registered mail (1-2 pages)", price: "32.49", priceCurrency: "USD" },
-          ],
+          description: "Specialized workflows for responding to official notices and government correspondence.",
+          url: "/",
+          hasPart: NOTICE_WORKFLOWS.map((workflow) => ({
+            "@type": "WebPage",
+            name: workflow.title,
+            url: workflow.route,
+            about: workflow.searchIntent,
+          })),
         }),
       },
     ],
   }),
-  component: LandingPage,
+  component: DirectoryPage,
 });
 
-function LandingPage() {
+function DirectoryPage() {
+  const groups = workflowCategories();
+
   return (
-    <div className="min-h-screen">
-      <SiteHeader variant="transparent" />
-      <Hero />
-      <TrustBar />
-      <Workflows />
-      <HowItWorks />
-      <Features />
-      <Pricing />
-      <Privacy />
-      <FAQ />
-      <FinalCTA />
+    <div className="min-h-screen bg-paper">
+      <SiteHeader />
+      <main>
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="postmark w-fit">Notice Respond</div>
+                <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">Find the response workflow that matches your notice.</h1>
+                <p className="mt-5 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+                  Notice Respond is a directory of specialized workflows for official notices. Pick the situation you are dealing with, review what information you need, and start from the documents you actually received.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-3">
+                <Link to="/workflows/analyze" className="rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground">Analyze a notice →</Link>
+                <Link to="/dashboard" className="rounded-full border border-rule px-5 py-3 text-sm font-medium">Open workspace</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-rule/60 bg-paper-deep/25">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              <DirectoryStat value={`${NOTICE_WORKFLOWS.length}`} label="specialized workflows" detail="Organized by notice type and user intent." />
+              <DirectoryStat value="1" label="master workspace" detail="Documents, deadlines, drafting, and response history." />
+              <DirectoryStat value="US" label="initial focus" detail="Built first around U.S. notices and correspondence." />
+            </div>
+          </div>
+        </section>
+
+        <section id="workflows">
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+            <div className="mb-10 max-w-2xl">
+              <div className="font-mono text-xs uppercase tracking-[0.18em] text-stamp">Workflow directory</div>
+              <h2 className="mt-3 font-serif text-3xl sm:text-4xl">Start with the problem, not the product name.</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Each page below is built around a distinct search intent and notice situation. The links open a focused explanation and then hand off into the actual Notice Respond workflow.</p>
+            </div>
+
+            <div className="space-y-12">
+              {groups.map((group) => (
+                <section key={group.category}>
+                  <div className="mb-5 flex items-center gap-3">
+                    <h3 className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{group.category}</h3>
+                    <span className="h-px flex-1 bg-rule/60" />
+                    <span className="font-mono text-xs text-muted-foreground">{group.workflows.length}</span>
+                  </div>
+                  <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                    {group.workflows.map((workflow) => <WorkflowCard key={workflow.slug} workflow={workflow} />)}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-rule/60 bg-paper-deep/30">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-3">
+            <DirectoryPrinciple title="Understand" text="Start with the actual notice and extract the facts, dates, reference numbers, and requested action." />
+            <DirectoryPrinciple title="Prepare" text="Organize the supporting documents and build a response you can review before sending." />
+            <DirectoryPrinciple title="Prove" text="When the document is ready, keep the mailing, tracking, and proof record with the workflow." />
+          </div>
+        </section>
+
+        <section className="border-t border-rule/60">
+          <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-20">
+            <div className="postmark mx-auto w-fit">Not sure which workflow</div>
+            <h2 className="mt-4 font-serif text-3xl sm:text-4xl">Upload the notice and start with analysis.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Notice Respond can help you identify the notice type and organize the next response step from the document itself.</p>
+            <Link to="/workflows/analyze" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Analyze my notice →</Link>
+          </div>
+        </section>
+      </main>
       <SiteFooter />
     </div>
   );
 }
 
-/* ── Shared icons ─────────────────────────────────────────────────────── */
-function ArrowRight() { return <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>; }
-function CheckIcon() { return <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>; }
-
-/* ── Hero ──────────────────────────────────────────────────────────────── */
-function Hero() {
+function DirectoryStat({ value, label, detail }: { value: string; label: string; detail: string }) {
   return (
-    <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, oklch(0.25 0.04 240) 0%, oklch(0.2 0.035 240) 60%, oklch(0.15 0.03 240) 100%)" }}>
-      <HeroBackground />
-      <div className="relative mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[1.1fr_1fr] md:gap-12 md:py-28">
-        <div className="flex flex-col justify-center">
-          <div className="postmark w-fit" style={{ borderColor: "rgba(16,185,129,.3)", color: "oklch(0.72 0.08 160)", background: "rgba(16,185,129,.05)" }}>Notice response</div>
-          <h1 className="mt-4 text-4xl leading-[1.05] text-white sm:text-5xl md:mt-6 md:text-7xl" style={{ fontFamily: "var(--font-serif)" }}>
-            Received a notice?
-            <br />
-            <span className="italic text-stamp-soft">Let's respond.</span>
-          </h1>
-          <p className="mt-4 max-w-lg text-base text-white/70 sm:mt-6 sm:text-lg">
-            Understand what the notice says. Prepare your response. Send it by mail
-            with tracking and proof of delivery — all from your browser.
-          </p>
-          <p className="mt-3 max-w-lg text-sm text-white/50">
-            IRS notices · Court summonses · Agency actions · Appeals · No printer required
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
-            <Link to="/workflows/irs-notice" className="inline-flex items-center gap-2 rounded-full bg-stamp px-6 py-3 text-base font-medium text-accent-foreground shadow-stamp transition-transform hover:-translate-y-0.5">
-              Respond to a notice <ArrowRight />
-            </Link>
-            <a href="#workflows" className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10">
-              See what you can respond to
-            </a>
-            <span className="font-mono text-xs uppercase tracking-widest text-stamp-soft">Starting at $4.99</span>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/60 sm:mt-6">
-            <span className="flex items-center gap-1.5"><CheckIcon /> USPS Tracking</span>
-            <span className="flex items-center gap-1.5"><CheckIcon /> Certified Mail</span>
-            <span className="flex items-center gap-1.5"><CheckIcon /> Proof of Delivery</span>
-            <span className="flex items-center gap-1.5"><CheckIcon /> Secure Documents</span>
-          </div>
-          <p className="mt-5 text-xs text-white/40">Not a law firm. Not legal advice. You remain in control of the facts and final document.</p>
-        </div>
-
-        <NoticeIllustration />
-      </div>
-    </section>
-  );
-}
-
-function HeroBackground() {
-  return (
-    <>
-      {/* Subtle green glow — government document feel */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(ellipse 60% 40% at 75% 30%, color-mix(in oklab, var(--stamp) 8%, transparent) 0%, transparent 70%), radial-gradient(ellipse 50% 50% at 15% 85%, color-mix(in oklab, var(--ink) 8%, transparent) 0%, transparent 60%)`,
-        }}
-        aria-hidden
-      />
-      {/* Diagonal security-line pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: "repeating-linear-gradient(45deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 16px)",
-        }}
-        aria-hidden
-      />
-      {/* Faint grid lines */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: "repeating-linear-gradient(0deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 48px), repeating-linear-gradient(90deg, oklch(0.6 0.02 240), oklch(0.6 0.02 240) 1px, transparent 1px, transparent 48px)",
-        }}
-        aria-hidden
-      />
-      {/* Vignette */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "radial-gradient(ellipse 100% 80% at 50% 40%, transparent 30%, color-mix(in oklab, oklch(0.1 0.03 240) 60%, transparent) 100%)",
-        }}
-        aria-hidden
-      />
-    </>
-  );
-}
-
-function NoticeIllustration() {
-  return (
-    <div className="relative mx-auto hidden w-full max-w-md flex-col items-center justify-center py-4 lg:flex">
-      {/* Notice card wrapper */}
-      <div className="relative w-full" style={{ maxWidth: "26rem" }}>
-        {/* Postmark circle behind */}
-        <div className="postmark-circle h-24 w-24 -right-6 top-0" aria-hidden>
-          <div className="text-center leading-tight">
-            Internal<br />Revenue<br />Service
-          </div>
-        </div>
-
-        {/* "FILED" ink stamp overlay */}
-        <div
-          className="absolute -left-4 top-10 z-20 rotate-[-18deg] select-none"
-          aria-hidden
-        >
-          <div
-            className="rounded border-2 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em]"
-            style={{
-              color: "color-mix(in oklab, var(--stamp) 70%, transparent)",
-              borderColor: "color-mix(in oklab, var(--stamp) 50%, transparent)",
-              backgroundColor: "color-mix(in oklab, var(--stamp) 4%, transparent)",
-              boxShadow: "inset 0 0 0 1px color-mix(in oklab, var(--stamp) 20%, transparent)",
-            }}
-          >
-            ✓ Filed
-          </div>
-        </div>
-
-        {/* Shadow layer */}
-        <div className="absolute inset-0 -rotate-3 rounded-2xl bg-paper-deep/20" aria-hidden />
-
-        {/* Notice card */}
-        <div
-          className="envelope-card relative rotate-1 overflow-hidden p-6 bg-paper"
-          style={{ animation: "float 6s ease-in-out infinite", aspectRatio: "1.5 / 1" }}
-        >
-          {/* Inner security tint */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: "repeating-linear-gradient(45deg, var(--ink), var(--ink) 1px, transparent 1px, transparent 10px)",
-            }}
-            aria-hidden
-          />
-
-          <div className="relative">
-            <div className="flex items-start justify-between">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-                Notice
-                <div className="mt-1 font-sans text-sm normal-case tracking-normal text-foreground">
-                  CP2000
-                  <div className="text-xs text-muted-foreground">IRS — Notice of Underreported Income</div>
-                </div>
-              </div>
-              {/* IRS stamp with perforation */}
-              <div className="relative rounded-sm border-2 border-dashed border-stamp bg-stamp/10 px-3 py-2 text-stamp shadow-sm">
-                <div className="font-serif text-sm leading-none italic">IRS</div>
-                <div className="mt-0.5 font-mono text-[8px] uppercase tracking-widest">official</div>
-                <div
-                  className="absolute inset-0 rounded-sm"
-                  style={{ boxShadow: "inset 0 0 4px color-mix(in oklab, var(--stamp) 12%, transparent)" }}
-                  aria-hidden
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 border-l-2 border-dashed border-rule pl-4">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Notice date</div>
-              <div className="mt-1 font-mono text-sm text-ink-soft">July 28, 2026</div>
-              <div className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Response deadline</div>
-              <div className="mt-1 font-mono text-sm font-semibold text-stamp">September 26, 2026</div>
-            </div>
-
-            {/* Barcode strip */}
-            <div className="mt-4 flex items-end gap-[1px] h-5">
-              {Array.from({ length: 32 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-ink/80"
-                  style={{
-                    width: i % 3 === 0 ? "2px" : i % 2 === 0 ? "1px" : "3px",
-                    height: i % 5 === 0 ? "100%" : i % 3 === 0 ? "80%" : "60%",
-                  }}
-                />
-              ))}
-              <span className="ml-2 font-mono text-[8px] tracking-wider text-muted-foreground">CP2000 08126</span>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between border-t border-dashed border-rule pt-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono uppercase tracking-widest">Notice #CP2000-08126</span>
-              </div>
-              <div className="postmark">3 pages · certified</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Wax seal — government seal style */}
-        <div
-          className="absolute -bottom-5 -right-3 z-20 flex h-14 w-14 rotate-[-8deg] items-center justify-center rounded-full"
-          aria-hidden
-        >
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-full border-2"
-            style={{
-              background: "radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--stamp) 22%, var(--paper)), color-mix(in oklab, var(--stamp) 8%, var(--paper)))",
-              borderColor: "color-mix(in oklab, var(--stamp) 35%, transparent)",
-              boxShadow: "0 2px 8px -2px color-mix(in oklab, var(--stamp) 30%, transparent), inset 0 1px 2px color-mix(in oklab, var(--paper) 40%, transparent)",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M12 2L9 6H4l-2 4 2 4-2 4 2 4h5l3 4 3-4h5l2-4-2-4 2-4-2-4h-5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-              <path d="M12 8v8M9 12h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Response status timeline */}
-      <div className="mt-8 w-full space-y-2" style={{ maxWidth: "26rem" }}>
-        {[
-          { label: "Notice received", done: true },
-          { label: "Response prepared", done: true },
-          { label: "Mailed (Certified)", done: true, accent: true },
-        ].map((step, i, arr) => (
-          <div key={step.label} className="flex items-center gap-3">
-            <div className="flex flex-col items-center">
-              <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${step.accent ? "bg-stamp text-accent-foreground" : step.done ? "bg-ink text-primary-foreground" : "border border-rule text-muted-foreground"}`}>
-                {step.done ? <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> : ""}
-              </span>
-              {i < arr.length - 1 && <span className="my-0.5 h-4 w-px bg-rule" />}
-            </div>
-            <span className={`text-sm ${step.accent ? "font-medium text-stamp" : step.done ? "text-ink-soft" : "text-muted-foreground"}`}>
-              {step.label}
-            </span>
-          </div>
-        ))}
-      </div>
+    <div className="rounded-xl border border-rule bg-card p-5">
+      <div className="font-serif text-3xl text-stamp">{value}</div>
+      <div className="mt-1 text-sm font-semibold">{label}</div>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
-/* ── Trust bar ────────────────────────────────────────────────────────── */
-function TrustBar() {
-  const items = ["USPS Tracking", "Certified Mail available", "Proof of delivery", "Secure document handling", "No printer needed"];
+function DirectoryPrinciple({ title, text }: { title: string; text: string }) {
   return (
-    <section className="border-y border-rule/60 bg-paper-deep/30">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 py-4">
-          {items.map((item) => (
-            <span key={item} className="flex items-center gap-1.5 text-xs text-muted-foreground"><CheckIcon /> {item}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Workflows ─────────────────────────────────────────────────────────── */
-const WORKFLOWS = [
-  { title: "Respond to an IRS Notice", desc: "Organize an IRS notice or letter, prepare a written response, and mail it with proof of delivery.", href: "/workflows/irs-notice", icon: "M9 12l2 2 4-4M5 3h14v18l-7-3-7 3V3z" },
-  { title: "Respond to a Court Summons", desc: "Prepare a written response to a court summons or complaint and file it by mail.", href: "/workflows/court-summons", icon: "M12 3v18M5 7l-3 7h6L5 7zm14 0l-3 7h6l-3-7zM5 7h14M8 21h8" },
-  { title: "Respond to an Agency Action", desc: "Prepare a written response to a regulatory agency notice, licensing board action, or FOIA determination.", href: "/workflows/agency-action", icon: "M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6" },
-  { title: "File an Appeal", desc: "Prepare an appeal letter for a denied claim, decision, or ruling and mail it with proof of delivery.", href: "/workflows/file-appeal", icon: "M12 6v6l4 2M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z" },
-];
-
-function Workflows() {
-  return (
-    <section id="workflows" className="border-b border-rule/60">
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="max-w-2xl">
-          <div className="postmark w-fit">What you can respond to</div>
-          <h2 className="mt-4 text-3xl md:text-4xl">Choose your notice type</h2>
-          <p className="mt-4 text-muted-foreground">Each workflow walks you through identifying the notice, stating the facts, preparing an editable draft, and mailing it — all in one place.</p>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {WORKFLOWS.map((w) => (
-            <Link key={w.title} to={w.href} className="envelope-card envelope-card-hover block p-6">
-              <div className="flex items-start gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-rule bg-paper-deep">
-                  <svg className="h-6 w-6 text-stamp" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d={w.icon} /></svg>
-                </span>
-                <div>
-                  <h3 className="font-serif text-2xl">{w.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{w.desc}</p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-stamp">Start workflow <ArrowRight /></span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── How it works ─────────────────────────────────────────────────────── */
-const STEPS = [
-  { n: "01", t: "Upload the notice", d: "Start with the notice you received. Upload it or identify it manually to begin the workflow." },
-  { n: "02", t: "Understand what it says", d: "The notice details are organized for you — sender, date, reference number, deadline, and what's being asked." },
-  { n: "03", t: "Decide how to respond", d: "State the facts in your own words. AI helps organize — but never invents facts or legal conclusions." },
-  { n: "04", t: "Prepare your response", d: "Review and edit the draft. Every word is yours to change before anything is sent." },
-  { n: "05", t: "Mail it", d: "Choose Standard, Certified, or Registered mail. We print, envelope, and mail via USPS." },
-  { n: "06", t: "Track and keep proof", d: "Get a USPS tracking number. Certified mail adds signature tracking. Your mailing record stays in your dashboard." },
-];
-
-function HowItWorks() {
-  return (
-    <section id="how" className="border-b border-rule/60 bg-paper-deep/20">
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="max-w-2xl">
-          <div className="postmark w-fit">Process</div>
-          <h2 className="mt-4 text-3xl md:text-4xl">How Notice Respond works</h2>
-        </div>
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {STEPS.map((s) => (
-            <div key={s.n} className="envelope-card p-6">
-              <div className="font-mono text-xs text-stamp">{s.n}</div>
-              <div className="mt-3 font-serif text-2xl">{s.t}</div>
-              <p className="mt-2 text-sm text-muted-foreground">{s.d}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Features ────────────────────────────────────────────────────────── */
-const FEATURES = [
-  { icon: "M9 12l2 2 4-4M5 3h14v18l-7-3-7 3V3z", title: "Guided workflows", desc: "Start with the notice, not a blank page. Each workflow walks you from notice to mailed response." },
-  { icon: "M12 2a5 5 0 0 1 5 5c0 1.5-.5 3-1.5 4 .5 1 1.5 1.5 1.5 3a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3c0-1.5 1-2 1.5-3-1-1-1.5-2.5-1.5-4a5 5 0 0 1 5-5z", title: "AI-assisted drafting", desc: "Organize your facts into a professional draft. Everything is editable. The AI never invents facts or draws legal conclusions." },
-  { icon: "M22 12h-4l-3 9L9 3l-3 9H2", title: "Physical mail with tracking", desc: "Your response is printed, enveloped, and mailed via USPS. Track delivery and keep proof of service." },
-  { icon: "M12 3l8 4v6c0 5-3.5 7-8 8-4.5-1-8-3-8-8V7l8-4zM9 12l2 2 4-4", title: "Proof of delivery", desc: "Certified mail options include signature tracking — your record that the response arrived." },
-  { icon: "M5 3h14v18l-7-3-7 3V3zM9 12l2 2 4-4", title: "Secure document handling", desc: "Documents are stored securely, never shared, and never used for marketing or AI training." },
-  { icon: "M12 6v6l4 2M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z", title: "Deadline awareness", desc: "Every workflow prompts you to note the response deadline so nothing falls through the cracks." },
-];
-
-function Features() {
-  return (
-    <section className="border-b border-rule/60">
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="max-w-2xl">
-          <div className="postmark w-fit">Why Notice Respond</div>
-          <h2 className="mt-4 text-3xl md:text-4xl">Built for notice deadlines</h2>
-        </div>
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="envelope-card p-6">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg border border-rule bg-paper-deep">
-                <svg className="h-5 w-5 text-stamp" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d={f.icon} /></svg>
-              </span>
-              <h3 className="mt-4 font-serif text-xl">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Pricing ───────────────────────────────────────────────────────────── */
-const PRICING = [
-  { type: "Standard", price: "$4.99", desc: "3–7 business days", features: ["USPS tracking included", "Professional printing & envelope", "Mailing record retained"] },
-  { type: "Certified", price: "$14.94", desc: "3–7 business days", features: ["Delivery tracking + confirmation", "Proof of delivery", "Signature tracking", "Mailing record retained"], featured: true },
-  { type: "Registered", price: "$32.49", desc: "5–10 business days", features: ["Secure handling + tracking", "Insured delivery", "Signature required", "Mailing record retained"] },
-];
-
-function Pricing() {
-  return (
-    <section id="pricing" className="border-b border-rule/60 bg-paper-deep/20">
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="max-w-2xl">
-          <div className="postmark w-fit">Pricing</div>
-          <h2 className="mt-4 text-3xl md:text-4xl">Pay per mailing. No subscription.</h2>
-          <p className="mt-4 text-muted-foreground">Prices include printing, paper, envelope, and postage. Page-count tiers apply.</p>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {PRICING.map((p) => (
-            <div key={p.type} className={`envelope-card p-6 ${p.featured ? "ring-1 ring-stamp/40" : ""}`}>
-              {p.featured && <div className="postmark w-fit mb-3">Recommended</div>}
-              <h3 className="font-serif text-2xl">{p.type}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{p.desc}</p>
-              <p className="mt-4 text-4xl font-serif">{p.price}</p>
-              <p className="text-xs text-muted-foreground">per mailing, starting</p>
-              <ul className="mt-5 space-y-2">
-                {p.features.map((f) => (<li key={f} className="flex items-center gap-2 text-sm text-ink-soft"><CheckIcon /> {f}</li>))}
-              </ul>
-              <Link to="/workflows/irs-notice" className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${p.featured ? "bg-primary text-primary-foreground shadow-stamp" : "border border-input text-foreground hover:bg-muted"}`}>Start <ArrowRight /></Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Privacy ──────────────────────────────────────────────────────────── */
-function Privacy() {
-  return (
-    <section className="border-b border-rule/60">
-      <div className="mx-auto grid max-w-6xl gap-8 px-6 py-16 md:grid-cols-2">
-        <div className="envelope-card p-8">
-          <div className="postmark w-fit">Privacy</div>
-          <h3 className="mt-4 font-serif text-3xl">Your documents stay private</h3>
-          <p className="mt-3 text-muted-foreground">Uploaded documents are used only to process, print, and mail your order. We do not use customer documents for AI training, resale, or marketing. You can request deletion at any time.</p>
-        </div>
-        <div className="envelope-card p-8">
-          <div className="postmark w-fit">Important</div>
-          <h3 className="mt-4 font-serif text-3xl">Not a law firm</h3>
-          <p className="mt-3 text-muted-foreground">Notice Respond is a correspondence tool, not a law firm, CPA firm, or government agency. We do not provide legal or tax advice. AI assists with organization but never invents facts or draws legal conclusions. You review everything before it's sent.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── FAQ ──────────────────────────────────────────────────────────────── */
-const FAQ_ITEMS = [
-  { q: "Is this legal advice?", a: "No. Notice Respond is a correspondence tool, not a law firm. We help you prepare and send documents — we do not provide legal or tax advice, and AI never invents facts or legal conclusions." },
-  { q: "What types of notices can I respond to?", a: "IRS notices and letters, court summonses and complaints, regulatory agency actions, licensing board decisions, FOIA determinations, and appeals of denied claims or rulings." },
-  { q: "How does the mailing work?", a: "Your final document is printed, placed in an envelope, and mailed via USPS. You can choose Standard, Certified, or Registered mail for proof of delivery." },
-  { q: "Is my data secure?", a: "All documents are stored with encryption, never shared with third parties, and never used for marketing or AI training. You can request full deletion at any time." },
-  { q: "What does it cost?", a: "Costs start at $4.99 per mailing, including printing, paper, envelope, and postage. Certified starts at $14.94. No subscription required." },
-  { q: "Can I edit the draft?", a: "Absolutely. Every draft is fully editable. The AI helps organize your facts — but you review and approve everything before it's mailed." },
-];
-
-function FAQ() {
-  return (
-    <section className="border-b border-rule/60">
-      <div className="mx-auto max-w-4xl px-6 py-20">
-        <div className="postmark mx-auto w-fit">FAQ</div>
-        <h2 className="mt-4 text-center text-3xl md:text-4xl">Questions people ask</h2>
-        <div className="mt-10 divide-y divide-rule/70 border-y border-rule/70">
-          {FAQ_ITEMS.map((item) => (
-            <details key={item.q} className="group py-5">
-              <summary className="flex cursor-pointer items-center justify-between list-none">
-                <span className="font-serif text-xl">{item.q}</span>
-                <span className="text-stamp transition-transform group-open:rotate-45">＋</span>
-              </summary>
-              <p className="mt-3 text-muted-foreground">{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Final CTA ───────────────────────────────────────────────────────── */
-function FinalCTA() {
-  return (
-    <section className="border-b border-rule/60">
-      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <div className="postmark mx-auto w-fit">Ready to respond</div>
-        <h2 className="mt-4 font-serif text-4xl md:text-5xl">Understand. Prepare. <span className="italic text-stamp">Sent.</span></h2>
-        <p className="mx-auto mt-4 max-w-lg text-muted-foreground">Start a guided workflow, review your response, and mail it — all in one place.</p>
-        <Link to="/workflows/irs-notice" className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5">Respond to a notice <ArrowRight /></Link>
-      </div>
-    </section>
+    <div className="rounded-xl border border-rule bg-card p-6">
+      <div className="font-mono text-xs text-stamp">{title}</div>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
+    </div>
   );
 }
