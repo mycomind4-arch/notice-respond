@@ -29,6 +29,9 @@ import { getCP2000ResearchPack } from "@/domain/cp2000-research";
 // P0-3: Security
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
+// P2: Draft provenance + research display
+import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-provenance";
+
 export const Route = createFileRoute("/workflows/cp2000-response")({
   head: () => {
     const def = getWorkflowById("cp2000-response")!;
@@ -82,6 +85,8 @@ function CP2000Response() {
   const [evidenceChecklist, setEvidenceChecklist] = useState<EvidenceChecklistResult | null>(null);
   const [cp2000Strategy, setCP2000Strategy] = useState<CP2000ResponseStrategy | null>(null);
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
+  // P2: Draft provenance
+  const [draftProvenance, setDraftProvenance] = useState<DraftProvenance | null>(null);
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
@@ -313,6 +318,10 @@ function CP2000Response() {
         warnings: cp2000Validation.warnings,
       };
       update((s) => setDraftValidation(s, bridgedValidation));
+
+      // P2-9: Build draft provenance
+      const provenance = buildDraftProvenance(draft, state.extractedFacts, []);
+      setDraftProvenance(provenance);
     } else {
       // Fallback: generic validation (for when case model isn't built yet)
       const validation = validateDraft(draft, state.extractedFacts, definition, {
@@ -321,6 +330,10 @@ function CP2000Response() {
         expectedDeadline: cp2000Extraction?.responseDeadline ?? undefined,
       });
       update((s) => setDraftValidation(s, validation));
+
+      // P2-9: Build draft provenance (fallback path too)
+      const provenance = buildDraftProvenance(draft, state.extractedFacts, []);
+      setDraftProvenance(provenance);
     }
   }, [cp2000Case, cp2000Extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update, discrepancyResult, evidenceChecklist]);
 
@@ -477,9 +490,19 @@ function CP2000Response() {
                       <div className="font-mono text-xs uppercase tracking-widest text-stamp">Extracted Facts</div>
                       <dl className="mt-3 space-y-2">
                         {cp2000Extraction.facts.map((fact) => (
-                          <div key={fact.id} className="flex items-start justify-between gap-4 border-b border-rule/30 pb-2 last:border-0">
-                            <dt className="text-sm font-medium text-foreground">{fact.label}</dt>
-                            <dd className="text-sm text-muted-foreground">{fact.value || "—"}</dd>
+                          <div key={fact.id} className="border-b border-rule/30 pb-2 last:border-0">
+                            <div className="flex items-start justify-between gap-4">
+                              <dt className="text-sm font-medium text-foreground">{fact.label}</dt>
+                              <dd className="text-sm text-muted-foreground">{fact.value || "—"}</dd>
+                            </div>
+                            {/* P2-12: Fact source excerpt */}
+                            {fact.sourceExcerpt && (
+                              <details className="mt-1">
+                                <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                                  Source: "{fact.sourceExcerpt}" · Method: {fact.extractionMethod}
+                                </summary>
+                              </details>
+                            )}
                           </div>
                         ))}
                       </dl>
@@ -676,6 +699,33 @@ function CP2000Response() {
                 </div>
               )}
               
+              {/* P2-8: Research sources */}
+              {cp2000Case?.research.sources && cp2000Case.research.sources.length > 0 && (
+                <div className="mt-4 rounded-lg border border-rule/60 p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Authoritative Sources</div>
+                  <ul className="mt-2 space-y-1">
+                    {cp2000Case.research.sources.slice(0, 5).map((source, i) => (
+                      <li key={i} className="text-sm">
+                        <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          {source.title}
+                        </a>
+                        <span className="ml-1 text-xs text-muted-foreground">— {source.organization}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {cp2000Case.research.knownFacts.length > 0 && (
+                    <div className="mt-3 border-t border-rule/30 pt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Key facts from IRS sources:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {cp2000Case.research.knownFacts.slice(0, 4).map((fact, i) => (
+                          <li key={i} className="text-xs text-muted-foreground">• {fact.fact}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <textarea
                 className="input-field mt-6 min-h-40"
                 value={state.userObjective}
@@ -718,6 +768,30 @@ function CP2000Response() {
                 value={state.draft}
                 onChange={(e) => update((s) => setDraft(s, e.target.value))}
               />
+              {/* P2-9: Draft provenance */}
+              {draftProvenance && (
+                <div className="mt-4 rounded-lg border border-rule/60 p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Draft Provenance</div>
+                  <div className="mt-2 flex gap-4 text-xs">
+                    <span className="text-emerald-600">✓ Supported: {draftProvenance.supported}</span>
+                    <span className="text-amber-600">⚠ Unsupported: {draftProvenance.unsupported}</span>
+                    <span className="text-destructive">✗ Blocking: {draftProvenance.blocking}</span>
+                    <span className={draftProvenance.safeForApproval ? "text-emerald-600" : "text-destructive"}>
+                      {draftProvenance.safeForApproval ? "✓ Safe for approval" : "✗ Not safe for approval"}
+                    </span>
+                  </div>
+                  {draftProvenance.assertions.filter(a => a.support === "unsupported" || a.support === "placeholder").length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {draftProvenance.assertions.filter(a => a.support === "unsupported" || a.support === "placeholder").map((a, i) => (
+                        <li key={i} className={`text-sm ${a.blocking ? "text-destructive" : "text-amber-700"}`}>
+                          {a.blocking ? "✗" : "⚠"} {a.reason ?? a.text}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={handleGenerateDraft}
                 className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
