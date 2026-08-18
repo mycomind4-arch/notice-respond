@@ -39,6 +39,7 @@ import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
 
 // ── CP14 gates ──
 import { auditCP14Authority } from "../src/domain/cp14-gates.ts";
+import { runCP14AuthorityGate } from "../src/domain/cp14-authority-gate.ts";
 import "../src/domain/cp14-packs.ts";
 
 // ── Fixtures ──────────────────────────────────────────────────
@@ -708,4 +709,51 @@ test("CP14 gold: authority gate checks all required capabilities", () => {
   assert.ok(typeof audit.documentRecognition.passed === "boolean");
   assert.ok(typeof audit.deadlineVerification.passed === "boolean");
   assert.ok(typeof audit.draftValidation.passed === "boolean");
+});
+
+// ── 11. Authority Gate ──────────────────────────────────────
+
+test("CP14 gold: authority gate runs all 20 checks", () => {
+  const result = runCP14AuthorityGate();
+  assert.equal(result.totalCount, 20, "Should have 20 checks");
+  assert.ok(result.checks.length === 20);
+  assert.ok(typeof result.allPassed === "boolean");
+  assert.ok(typeof result.passedCount === "number");
+  assert.ok(typeof result.failedChecks === "object");
+});
+
+test("CP14 gold: authority gate passes classification check", () => {
+  const result = runCP14AuthorityGate();
+  const classification = result.checks.find(c => c.name === "classification");
+  assert.ok(classification, "Should have classification check");
+  assert.ok(classification.passed, "Classification should pass");
+});
+
+test("CP14 gold: authority gate passes security check", () => {
+  const result = runCP14AuthorityGate();
+  const security = result.checks.find(c => c.name === "security");
+  assert.ok(security, "Should have security check");
+  assert.ok(security.passed, "Security should pass");
+});
+
+test("CP14 gold: authority gate passes factory registration", () => {
+  const result = runCP14AuthorityGate();
+  const factory = result.checks.find(c => c.name === "factory_registration");
+  assert.ok(factory, "Should have factory_registration check");
+  assert.ok(factory.passed, "Factory registration should pass");
+});
+
+test("CP14 gold: authority gate passes adversarial testing", () => {
+  const result = runCP14AuthorityGate();
+  const adversarial = result.checks.find(c => c.name === "adversarial_testing");
+  assert.ok(adversarial, "Should have adversarial_testing check");
+  assert.ok(adversarial.passed, "Adversarial testing should pass");
+});
+
+test("CP14 gold: authority gate passes all checks", () => {
+  const result = runCP14AuthorityGate();
+  if (!result.allPassed) {
+    console.log("Failed checks:", result.failedChecks);
+  }
+  assert.equal(result.allPassed, true, `Authority gate should pass all checks. Failed: ${result.failedChecks.join(", ")}`);
 });
