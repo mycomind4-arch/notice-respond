@@ -30,6 +30,9 @@ import { getCP2000ResearchPack } from "@/domain/cp2000-research";
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
 // P2: Draft provenance + research display
+
+// Wire CP2000 domain packs into factory registry
+import "@/domain/cp2000-packs";
 import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-provenance";
 
 export const Route = createFileRoute("/workflows/cp2000-response")({
