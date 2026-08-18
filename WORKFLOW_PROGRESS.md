@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-08-18
 **Total Workflows in Registry:** 47
-**Total Workflows in Catalog (Production):** 6
+**Total Workflows in Catalog (Production):** 7
 
 ## Status Table
 
@@ -14,6 +14,7 @@
 | court-summons | Respond to Court Summons | document-action | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | agency-action | Respond to Agency Action | document-action | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | file-appeal | File an Appeal | appeal | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
+| cp504-response | Respond to IRS CP504 (Intent to Levy) | document-action | notice-respond | FUNCTIONAL | ✅ 29 tests | ✅ Full | ✅ Generic | — | ✅ Production |
 
 ### Blueprint Workflows (in registry, not yet implemented)
 

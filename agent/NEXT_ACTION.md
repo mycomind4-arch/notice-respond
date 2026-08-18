@@ -1,42 +1,37 @@
-# Next Action — P2 Gaps + Generalize
+# Next Action — Continue Workflow Production
 
-**Priority:** High
-**Effort:** Medium
+**Date:** 2026-08-18
+**Status:** CP504 complete (functional), CP2000 + CP14 at authority level
 
-## Immediate: P2 Gaps for CP2000 Authority
+## Completed
+- CP2000: AUTHORITY (all P0-P2 gaps fixed, gold-standard pipeline connected)
+- CP14: AUTHORITY (existing, with authority gates)
+- CP504: FUNCTIONAL (extraction + draft + security + validation + mailing)
+- Tests: 525 pass / 0 fail
+- Build: succeeds
+- Commits: 10 pushed to GitHub main
 
-1. **P2-8: Show research sources** — Display `getCP2000ResearchPack()` sources in extraction or objective phase (7 verified IRS.gov sources)
-2. **P2-9: Show draft provenance** — Call `buildDraftProvenance()` and display assertion-to-fact mapping in draft phase
-3. **P2-12: Show fact source excerpts** — Add expandable source excerpt per fact in extraction review
-4. **P2-13: Route-level security tests** — Test that malicious input is classified/rejected
+## Next Priority Workflows
 
-## After P2: Generalize Gold Standard
+### Phase A — IRS/Tax (continued)
+1. IRS audit notice — moderate complexity, high CPC (~$13)
+2. IRS notice of deficiency — high value, 30-day deadline
+3. IRS levy notice (LT11/FTB 4919) — similar to CP504
 
-5. Extract shared platform capabilities:
-   - Deadline engine (deadline.ts) → shared
-   - Evidence lifecycle (evidence.ts) → shared
-   - Contradiction engine (contradiction.ts) → shared
-   - Finding model (finding.ts) → shared
-   - Source provenance (source-provenance.ts) → shared
-   - Draft provenance (draft-provenance.ts) → shared
-   - Validation framework → shared (generalize cp2000-validation.ts pattern)
+### Phase B — Credit/Dispute (high search demand)
+4. TransUnion dispute — 12,100 MSV, high demand
+5. Experian dispute — 8,100 MSV
+6. Equifax dispute — strong demand
+7. Credit report error dispute — 6,600 MSV
+8. Debt collection dispute — 1,300 MSV, $9 CPC
 
-6. Make workflow factory runtime-connected:
-   - Call `constructWorkflow()` at route initialization
-   - Use domain packs from factory
-   - Validate workflow readiness at startup
-
-7. Build Phase A workflows (IRS/Tax):
-   - CP504 (intent to levy)
-   - IRS penalty notice
-   - IRS audit notice
-   - IRS notice of deficiency
-   - IRS levy notice
+### Generalization Tasks
+- Extract shared extraction pattern (notice type → extraction → facts → draft → validation)
+- Create a workflow factory that auto-generates routes from definitions
+- Generalize the CP2000 two-pass validation to work with any document type
 
 ## Reference
-- CURRENT_STATE.md — full architecture audit
-- docs/CP2000_GAP_MATRIX.md — original gap analysis (P0-P2 now fixed)
-- src/domain/cp2000-validation.ts — two-pass validation (now connected)
-- src/domain/cp2000-discrepancy.ts — discrepancy analysis (now connected)
-- src/domain/cp2000-evidence.ts — evidence checklist (now connected)
-- src/domain/cp2000-strategy.ts — CP2000 strategy (now connected)
+- CURRENT_STATE.md — architecture audit
+- WORKFLOW_PROGRESS.md — workflow status table
+- src/domain/cp504.ts — newest workflow domain logic
+- src/routes/workflows/cp504-response.tsx — newest production route
