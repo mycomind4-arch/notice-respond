@@ -41,6 +41,7 @@ import { Route as WorkflowsRespondToAnSsaNoticeRouteImport } from './routes/work
 import { Route as WorkflowsRespondToCodeEnforcementNoticeRouteImport } from './routes/workflows/respond-to-code-enforcement-notice'
 import { Route as WorkflowsRespondToCp14NoticeRouteImport } from './routes/workflows/respond-to-cp14-notice'
 import { Route as WorkflowsRespondToCp2000NoticeRouteImport } from './routes/workflows/respond-to-cp2000-notice'
+import { Route as WorkflowsTransunionDisputeRouteImport } from './routes/workflows/transunion-dispute'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -215,6 +216,12 @@ const WorkflowsRespondToCp2000NoticeRoute =
     path: '/workflows/respond-to-cp2000-notice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const WorkflowsTransunionDisputeRoute =
+  WorkflowsTransunionDisputeRouteImport.update({
+    id: '/workflows/transunion-dispute',
+    path: '/workflows/transunion-dispute',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
   '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
+  '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
   '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
+  '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources': typeof ResourcesIndexRoute
 }
 export interface FileRoutesById {
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/workflows/respond-to-code-enforcement-notice': typeof WorkflowsRespondToCodeEnforcementNoticeRoute
   '/workflows/respond-to-cp14-notice': typeof WorkflowsRespondToCp14NoticeRoute
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
+  '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
 }
 export interface FileRouteTypes {
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-code-enforcement-notice'
     | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
+    | '/workflows/transunion-dispute'
     | '/resources/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-code-enforcement-notice'
     | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
+    | '/workflows/transunion-dispute'
     | '/resources'
   id:
     | '__root__'
@@ -421,6 +433,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-code-enforcement-notice'
     | '/workflows/respond-to-cp14-notice'
     | '/workflows/respond-to-cp2000-notice'
+    | '/workflows/transunion-dispute'
     | '/resources/'
   fileRoutesById: FileRoutesById
 }
@@ -456,6 +469,7 @@ export interface RootRouteChildren {
   WorkflowsRespondToCodeEnforcementNoticeRoute: typeof WorkflowsRespondToCodeEnforcementNoticeRoute
   WorkflowsRespondToCp14NoticeRoute: typeof WorkflowsRespondToCp14NoticeRoute
   WorkflowsRespondToCp2000NoticeRoute: typeof WorkflowsRespondToCp2000NoticeRoute
+  WorkflowsTransunionDisputeRoute: typeof WorkflowsTransunionDisputeRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
 }
 
@@ -685,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsRespondToCp2000NoticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/transunion-dispute': {
+      id: '/workflows/transunion-dispute'
+      path: '/workflows/transunion-dispute'
+      fullPath: '/workflows/transunion-dispute'
+      preLoaderRoute: typeof WorkflowsTransunionDisputeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -723,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
     WorkflowsRespondToCodeEnforcementNoticeRoute,
   WorkflowsRespondToCp14NoticeRoute: WorkflowsRespondToCp14NoticeRoute,
   WorkflowsRespondToCp2000NoticeRoute: WorkflowsRespondToCp2000NoticeRoute,
+  WorkflowsTransunionDisputeRoute: WorkflowsTransunionDisputeRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
 }
 export const routeTree = rootRouteImport
