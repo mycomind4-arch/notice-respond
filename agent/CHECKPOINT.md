@@ -1,44 +1,67 @@
-# Checkpoint — CP2000 Gold Standard COMPLETE
+# Checkpoint — Milestone 5: CP2000 Factory Parity COMPLETE
 
 **Date:** 2026-08-18
-**Status:** All P0-P2 gaps fixed. CP2000 is now genuinely gold-standard.
+**Status:** CP2000 executable factory parity achieved. Generic pipeline proven.
 
-## Completed This Session
+## Milestone 5 — COMPLETE
 
-### Fresh Audit
-- ✅ CURRENT_STATE.md — full architecture map, gap analysis, next steps
+### What was built
 
-### P0 Fixes (Production Safety) — DONE
-- ✅ P0-1: Validation blocking in `canAdvance()` — draft with errors can't advance
-- ✅ P0-2: Two-pass CP2000 validation (`validateCP2000Draft`) connected via WorkflowState→CP2000Case bridge
-- ✅ P0-3: Security (classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType) on upload/paste
+- `src/domain/runtime/cp2000-executable-pack.ts` — Executable adapter mapping CP2000 domain logic into `ExecutableDomainPack`
+- `src/domain/runtime/factory-construction.ts` — Factory that constructs executable workflows from workflow definitions
+- `tests/factory-cp2000-parity.test.mjs` — 42 parity tests covering pack resolution, extraction, validation, discrepancy, evidence, draft, factory construction, full pipeline, and negative cases
 
-### P1 Fixes (Functional Completeness) — DONE
-- ✅ P1-4: CP2000 discrepancy analysis displayed
-- ✅ P1-5: Dynamic evidence checklist displayed
-- ✅ P1-6: Deadline certainty displayed
-- ✅ P1-7: CP2000-specific strategy used
+### What was fixed
 
-### P2 Fixes (Authority Readiness) — DONE
-- ✅ P2-8: Research sources (7 verified IRS.gov) displayed in objective phase
-- ✅ P2-9: Draft provenance displayed in draft phase
-- ✅ P2-12: Fact source excerpts displayed in extraction review
+- CP2000 `CP2000ValidationFinding.severity` widened to include `"block"` (in `cp2000-case.ts`)
+- Runtime `ValidationFinding.severity` widened to include `"block"` (in `runtime/types.ts`)
+- Adapter `toValidationFinding` parameter type aligned with widened severity
+- Pipeline extension stages (`reviewBoundary`, `approvalBoundary`, `submissionBoundary`, `proofTrackingBoundary`, `provenance`, `analysis`) always report `skipped` even when pipeline is blocked — they are unimplemented framework extension points, not failed stages
+- `setCaseAnalysis()` call corrected (2 args, not 4)
+- `setCaseDraft()` call corrected (passes `ResponseDraft` object, not string)
+- `WorkflowDefinition` → `MasterWorkflowDefinition` import fix in pipeline.ts and factory-construction.ts
+- Type adapter mappings: `toRuntimeDiscrepancy()`, `toRuntimeEvidenceItem()`, `mapEvidenceState()`
+
+### Correct behavior preserved
+
+- Pipeline correctly blocks when requirement validation finds unresolved issues on auto-generated draft
+- BLOCK never becomes approval
+- Extension stages are `skipped`, not `blocked`
+
+### Deferred intentionally
+
+- `BaseExtraction.taxYear` generic refactor — re-extraction from raw text is acceptable
+- Non-CP2000 `classificationConfidence` behavior — `isCP2000` flag is the discriminator
+- CP14 `"block"` severity mismatch — known technical debt, same pattern as CP2000 fix
 
 ### Stats
-- Tests: 496 pass / 0 fail
-- Build: succeeds
-- Commits: 6 pushed to GitHub main
-- CP2000 production route now uses full gold-standard pipeline:
-  upload → security → classify → extract → facts+provenance →
-  deadline certainty → discrepancy analysis → evidence checklist →
-  research → strategy → draft → two-pass validation →
-  BLOCK/ALLOW → review → mailing
 
-## Next: Phase 3 — Generalize Gold Standard
+- CP2000 focused parity tests: 42/42 pass
+- Full regression suite: 742/742 pass
+- Build: PASS
+- Commits: 3 pushed to GitHub main (8d8c7245, 5196db90, 2bf21179)
+- Branch: main, synchronized with origin
 
-The CP2000 route now demonstrates the full gold-standard pipeline.
-Next steps:
-1. Extract shared platform capabilities (deadline, evidence, contradiction, findings, provenance, validation)
-2. Make the workflow factory runtime-connected
-3. Build Phase A workflows (CP504, IRS penalty, IRS audit, etc.)
-4. Build Phase B workflows (credit disputes — TransUnion, Experian, Equifax)
+## Canonical vertical factory pattern
+
+```text
+existing vertical intelligence
+        ↓
+executable adapter
+        ↓
+type mappings
+        ↓
+factory
+        ↓
+parity tests
+        ↓
+full workflow pipeline
+        ↓
+regression suite
+```
+
+## Next: CP14 or next highest-priority vertical
+
+- Reuse CP2000 factory/parity pattern — do not redesign architecture
+- Known CP14 issue: CP14 validation severity also needs `"block"` (same fix as CP2000)
+- Inspect target domain modules → map into ExecutableDomainPack → add type adapters → construct via factory → copy parity test structure → run focused + regression → stop when green

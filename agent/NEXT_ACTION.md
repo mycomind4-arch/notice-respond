@@ -1,37 +1,43 @@
-# Next Action — Continue Workflow Production
+# Next Action — Milestone 6: CP14 Factory Parity
 
 **Date:** 2026-08-18
-**Status:** CP504 complete (functional), CP2000 + CP14 at authority level
+**Status:** Milestone 5 (CP2000 factory parity) COMPLETE. 742 tests pass.
 
-## Completed
-- CP2000: AUTHORITY (all P0-P2 gaps fixed, gold-standard pipeline connected)
-- CP14: AUTHORITY (existing, with authority gates)
-- CP504: FUNCTIONAL (extraction + draft + security + validation + mailing)
-- Tests: 525 pass / 0 fail
-- Build: succeeds
-- Commits: 10 pushed to GitHub main
+## Current State
 
-## Next Priority Workflows
+- CP2000 factory parity: COMPLETE (42/42 focused tests)
+- Full regression: 742/742 pass
+- Build: PASS
+- Branch: main, synchronized with GitHub
+- Commits: 2bf21179 (latest)
 
-### Phase A — IRS/Tax (continued)
-1. IRS audit notice — moderate complexity, high CPC (~$13)
-2. IRS notice of deficiency — high value, 30-day deadline
-3. IRS levy notice (LT11/FTB 4919) — similar to CP504
+## Next Vertical: CP14
 
-### Phase B — Credit/Dispute (high search demand)
-4. TransUnion dispute — 12,100 MSV, high demand
-5. Experian dispute — 8,100 MSV
-6. Equifax dispute — strong demand
-7. Credit report error dispute — 6,600 MSV
-8. Debt collection dispute — 1,300 MSV, $9 CPC
+### Known issues to fix during CP14 parity
 
-### Generalization Tasks
-- Extract shared extraction pattern (notice type → extraction → facts → draft → validation)
-- Create a workflow factory that auto-generates routes from definitions
-- Generalize the CP2000 two-pass validation to work with any document type
+1. CP14 validation severity type mismatch — `cp14-validation.ts` uses `"block"` severity but `CP14ValidationFinding` type only allows `"error" | "warning" | "info"`. Same fix as CP2000: widen the type.
 
-## Reference
-- CURRENT_STATE.md — architecture audit
-- WORKFLOW_PROGRESS.md — workflow status table
-- src/domain/cp504.ts — newest workflow domain logic
-- src/routes/workflows/cp504-response.tsx — newest production route
+### Implementation steps (copy CP2000 pattern)
+
+1. Inspect `src/domain/cp14*.ts` modules — identify extraction, validation, discrepancy, evidence, strategy, draft functions
+2. Map existing capabilities into `ExecutableDomainPack` interface
+3. Add only required type adapters (copy `toValidationFinding`, `toRuntimeDiscrepancy`, etc. from CP2000 adapter)
+4. Register CP14 pack in `pack-registry.ts`
+5. Add CP14 workflow to workflow catalog
+6. Construct executable workflow through existing factory
+7. Copy `tests/factory-cp2000-parity.test.mjs` structure → create `tests/factory-cp14-parity.test.mjs`
+8. Run focused tests → fix failures → run full regression → build
+9. Commit: `feat: complete CP14 executable factory parity`
+
+### Do NOT
+
+- Redesign the factory or executable-pack architecture
+- Introduce generic refactors unless a failing test requires them
+- Weaken validation to make the workflow complete
+- Start implementing other verticals during CP14 parity
+
+## Reference Implementation
+
+- `src/domain/runtime/cp2000-executable-pack.ts` — the adapter to copy
+- `tests/factory-cp2000-parity.test.mjs` — the parity test to copy
+- `agent/CHECKPOINT.md` — full milestone 5 record
