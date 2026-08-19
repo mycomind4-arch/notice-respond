@@ -17,6 +17,7 @@ import { validateCP14Draft } from "./cp14-validation";
 import { buildDraftProvenance } from "./draft-provenance";
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "./security";
 import { getDomainPack } from "./domain-packs";
+import "./cp14-packs"; /// side-effect: registers CP14 pack
 
 // ── Types ─────────────────────────────────────────────────────
 
