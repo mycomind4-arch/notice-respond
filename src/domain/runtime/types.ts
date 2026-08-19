@@ -58,7 +58,7 @@ export interface ValidationFinding {
   check: string;
   passed: boolean;
   detail: string;
-  severity: "error" | "warning" | "info";
+  severity: "error" | "warning" | "info" | "block";
   validator: "factual" | "requirement";
 }
 
