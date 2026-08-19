@@ -36,14 +36,17 @@ export interface EnginePolicy {
 }
 
 // ── document-action engine policy ───────────────────────────
-// Based on the existing ENGINE_REGISTRY pipeline:
-// document → classify → extract → understand → deadline → requirements → action
-// Expanded to match the runtime pipeline stages.
+// Full pipeline with 20 stages per the architecture.
+// Stages 1-14 are executable. Stages 15-20 are framework
+// extension points that are currently SKIPPED — they must be
+// explicitly present so the pipeline marks them SKIPPED
+// rather than silently omitting them.
 
 const documentActionPolicy: EnginePolicy = {
   engine: "document-action",
   description: "Upload a document, classify it, extract facts, identify deadlines and requirements, produce a response.",
   stages: [
+    // ── Executable stages ──
     { name: "security", required: true, blocksOnFailure: true },
     { name: "classification", required: true, blocksOnFailure: true },
     { name: "extraction", required: true, blocksOnFailure: true },
@@ -57,7 +60,15 @@ const documentActionPolicy: EnginePolicy = {
     { name: "draftProvenance", required: true, blocksOnFailure: false },
     { name: "factualValidation", required: false, blocksOnFailure: false },
     { name: "requirementValidation", required: false, blocksOnFailure: false },
-    { name: "blocking", required: true, blocksOnFailure: false },
+    { name: "blocking", required: true, blocksOnFailure: true },
+    // ── Framework extension points (SKIPPED until implemented) ──
+    { name: "reviewBoundary", required: false, blocksOnFailure: false },
+    { name: "approvalBoundary", required: false, blocksOnFailure: false },
+    { name: "submissionBoundary", required: false, blocksOnFailure: false },
+    { name: "proofTrackingBoundary", required: false, blocksOnFailure: false },
+    // ── Marker stages (delegated to other stages) ──
+    { name: "provenance", required: false, blocksOnFailure: false },
+    { name: "analysis", required: false, blocksOnFailure: false },
   ],
 };
 
