@@ -25,7 +25,7 @@
 import { classifyContent } from "../security";
 import { classifyNoticeType } from "../notice-type";
 import { buildDraftProvenance } from "../draft-provenance";
-import type { WorkflowDefinition } from "../workflow-definition";
+import type { MasterWorkflowDefinition as WorkflowDefinition } from "../workflow-definition";
 import type { ExecutableDomainPack } from "./executable-pack";
 import type { EnginePolicy } from "./engine-dispatch";
 import {
@@ -46,6 +46,17 @@ function time<T>(fn: () => T): { result: T; durationMs: number } {
   return { result, durationMs: Date.now() - start };
 }
 
+// ── Framework extension stages (always skipped) ────────────
+
+const EXTENSION_STAGES = new Set([
+  "reviewBoundary",
+  "approvalBoundary",
+  "submissionBoundary",
+  "proofTrackingBoundary",
+  "provenance",
+  "analysis",
+]);
+
 // ── Main entry point ────────────────────────────────────────
 
 export function runWorkflowPipeline(params: {
@@ -65,7 +76,13 @@ export function runWorkflowPipeline(params: {
   for (const stageDef of enginePolicy.stages) {
     // If already blocked, mark remaining stages as BLOCKED
     if (blocked) {
-      recordStage(ctx, stageDef.name, "blocked", 0);
+      // Framework extension points are always SKIPPED, even when pipeline is blocked.
+      // They are not implemented yet — blocking should not change their status.
+      if (EXTENSION_STAGES.has(stageDef.name)) {
+        recordStage(ctx, stageDef.name, "skipped", 0, "framework extension point, not yet implemented");
+      } else {
+        recordStage(ctx, stageDef.name, "blocked", 0);
+      }
       continue;
     }
 
@@ -175,7 +192,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage discrepancy not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.analyzeDiscrepancies(ctx));
+      const { result } = time(() => pack.analyzeDiscrepancies!(ctx));
       ctx.discrepancies = result.discrepancies;
       ctx.findings = [...ctx.findings, ...result.findings];
       return { status: "passed", detail: `${result.discrepancies.length} discrepancies, ${result.findings.length} findings` };
@@ -187,7 +204,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage evidence not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.buildEvidenceChecklist(ctx));
+      const { result } = time(() => pack.buildEvidenceChecklist!(ctx));
       ctx.evidence = result.items;
       return { status: "passed", detail: `${result.items.length} evidence items, ${result.satisfied}/${result.required} satisfied` };
     }
@@ -198,7 +215,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage research not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.getResearchPack());
+      const { result } = time(() => pack.getResearchPack!());
       ctx.research = result;
       return { status: "passed", detail: `${result.sources.length} sources` };
     }
@@ -209,7 +226,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage strategy not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.generateStrategy(ctx));
+      const { result } = time(() => pack.generateStrategy!(ctx));
       ctx.strategy = result;
       return { status: "passed", detail: `position=${result.position}, confidence=${result.confidence}` };
     }
@@ -232,7 +249,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage factualValidation not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.validateFactual(ctx));
+      const { result } = time(() => pack.validateFactual!(ctx));
       ctx.factualValidation = result;
       return {
         status: result.passed ? "passed" : "failed",
@@ -247,7 +264,7 @@ function executeStage(
           ? { status: "failed", error: "Required stage requirementValidation not supported by pack" }
           : { status: "not_supported" };
       }
-      const { result } = time(() => pack.validateRequirements(ctx));
+      const { result } = time(() => pack.validateRequirements!(ctx));
       ctx.requirementValidation = result;
       return {
         status: result.passed ? "passed" : "failed",
