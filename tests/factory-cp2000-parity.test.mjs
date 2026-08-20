@@ -514,7 +514,7 @@ test("H12: blocking stage — blocks for requirement validation on auto-generate
   }
 });
 
-test("H13: framework extension stages are SKIPPED", () => {
+test("H13: consequential stages are present and enforced (blocked when no consequential state)", () => {
   const def = getWorkflowById("cp2000-response");
   const wf = constructExecutableWorkflow(def);
   const result = runWorkflowPipeline({
@@ -523,7 +523,16 @@ test("H13: framework extension stages are SKIPPED", () => {
     enginePolicy: wf.enginePolicy,
     input: { rawText: FIXTURE_VALID_SIMPLE },
   });
-  for (const extStage of ["reviewBoundary", "approvalBoundary", "submissionBoundary", "proofTrackingBoundary", "provenance", "analysis"]) {
+  // Consequential stages must be present — they are no longer silently omitted
+  for (const cs of ["reviewBoundary", "approvalBoundary", "submissionBoundary", "proofTrackingBoundary"]) {
+    const stage = result.stages.find(s => s.stage === cs);
+    assert.ok(stage, `${cs} should be present in stages`);
+    // Pipeline blocks at the blocking stage (requirement validation), so consequential stages are BLOCKED
+    assert.ok(stage.status === "blocked" || stage.status === "failed",
+      `${cs} should be blocked or failed (got ${stage.status}) — it must not be silently skipped`);
+  }
+  // Marker stages (provenance, analysis) are still SKIPPED — they are delegated to other stages
+  for (const extStage of ["provenance", "analysis"]) {
     const stage = result.stages.find(s => s.stage === extStage);
     assert.ok(stage, `${extStage} should be present in stages`);
     assert.equal(stage.status, "skipped", `${extStage} should be SKIPPED, got ${stage.status}`);

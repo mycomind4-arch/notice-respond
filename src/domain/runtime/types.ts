@@ -237,3 +237,45 @@ export function recordStage(
     message: `${stage}: ${status}${error ? ` — ${error}` : ""}`,
   });
 }
+
+// ── Consequential Pipeline State ─────────────────────────────
+// Post-intelligence gates: review → approval → payment → mailing → tracking → proof
+
+export interface ConsequentialState {
+  draftValidationPassed: boolean;
+  reviewChecks: boolean[];
+  approved: boolean;
+  paymentComplete: boolean;
+  mailingReady: boolean;
+  mailingSubmitted: boolean;
+  trackingNumber: string | null;
+  proofVerified: boolean;
+}
+
+export function createConsequentialState(overrides?: Partial<ConsequentialState>): ConsequentialState {
+  return {
+    draftValidationPassed: false,
+    reviewChecks: [],
+    approved: false,
+    paymentComplete: false,
+    mailingReady: false,
+    mailingSubmitted: false,
+    trackingNumber: null,
+    proofVerified: false,
+    ...overrides,
+  };
+}
+
+export function isConsequentialComplete(state: ConsequentialState): boolean {
+  return (
+    state.draftValidationPassed &&
+    state.reviewChecks.length > 0 &&
+    state.reviewChecks.every(Boolean) &&
+    state.approved &&
+    state.paymentComplete &&
+    state.mailingReady &&
+    state.mailingSubmitted &&
+    state.trackingNumber !== null &&
+    state.proofVerified
+  );
+}

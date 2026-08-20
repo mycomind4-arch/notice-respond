@@ -36,17 +36,19 @@ export interface EnginePolicy {
 }
 
 // ── document-action engine policy ───────────────────────────
-// Full pipeline with 20 stages per the architecture.
-// Stages 1-14 are executable. Stages 15-20 are framework
-// extension points that are currently SKIPPED — they must be
-// explicitly present so the pipeline marks them SKIPPED
-// rather than silently omitting them.
+// Full Gold Standard pipeline with 20 stages.
+// Stages 1-14: intelligence pipeline (security → validation → blocking)
+// Stages 15-18: consequential gates (review → approval → submission → proof)
+// Stages 19-20: marker stages (provenance, analysis — delegated)
+//
+// Consequential stages are REQUIRED and block on failure.
+// They fail closed when consequential state is missing.
 
 const documentActionPolicy: EnginePolicy = {
   engine: "document-action",
   description: "Upload a document, classify it, extract facts, identify deadlines and requirements, produce a response.",
   stages: [
-    // ── Executable stages ──
+    // ── Intelligence stages (executable) ──
     { name: "security", required: true, blocksOnFailure: true },
     { name: "classification", required: true, blocksOnFailure: true },
     { name: "extraction", required: true, blocksOnFailure: true },
@@ -61,11 +63,11 @@ const documentActionPolicy: EnginePolicy = {
     { name: "factualValidation", required: false, blocksOnFailure: false },
     { name: "requirementValidation", required: false, blocksOnFailure: false },
     { name: "blocking", required: true, blocksOnFailure: true },
-    // ── Framework extension points (SKIPPED until implemented) ──
-    { name: "reviewBoundary", required: false, blocksOnFailure: false },
-    { name: "approvalBoundary", required: false, blocksOnFailure: false },
-    { name: "submissionBoundary", required: false, blocksOnFailure: false },
-    { name: "proofTrackingBoundary", required: false, blocksOnFailure: false },
+    // ── Consequential stages (enforced — fail closed) ──
+    { name: "reviewBoundary", required: true, blocksOnFailure: true },
+    { name: "approvalBoundary", required: true, blocksOnFailure: true },
+    { name: "submissionBoundary", required: true, blocksOnFailure: true },
+    { name: "proofTrackingBoundary", required: true, blocksOnFailure: true },
     // ── Marker stages (delegated to other stages) ──
     { name: "provenance", required: false, blocksOnFailure: false },
     { name: "analysis", required: false, blocksOnFailure: false },

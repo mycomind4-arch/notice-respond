@@ -283,12 +283,16 @@ test("pipeline blocks when factual validation fails", () => {
   assert.equal(result.context.blocked, true);
   assert.ok(result.context.blockReasons.some(r => r.includes("factual")), `Expected factual block reason, got: ${result.context.blockReasons.join(", ")}`);
 
-  // Stages after blocking: extension stages are always SKIPPED (not implemented)
+  // Stages after blocking: consequential stages are BLOCKED (enforced, not skipped)
+  // Only marker stages (provenance, analysis) are SKIPPED
   const blockingIdx = result.stages.findIndex(s => s.stage === "blocking");
   const stagesAfterBlocking = result.stages.slice(blockingIdx + 1);
   for (const s of stagesAfterBlocking) {
-    // Extension stages are always skipped, even when pipeline is blocked
-    assert.equal(s.status, "skipped", `stage ${s.stage} should be skipped (extension point), got ${s.status}`);
+    if (["provenance", "analysis"].includes(s.stage)) {
+      assert.equal(s.status, "skipped", `stage ${s.stage} should be skipped (marker), got ${s.status}`);
+    } else {
+      assert.equal(s.status, "blocked", `stage ${s.stage} should be blocked (consequential enforced), got ${s.status}`);
+    }
   }
 });
 

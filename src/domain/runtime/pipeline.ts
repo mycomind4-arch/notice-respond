@@ -6,6 +6,7 @@
    - executable domain pack (functions)
    - engine policy (stage ordering)
    - input (raw text + user context)
+   - consequential state (review, approval, mailing, tracking, proof)
 
    Produces:
    - WorkflowPipelineResult with final context, stage results,
@@ -19,6 +20,8 @@
    - BLOCK never becomes approval
    - Stage ordering follows engine policy
    - Each stage is timed and audited
+   - Consequential stages (review, approval, mailing, tracking, proof) are
+     enforced — never SKIPPED. They fail closed when state is missing.
 
    ═══════════════════════════════════════════════════════════ */
 
@@ -36,6 +39,7 @@ import {
   type WorkflowInput,
   type WorkflowPipelineResult,
   type DeadlineInfo,
+  type ConsequentialState,
 } from "./types";
 
 // ── Timer helper ────────────────────────────────────────────
@@ -49,10 +53,6 @@ function time<T>(fn: () => T): { result: T; durationMs: number } {
 // ── Framework extension stages (always skipped) ────────────
 
 const EXTENSION_STAGES = new Set([
-  "reviewBoundary",
-  "approvalBoundary",
-  "submissionBoundary",
-  "proofTrackingBoundary",
   "provenance",
   "analysis",
 ]);
@@ -64,8 +64,10 @@ export function runWorkflowPipeline(params: {
   pack: ExecutableDomainPack;
   enginePolicy: EnginePolicy;
   input: WorkflowInput;
+  consequential?: ConsequentialState;
 }): WorkflowPipelineResult {
   const { definition, pack, enginePolicy, input } = params;
+  const consequential = params.consequential ?? null;
 
   const ctx = createWorkflowContext(definition.id, pack.engine, input);
   const errors: string[] = [];
@@ -76,8 +78,6 @@ export function runWorkflowPipeline(params: {
   for (const stageDef of enginePolicy.stages) {
     // If already blocked, mark remaining stages as BLOCKED
     if (blocked) {
-      // Framework extension points are always SKIPPED, even when pipeline is blocked.
-      // They are not implemented yet — blocking should not change their status.
       if (EXTENSION_STAGES.has(stageDef.name)) {
         recordStage(ctx, stageDef.name, "skipped", 0, "framework extension point, not yet implemented");
       } else {
@@ -87,7 +87,7 @@ export function runWorkflowPipeline(params: {
     }
 
     try {
-      const { status, detail, error } = executeStage(ctx, stageDef.name, pack, stageDef.required);
+      const { status, detail, error } = executeStage(ctx, stageDef.name, pack, stageDef.required, consequential);
       recordStage(ctx, stageDef.name, status, 0, detail, error);
 
       if (status === "failed" && stageDef.blocksOnFailure) {
@@ -107,7 +107,6 @@ export function runWorkflowPipeline(params: {
     }
   }
 
-  // Collect errors from stage results
   for (const sr of ctx.stageResults) {
     if (sr.status === "failed" && sr.error) {
       errors.push(`${sr.stage}: ${sr.error}`);
@@ -118,10 +117,27 @@ export function runWorkflowPipeline(params: {
     warnings.push("Pipeline blocked — review blockReasons");
   }
 
+  // Gold readiness requires both intelligence pipeline completion AND
+  // consequential state completion (when consequential state was provided).
+  let goldReady = !ctx.blocked && errors.length === 0;
+  if (consequential) {
+    const cs = consequential;
+    goldReady = goldReady &&
+      cs.draftValidationPassed &&
+      cs.reviewChecks.length > 0 &&
+      cs.reviewChecks.every(Boolean) &&
+      cs.approved &&
+      cs.paymentComplete &&
+      cs.mailingReady &&
+      cs.mailingSubmitted &&
+      cs.trackingNumber !== null &&
+      cs.proofVerified;
+  }
+
   return {
     context: ctx,
     stages: ctx.stageResults,
-    ready: !ctx.blocked && errors.length === 0,
+    ready: goldReady,
     errors,
     warnings,
   };
@@ -134,6 +150,7 @@ function executeStage(
   stageName: string,
   pack: ExecutableDomainPack,
   required: boolean,
+  consequential: ConsequentialState | null,
 ): { status: StageStatus; detail?: string; error?: string } {
   switch (stageName) {
 
@@ -276,7 +293,6 @@ function executeStage(
     // ── Blocking stage ──
 
     case "blocking": {
-      // Factual validation blocking
       if (ctx.factualValidation?.blocked) {
         ctx.blocked = true;
         ctx.blockReasons.push("factual validation blocked");
@@ -287,7 +303,6 @@ function executeStage(
         ctx.blockReasons.push(`${ctx.factualValidation.errors} factual validation errors`);
         return { status: "failed", error: `${ctx.factualValidation.errors} factual errors` };
       }
-      // Requirement validation blocking
       if (ctx.requirementValidation?.blocked) {
         ctx.blocked = true;
         ctx.blockReasons.push("requirement validation blocked");
@@ -301,15 +316,64 @@ function executeStage(
       return { status: "passed", detail: "no blocking issues" };
     }
 
-    // ── Boundary stages (framework extension points — not yet executed) ──
+    // ── Consequential stages (enforced — fail closed) ──
 
-    case "reviewBoundary":
-    case "approvalBoundary":
-    case "submissionBoundary":
-    case "proofTrackingBoundary":
+    case "reviewBoundary": {
+      if (!consequential) return { status: "skipped", detail: "no consequential state provided" };
+      if (!consequential.draftValidationPassed) {
+        return { status: "failed", error: "Draft validation has not passed — review cannot begin" };
+      }
+      if (consequential.reviewChecks.length === 0) {
+        return { status: "failed", error: "No review checks recorded — human review is required" };
+      }
+      if (!consequential.reviewChecks.every(Boolean)) {
+        const failed = consequential.reviewChecks.filter(c => !c).length;
+        return { status: "failed", error: `${failed} review check(s) failed — cannot advance to approval` };
+      }
+      return { status: "passed", detail: `${consequential.reviewChecks.length} review checks passed` };
+    }
+
+    case "approvalBoundary": {
+      if (!consequential) return { status: "skipped", detail: "no consequential state provided" };
+      if (!consequential.approved) {
+        return { status: "failed", error: "Explicit human approval is required before mailing" };
+      }
+      return { status: "passed", detail: "human approval confirmed" };
+    }
+
+    case "submissionBoundary": {
+      if (!consequential) return { status: "skipped", detail: "no consequential state provided" };
+      if (!consequential.paymentComplete) {
+        return { status: "failed", error: "Payment must be completed before mailing submission" };
+      }
+      if (!consequential.mailingReady) {
+        return { status: "failed", error: "Mailing recipient and method must be complete before submission" };
+      }
+      if (!consequential.mailingSubmitted) {
+        return { status: "failed", error: "Mailing has not been submitted to provider" };
+      }
+      return { status: "passed", detail: "mailing submitted to provider" };
+    }
+
+    case "proofTrackingBoundary": {
+      if (!consequential) return { status: "skipped", detail: "no consequential state provided" };
+      if (!consequential.mailingSubmitted) {
+        return { status: "failed", error: "Cannot track a mailing that has not been submitted" };
+      }
+      if (!consequential.trackingNumber) {
+        return { status: "failed", error: "Tracking number is required before proof verification" };
+      }
+      if (!consequential.proofVerified) {
+        return { status: "failed", error: "Proof of delivery must be verified to complete Gold certification" };
+      }
+      return { status: "passed", detail: `tracking=${consequential.trackingNumber}, proof verified` };
+    }
+
+    // ── Marker stages (delegated to other stages) ──
+
     case "provenance":
     case "analysis": {
-      return { status: "skipped", detail: `${stageName}: framework extension point, not yet implemented` };
+      return { status: "skipped", detail: `${stageName}: delegated to extraction and draftProvenance stages` };
     }
 
     default:

@@ -7,7 +7,7 @@
 
 | ID | Title | Vertical | Repo | Engine | Maturity | Route? | Catalog? | MSV | CPC | Competition | Research? | Prod Status | Next Action |
 |----|-------|----------|------|--------|----------|--------|---------|-----|-----|-------------|-----------|-------------|-------------|
-| cp2000-response | Respond to an IRS CP2000 Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1900 | TBD | TBD | needed | functional | Upgrade to authority |
+| cp2000-response | Respond to an IRS CP2000 Notice | notice-respond | notice-respond | document-action | gold | ✅ | ✅ | 1900 | ✅ enforced | ✅ 15 tests | needed | gold | Maintain Gold |
 | cp14-response | Respond to an IRS CP14 Notice | notice-respond | notice-respond | document-action | authority | ✅ | ✅ | TBD | TBD | TBD | needed | authority | Maintain authority |
 | cp504-response | Respond to an IRS CP504 Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1900 | 13 | TBD | needed | functional | Upgrade to authority |
 | irs-notice | Respond to an IRS Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | TBD | TBD | TBD | needed | functional | Upgrade to authority |
@@ -92,7 +92,7 @@
 These have routes, catalog entries, and working code:
 
 1. **cp14-response** (authority, document-action) — full gold-standard pipeline
-2. **cp2000-response** (functional, document-action) — full intelligence pipeline
+2. **cp2000-response** (gold, document-action) — full intelligence pipeline + consequential enforcement
 3. **cp504-response** (functional, document-action) — full intelligence pipeline
 4. **irs-notice** (functional, document-action) — extraction + validation
 5. **court-summons** (functional, document-action) — basic
