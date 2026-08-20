@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "npx tsx --test tests/*.test.mjs",
+    "test": "npx tsx --test tests/*.test.mjs src/domain/__tests__/*.test.ts",
     "verify:launch": "npm test && npm run build"
   },
   "dependencies": {
@@ -34,7 +34,6 @@
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-react-hooks": "^5.2.0",
