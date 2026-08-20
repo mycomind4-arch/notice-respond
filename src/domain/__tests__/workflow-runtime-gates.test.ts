@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   advanceStep,
+  approveWorkflow,
   canAdvance,
   createWorkflowState,
   goToStep,
@@ -59,6 +60,20 @@ test("cannot jump directly to a later consequential phase", () => {
   assert.equal(jumped.phase, "draft");
 });
 
+test("review checks do not silently grant approval", () => {
+  let state = atPhase("review");
+  state = setDraft(state, "complete draft");
+  state = setDraftValidation(state, { findings: [], passed: true, errors: 0, warnings: 0 });
+  state = setReviewChecks(state, [true, true]);
+
+  assert.equal(state.approved, false);
+  assert.equal(canAdvance(state, definition), false);
+
+  state = approveWorkflow(state);
+  assert.equal(state.approved, true);
+  assert.equal(canAdvance(state, definition), true);
+});
+
 test("requires explicit review approval before mailing", () => {
   let state = atPhase("mailing");
   state = setMailing(state, {
@@ -85,7 +100,7 @@ test("requires a real provider transition before checkout can complete", () => {
     recipient: { name: "Agency", org: "Agency", address1: "1 Main", address2: "", city: "City", state: "CA", zip: "90000" },
     status: "draft",
   });
-  state = setReviewChecks(state, [true, true]);
+  state = { ...state, approved: true };
   assert.equal(canAdvance(state, definition), false);
   state = { ...state, mailing: { ...state.mailing!, providerOrderId: "order-1", status: "submitted" } };
   assert.equal(canAdvance(state, definition), true);
