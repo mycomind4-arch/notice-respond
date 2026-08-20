@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import test from "node:test";
+import assert from "node:assert/strict";
 import {
   advanceStep,
   canAdvance,
@@ -38,58 +39,54 @@ const definition = {
 } as unknown as MasterWorkflowDefinition;
 
 function atPhase(phase: WorkflowState["phase"]): WorkflowState {
-  return {
-    ...createWorkflowState(definition),
-    phase,
-    step: definition.ux!.steps.findIndex((step) => step.id === phase),
-  };
+  const base = createWorkflowState(definition);
+  const step = definition.ux!.steps.findIndex((item) => item.id === phase);
+  return { ...base, phase, step };
 }
 
-describe("workflow runtime consequential gates", () => {
-  it("requires validation to have run before leaving draft", () => {
-    const base = atPhase("draft");
-    const drafted = setDraft(base, "complete draft");
-    expect(canAdvance(drafted, definition)).toBe(false);
-    const validated = setDraftValidation(drafted, { findings: [], passed: true, errors: 0, warnings: 0 });
-    expect(canAdvance(validated, definition)).toBe(true);
-  });
+test("requires validation to have run before leaving draft", () => {
+  const drafted = setDraft(atPhase("draft"), "complete draft");
+  assert.equal(canAdvance(drafted, definition), false);
 
-  it("cannot jump directly to a later consequential phase", () => {
-    const state = atPhase("draft");
-    const jumped = goToStep(state, definition, 3);
-    expect(jumped.step).toBe(state.step);
-    expect(jumped.phase).toBe("draft");
-  });
+  const validated = setDraftValidation(drafted, { findings: [], passed: true, errors: 0, warnings: 0 });
+  assert.equal(canAdvance(validated, definition), true);
+});
 
-  it("requires explicit review approval before mailing", () => {
-    let state = atPhase("mailing");
-    state = setMailing(state, {
-      method: "certified",
-      recipient: { name: "Agency", org: "Agency", address1: "1 Main", address2: "", city: "City", state: "CA", zip: "90000" },
-      status: "draft",
-    });
-    expect(canAdvance(state, definition)).toBe(false);
+test("cannot jump directly to a later consequential phase", () => {
+  const state = atPhase("draft");
+  const jumped = goToStep(state, definition, 3);
+  assert.equal(jumped.step, state.step);
+  assert.equal(jumped.phase, "draft");
+});
 
-    state = { ...state, approved: true };
-    expect(canAdvance(state, definition)).toBe(true);
+test("requires explicit review approval before mailing", () => {
+  let state = atPhase("mailing");
+  state = setMailing(state, {
+    method: "certified",
+    recipient: { name: "Agency", org: "Agency", address1: "1 Main", address2: "", city: "City", state: "CA", zip: "90000" },
+    status: "draft",
   });
+  assert.equal(canAdvance(state, definition), false);
 
-  it("never permits advance from submitted", () => {
-    const state = atPhase("submitted");
-    expect(canAdvance(state, definition)).toBe(false);
-    expect(advanceStep(state, definition)).toEqual(state);
-  });
+  state = { ...state, approved: true };
+  assert.equal(canAdvance(state, definition), true);
+});
 
-  it("requires a real provider transition before checkout can complete", () => {
-    let state = atPhase("checkout");
-    state = setMailing(state, {
-      method: "certified",
-      recipient: { name: "Agency", org: "Agency", address1: "1 Main", address2: "", city: "City", state: "CA", zip: "90000" },
-      status: "draft",
-    });
-    state = setReviewChecks(state, [true, true]);
-    expect(canAdvance(state, definition)).toBe(false);
-    state = { ...state, mailing: { ...state.mailing!, providerOrderId: "order-1", status: "submitted" } };
-    expect(canAdvance(state, definition)).toBe(true);
+test("never permits advance from submitted", () => {
+  const state = atPhase("submitted");
+  assert.equal(canAdvance(state, definition), false);
+  assert.deepEqual(advanceStep(state, definition), state);
+});
+
+test("requires a real provider transition before checkout can complete", () => {
+  let state = atPhase("checkout");
+  state = setMailing(state, {
+    method: "certified",
+    recipient: { name: "Agency", org: "Agency", address1: "1 Main", address2: "", city: "City", state: "CA", zip: "90000" },
+    status: "draft",
   });
+  state = setReviewChecks(state, [true, true]);
+  assert.equal(canAdvance(state, definition), false);
+  state = { ...state, mailing: { ...state.mailing!, providerOrderId: "order-1", status: "submitted" } };
+  assert.equal(canAdvance(state, definition), true);
 });
