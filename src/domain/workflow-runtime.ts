@@ -156,7 +156,9 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
 
   switch (phase) {
     case "document":
-      return Boolean(state.upload) || state.extraction !== null;
+      // An uploaded file is not sufficient proof that analysis succeeded.
+      // Downstream stages require a real, structured extraction result.
+      return state.extraction !== null;
     case "extraction":
       return state.extraction !== null;
     case "facts":
