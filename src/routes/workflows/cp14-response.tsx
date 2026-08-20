@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -34,6 +34,13 @@ import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-prove
 
 // Wire CP14 domain packs into factory registry
 import "@/domain/cp14-packs";
+
+// AI analysis and drafting
+import { analyzeDocumentWithAI } from "@/api/ai-analysis";
+import { generateDraftWithAI } from "@/api/ai-drafting";
+import { LLMProviderSelector, type LLMProvider } from "@/components/llm-provider-selector";
+import { getLLMProviders } from "@/api/llm-providers";
+import type { AnalysisResult } from "@/api/ai-analysis";
 
 export const Route = createFileRoute("/workflows/cp14-response")({
   head: () => {
@@ -91,7 +98,25 @@ function CP14Response() {
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [draftProvenance, setDraftProvenance] = useState<DraftProvenance | null>(null);
 
+  // AI / LLM state
+  const [llmProvider, setLLMProvider] = useState<LLMProvider | null>(null);
+  const [aiAnalysis, setAIAnalysis] = useState<AnalysisResult | null>(null);
+  const [aiAnalysisLoading, setAIAnalysisLoading] = useState(false);
+  const [aiAnalysisError, setAIAnalysisError] = useState<string | null>(null);
+  const [aiDraftLoading, setAiDraftLoading] = useState(false);
+  const [aiDraftError, setAiDraftError] = useState<string | null>(null);
+  const [availableProviders, setAvailableProviders] = useState<{id: LLMProvider; label: string; available: boolean}[]>([]);
+
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
+
+  // Fetch available LLM providers on mount
+  useEffect(() => {
+    getLLMProviders().then((providers) => {
+      setAvailableProviders(providers);
+      const first = providers.find((p) => p.available);
+      if (first) setLLMProvider(first.id as LLMProvider);
+    }).catch(() => {});
+  }, []);
 
   // ── Build the gold-standard CP14 pipeline from extraction ──
   const buildGoldStandardPipeline = useCallback((extraction: CP14Extraction) => {
@@ -219,6 +244,9 @@ function CP14Response() {
           rawText: text,
           extractionConfidence: extraction.classificationConfidence,
         }));
+
+        // Trigger AI analysis alongside local extraction
+        handleAIAnalysis(text);
       }
     } catch (err) {
       setExtractionError(`Failed to process document: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -248,6 +276,7 @@ function CP14Response() {
     update((s) => setUpload(s, upload));
 
     const extraction = extractCP14(sanitizedText);
+    handleAIAnalysis(sanitizedText);
     setCP14Extraction(extraction);
 
     // Build gold-standard pipeline
@@ -266,6 +295,103 @@ function CP14Response() {
       extractionConfidence: extraction.classificationConfidence,
     }));
   }, [update, buildGoldStandardPipeline]);
+
+  // ── AI document analysis ──
+  const handleAIAnalysis = useCallback(async (text: string) => {
+    if (!text || text.length < 20) return;
+    setAIAnalysisLoading(true);
+    setAIAnalysisError(null);
+    try {
+      const result = await analyzeDocumentWithAI({
+        data: {
+          documentText: text,
+          workflowId: "cp14-response",
+          provider: llmProvider ?? undefined,
+        },
+      });
+      setAIAnalysis(result as AnalysisResult);
+    } catch (err) {
+      setAIAnalysisError(err instanceof Error ? err.message : "AI analysis failed.");
+    } finally {
+      setAIAnalysisLoading(false);
+    }
+  }, [llmProvider]);
+
+  // ── AI draft generation ──
+  const handleAIGenerateDraft = useCallback(async () => {
+    if (!state.userFacts && !state.userObjective) {
+      setAiDraftError("Please provide your facts and objective first.");
+      return;
+    }
+    setAiDraftLoading(true);
+    setAiDraftError(null);
+    try {
+      const result = await generateDraftWithAI({
+        data: {
+          workflowId: "cp14-response",
+          workflowTitle: definition.title,
+          documentText: state.upload?.rawText ?? "",
+          analysis: {
+            agency: "IRS",
+            noticeType: cp14Extraction?.isCP14 ? "CP14" : null,
+            referenceNumber: cp14Extraction?.noticeNumber ?? null,
+            noticeDate: cp14Extraction?.noticeDate ?? null,
+            responseDeadline: cp14Extraction?.responseDeadline ?? null,
+            paymentDeadline: cp14Extraction?.paymentDeadline ?? null,
+            amountOwed: cp14Extraction?.balanceDue ?? null,
+            totalDue: cp14Extraction?.totalDue ?? null,
+            taxYear: cp14Extraction?.taxYear ?? null,
+            keyFacts: cp14Extraction?.facts?.map((f: { label: string; value: string }) => `${f.label}: ${f.value}`) ?? [],
+            summary: aiAnalysis?.summary ?? "",
+          },
+          userFacts: state.userFacts,
+          userObjective: state.userObjective,
+          provider: llmProvider ?? undefined,
+        },
+      });
+      const aiDraft = (result as { draft: string }).draft;
+      update((s) => setDraft(s, aiDraft));
+
+      // Run validation on the AI draft
+      if (cp14Case && cp14Extraction) {
+        let case_ = setCP14CaseUserInput(cp14Case, state.userFacts, state.userObjective);
+        case_ = setCP14CaseDraft(case_, { content: aiDraft, wordCount: aiDraft.split(/\s+/).length, unresolvedPlaceholders: [] });
+        const cp14Validation = validateCP14Draft(case_);
+        case_ = setCP14CaseValidation(case_, cp14Validation);
+        setCP14Case(case_);
+
+        const allFindings = cp14Validation.allFindings.map(f => ({
+          check: f.check,
+          passed: f.passed,
+          detail: f.detail,
+          severity: f.severity === "block" ? "error" as const : f.severity,
+        }));
+        update((s) => setDraftValidation(s, {
+          findings: allFindings,
+          passed: cp14Validation.passed,
+          errors: cp14Validation.errors + cp14Validation.blocks,
+          warnings: cp14Validation.warnings,
+        }));
+
+        const provenance = buildDraftProvenance(aiDraft, state.extractedFacts, []);
+        setDraftProvenance(provenance);
+      } else {
+        const validation = validateDraft(aiDraft, state.extractedFacts, definition, {
+          expectedNoticeNumber: cp14Extraction?.noticeNumber ?? undefined,
+          expectedTaxYear: cp14Extraction?.taxYear ?? undefined,
+          expectedDeadline: cp14Extraction?.responseDeadline ?? undefined,
+          expectedAmounts: [cp14Extraction?.balanceDue, cp14Extraction?.totalDue].filter(Boolean) as string[],
+        });
+        update((s) => setDraftValidation(s, validation));
+        const provenance = buildDraftProvenance(aiDraft, state.extractedFacts, []);
+        setDraftProvenance(provenance);
+      }
+    } catch (err) {
+      setAiDraftError(err instanceof Error ? err.message : "AI draft generation failed.");
+    } finally {
+      setAiDraftLoading(false);
+    }
+  }, [state.userFacts, state.userObjective, state.upload, state.extractedFacts, cp14Extraction, cp14Case, llmProvider, definition, aiAnalysis, update]);
 
   // ── Draft generation (uses two-pass validation) ──
   const handleGenerateDraft = useCallback(() => {
@@ -436,6 +562,76 @@ function CP14Response() {
               {securityWarning && (
                 <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
                   <span className="font-medium">⚠ Security:</span> {securityWarning}
+                </div>
+              )}
+
+              {/* AI Provider Selector */}
+              {availableProviders.length > 0 && (
+                <div className="mt-6 border-t border-rule/60 pt-4">
+                  <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-3">
+                    AI Analysis Engine
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {availableProviders.map((provider) => (
+                      <button
+                        key={provider.id}
+                        disabled={!provider.available}
+                        onClick={() => setLLMProvider(provider.id)}
+                        className={`rounded-lg border p-3 text-left transition-all ${
+                          llmProvider === provider.id
+                            ? "border-stamp bg-stamp/5 ring-1 ring-stamp"
+                            : "border-rule hover:border-ink/20"
+                        } ${!provider.available ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+                      >
+                        <div className="text-sm font-medium">{provider.label}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {provider.available ? "Available" : "API key required"}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Analysis Result */}
+              {aiAnalysis && (
+                <div className="mt-4 rounded-lg border border-stamp/40 bg-stamp/5 p-4">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">
+                    AI Analysis ({aiAnalysis.provider} · {aiAnalysis.model})
+                  </div>
+                  <p className="mt-2 text-sm text-foreground">{aiAnalysis.summary}</p>
+                  {aiAnalysis.keyFacts.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {aiAnalysis.keyFacts.map((fact, i) => (
+                        <li key={i} className="text-sm text-muted-foreground">• {fact}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {aiAnalysis.recommendedActions.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-xs font-medium text-muted-foreground">Recommended actions:</div>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiAnalysis.recommendedActions.map((action, i) => (
+                          <li key={i} className="text-sm text-foreground">→ {action}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {aiAnalysisLoading && (
+                <div className="mt-4 rounded-md border border-rule/70 bg-paper-deep/40 p-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-stamp border-t-transparent" />
+                    <span className="text-muted-foreground">AI is analyzing the document…</span>
+                  </div>
+                </div>
+              )}
+
+              {aiAnalysisError && (
+                <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                  {aiAnalysisError}
                 </div>
               )}
 
@@ -824,12 +1020,40 @@ function CP14Response() {
                 </div>
               )}
 
-              <button
-                onClick={handleGenerateDraft}
-                className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                Regenerate draft
-              </button>
+              {aiDraftLoading && (
+                <div className="mt-4 rounded-md border border-rule/70 bg-paper-deep/40 p-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-stamp border-t-transparent" />
+                    <span className="text-muted-foreground">
+                      AI is generating your response letter{llmProvider ? ` (${llmProvider})` : ""}…
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {aiDraftError && (
+                <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                  {aiDraftError}
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-3">
+                {availableProviders.length > 0 && (
+                  <button
+                    onClick={handleAIGenerateDraft}
+                    disabled={aiDraftLoading}
+                    className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {aiDraftLoading ? "Generating…" : `Generate with AI${llmProvider ? ` (${llmProvider})` : ""}`}
+                  </button>
+                )}
+                <button
+                  onClick={handleGenerateDraft}
+                  className="rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Regenerate template draft
+                </button>
+              </div>
             </div>
           )}
 
