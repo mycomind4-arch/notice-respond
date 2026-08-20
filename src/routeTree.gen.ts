@@ -27,6 +27,7 @@ import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/co
 import { Route as WorkflowsCp14ResponseRouteImport } from './routes/workflows/cp14-response'
 import { Route as WorkflowsCp2000ResponseRouteImport } from './routes/workflows/cp2000-response'
 import { Route as WorkflowsCp504ResponseRouteImport } from './routes/workflows/cp504-response'
+import { Route as WorkflowsCp523ResponseRouteImport } from './routes/workflows/cp523-response'
 import { Route as WorkflowsEquifaxDisputeRouteImport } from './routes/workflows/equifax-dispute'
 import { Route as WorkflowsExperianDisputeRouteImport } from './routes/workflows/experian-dispute'
 import { Route as WorkflowsFileAppealRouteImport } from './routes/workflows/file-appeal'
@@ -134,6 +135,11 @@ const WorkflowsCp2000ResponseRoute = WorkflowsCp2000ResponseRouteImport.update({
 const WorkflowsCp504ResponseRoute = WorkflowsCp504ResponseRouteImport.update({
   id: '/workflows/cp504-response',
   path: '/workflows/cp504-response',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowsCp523ResponseRoute = WorkflowsCp523ResponseRouteImport.update({
+  id: '/workflows/cp523-response',
+  path: '/workflows/cp523-response',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsEquifaxDisputeRoute = WorkflowsEquifaxDisputeRouteImport.update({
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
+  '/workflows/cp523-response': typeof WorkflowsCp523ResponseRoute
   '/workflows/equifax-dispute': typeof WorkflowsEquifaxDisputeRoute
   '/workflows/experian-dispute': typeof WorkflowsExperianDisputeRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
+  '/workflows/cp523-response': typeof WorkflowsCp523ResponseRoute
   '/workflows/equifax-dispute': typeof WorkflowsEquifaxDisputeRoute
   '/workflows/experian-dispute': typeof WorkflowsExperianDisputeRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/workflows/cp14-response': typeof WorkflowsCp14ResponseRoute
   '/workflows/cp2000-response': typeof WorkflowsCp2000ResponseRoute
   '/workflows/cp504-response': typeof WorkflowsCp504ResponseRoute
+  '/workflows/cp523-response': typeof WorkflowsCp523ResponseRoute
   '/workflows/equifax-dispute': typeof WorkflowsEquifaxDisputeRoute
   '/workflows/experian-dispute': typeof WorkflowsExperianDisputeRoute
   '/workflows/file-appeal': typeof WorkflowsFileAppealRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/cp504-response'
+    | '/workflows/cp523-response'
     | '/workflows/equifax-dispute'
     | '/workflows/experian-dispute'
     | '/workflows/file-appeal'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/cp504-response'
+    | '/workflows/cp523-response'
     | '/workflows/equifax-dispute'
     | '/workflows/experian-dispute'
     | '/workflows/file-appeal'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/workflows/cp14-response'
     | '/workflows/cp2000-response'
     | '/workflows/cp504-response'
+    | '/workflows/cp523-response'
     | '/workflows/equifax-dispute'
     | '/workflows/experian-dispute'
     | '/workflows/file-appeal'
@@ -480,6 +492,7 @@ export interface RootRouteChildren {
   WorkflowsCp14ResponseRoute: typeof WorkflowsCp14ResponseRoute
   WorkflowsCp2000ResponseRoute: typeof WorkflowsCp2000ResponseRoute
   WorkflowsCp504ResponseRoute: typeof WorkflowsCp504ResponseRoute
+  WorkflowsCp523ResponseRoute: typeof WorkflowsCp523ResponseRoute
   WorkflowsEquifaxDisputeRoute: typeof WorkflowsEquifaxDisputeRoute
   WorkflowsExperianDisputeRoute: typeof WorkflowsExperianDisputeRoute
   WorkflowsFileAppealRoute: typeof WorkflowsFileAppealRoute
@@ -628,6 +641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsCp504ResponseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflows/cp523-response': {
+      id: '/workflows/cp523-response'
+      path: '/workflows/cp523-response'
+      fullPath: '/workflows/cp523-response'
+      preLoaderRoute: typeof WorkflowsCp523ResponseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflows/equifax-dispute': {
       id: '/workflows/equifax-dispute'
       path: '/workflows/equifax-dispute'
@@ -768,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsCp14ResponseRoute: WorkflowsCp14ResponseRoute,
   WorkflowsCp2000ResponseRoute: WorkflowsCp2000ResponseRoute,
   WorkflowsCp504ResponseRoute: WorkflowsCp504ResponseRoute,
+  WorkflowsCp523ResponseRoute: WorkflowsCp523ResponseRoute,
   WorkflowsEquifaxDisputeRoute: WorkflowsEquifaxDisputeRoute,
   WorkflowsExperianDisputeRoute: WorkflowsExperianDisputeRoute,
   WorkflowsFileAppealRoute: WorkflowsFileAppealRoute,

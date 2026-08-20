@@ -1135,6 +1135,28 @@ export const WORKFLOW_REGISTRY: WorkflowRegistryEntry[] = [
     priority: "high",
     researchRequired: false,
   },
+  {
+    id: "cp523-response",
+    vertical: "notice-respond",
+    category: "Tax",
+    engine: "document-action",
+    lifecycle: "functional",
+    title: "Respond to an IRS CP523 Notice (Installment Agreement Default)",
+    canonicalKeyword: "CP523 notice",
+    keywordCluster: ["CP523", "IRS CP523", "installment agreement default", "intent to levy", "CP523 response"],
+    msv: 390,
+    cpc: 26,
+    competition: "low",
+    seoUrl: "/workflows/cp523-response",
+    repo: "notice-respond",
+    productStatus: "functional",
+    testStatus: "passing",
+    deploymentStatus: "production",
+    factoryReuseScore: 0.85,
+    implementationDifficulty: 3,
+    priority: "high",
+    researchRequired: false,
+  },
 ];
 
 // ── Registry Lookups ──────────────────────────────────────────

@@ -1,51 +1,84 @@
-# Checkpoint — Milestone 5: CP2000 Factory Parity COMPLETE
+# Checkpoint — CP523 Workflow COMPLETE
 
-**Date:** 2026-08-18
-**Status:** CP2000 executable factory parity achieved. Generic pipeline proven.
+**Date:** 2026-08-19
+**Status:** CP523 (Installment Agreement Default + Intent to Levy) fully implemented through factory pipeline.
+**Branch:** main
+**Latest commit:** pending (will commit after documentation update)
 
-## Milestone 5 — COMPLETE
+## Milestone — CP523 COMPLETE
 
-### What was built
+### Workflow selected: CP523
 
-- `src/domain/runtime/cp2000-executable-pack.ts` — Executable adapter mapping CP2000 domain logic into `ExecutableDomainPack`
-- `src/domain/runtime/factory-construction.ts` — Factory that constructs executable workflows from workflow definitions
-- `tests/factory-cp2000-parity.test.mjs` — 42 parity tests covering pack resolution, extraction, validation, discrepancy, evidence, draft, factory construction, full pipeline, and negative cases
+**Why:** CP523 (Notice of Default on Installment Agreement and Intent to Levy) was selected because:
+- Strong keyword signal: 390 MSV, $26.20 CPC, LOW competition
+- Shares substantial domain concepts with CP504 (levy, CDP hearing rights, deadlines, collection consequences)
+- High factory reuse score (0.85) — same engine, same pipeline architecture
+- IRS authoritative sources available (irs.gov CP523 page, Pub 1660, Pub 594)
 
-### What was fixed
+### What was implemented
 
-- CP2000 `CP2000ValidationFinding.severity` widened to include `"block"` (in `cp2000-case.ts`)
-- Runtime `ValidationFinding.severity` widened to include `"block"` (in `runtime/types.ts`)
-- Adapter `toValidationFinding` parameter type aligned with widened severity
-- Pipeline extension stages (`reviewBoundary`, `approvalBoundary`, `submissionBoundary`, `proofTrackingBoundary`, `provenance`, `analysis`) always report `skipped` even when pipeline is blocked — they are unimplemented framework extension points, not failed stages
-- `setCaseAnalysis()` call corrected (2 args, not 4)
-- `setCaseDraft()` call corrected (passes `ResponseDraft` object, not string)
-- `WorkflowDefinition` → `MasterWorkflowDefinition` import fix in pipeline.ts and factory-construction.ts
-- Type adapter mappings: `toRuntimeDiscrepancy()`, `toRuntimeEvidenceItem()`, `mapEvidenceState()`
+1. **Domain intelligence** (`src/domain/cp523.ts`):
+   - Extraction: notice number, dates, balance, IA number, default reason, termination date, CDP rights, passport certification
+   - Draft generation: evidence-grounded, placeholder-aware, user fact inclusion
 
-### Correct behavior preserved
+2. **Case model** (`src/domain/cp523-case.ts`):
+   - Versioned case with phases: extraction → analysis → strategy → draft → validation
+   - Owner-scoped, IA-specific fields (agreement number, default reason, termination date)
 
-- Pipeline correctly blocks when requirement validation finds unresolved issues on auto-generated draft
-- BLOCK never becomes approval
-- Extension stages are `skipped`, not `blocked`
+3. **Discrepancy analysis** (`src/domain/cp523-discrepancy.ts`):
+   - Balance disputes, deadline risks, levy risks, termination risks, missing IA documentation
 
-### Deferred intentionally
+4. **Evidence checklist** (`src/domain/cp523-evidence.ts`):
+   - IA documentation, payment records, tax returns, financial statement, CDP request form
 
-- `BaseExtraction.taxYear` generic refactor — re-extraction from raw text is acceptable
-- Non-CP2000 `classificationConfidence` behavior — `isCP2000` flag is the discriminator
-- CP14 `"block"` severity mismatch — known technical debt, same pattern as CP2000 fix
+5. **Findings taxonomy** (`src/domain/cp523-findings.ts`):
+   - levy_risk, deadline_risk, balance_dispute, termination_risk, evidence_gap, passport_risk
+
+6. **Strategy** (`src/domain/cp523-strategy.ts`):
+   - Positions: reinstate_agreement, request_cdp_hearing, dispute_default, pay_balance, insufficient_info
+
+7. **Research pack** (`src/domain/cp523-research.ts`):
+   - 7 verified IRS sources with provenance (irs.gov CP523, Pub 1660, Pub 594, Form 9465, IRC 6330, IRC 6159, Form 433-F)
+   - Known facts with isSourceStatement flag
+
+8. **Validation** (`src/domain/cp523-validation.ts`):
+   - Factual validation: notice number, tax years, placeholders, forbidden claims, balance disputes
+   - Requirement validation: deadline, recipient, CDP request, signature
+
+9. **Domain pack** (`src/domain/cp523-packs.ts`):
+   - Pack registration with all capabilities declared
+
+10. **Executable adapter** (`src/domain/runtime/cp523-executable-pack.ts`):
+    - Maps domain logic into ExecutableDomainPack
+    - All 8 capability functions implemented
+    - Auto-registers on import
+
+11. **Workflow catalog** (`src/domain/workflow-catalog.ts`):
+    - Full catalog entry with deadlines, requirements, evidence, analysis, drafting, SEO, FAQ
+
+12. **Master registry** (`src/domain/workflow-master-registry.ts`):
+    - Registry entry with keyword data, factory reuse score
+
+13. **Route** (`src/routes/workflows/cp523-response.tsx`):
+    - Full UI with upload, extraction display, facts, objective, draft, review, mailing
+
+14. **Test fixtures** (`tests/cp523-fixtures.mjs`):
+    - Valid CP523, no deadline, wrong document, minimal, adversarial injection, empty, balance dispute
+
+15. **Tests** (70 total):
+    - `tests/cp523.test.mjs` — 37 tests (extraction, draft, discrepancy, evidence, strategy, research, validation, case model)
+    - `tests/factory-cp523-parity.test.mjs` — 33 tests (pack resolution, extraction, validation, discrepancy, evidence, draft, factory construction, full pipeline, negative/adversarial)
 
 ### Stats
 
-- CP2000 focused parity tests: 42/42 pass
-- Full regression suite: 742/742 pass
-- Build: PASS
-- Commits: 3 pushed to GitHub main (8d8c7245, 5196db90, 2bf21179)
-- Branch: main, synchronized with origin
+- CP523 focused tests: 70/70 pass
+- Full regression suite: 815/815 pass
+- Build: PASS (cp523-response route compiled successfully)
 
 ## Canonical vertical factory pattern
 
 ```text
-existing vertical intelligence
+existing domain intelligence
         ↓
 executable adapter
         ↓
@@ -53,15 +86,19 @@ type mappings
         ↓
 factory
         ↓
-parity tests
+focused parity tests
         ↓
 full workflow pipeline
         ↓
 regression suite
 ```
 
-## Next: CP14 or next highest-priority vertical
+## Workflow inventory
 
-- Reuse CP2000 factory/parity pattern — do not redesign architecture
-- Known CP14 issue: CP14 validation severity also needs `"block"` (same fix as CP2000)
-- Inspect target domain modules → map into ExecutableDomainPack → add type adapters → construct via factory → copy parity test structure → run focused + regression → stop when green
+| Workflow | Status | Tests |
+|----------|--------|-------|
+| CP2000 | Factory parity, route | ✅ |
+| CP14 | Factory parity, route, authority gates | ✅ |
+| CP504 | Factory parity, route, CDP hearing | ✅ |
+| CP49 | Factory parity, route, classification | ✅ |
+| CP523 | Factory parity, route, IA default | ✅ (this milestone) |

@@ -1,7 +1,7 @@
 # CURRENT_STATE.md — Fresh Repository Audit
 
-**Date:** 2026-08-18
-**Auditor:** Koda (fresh agent, no prior assumptions)
+**Date:** 2026-08-19
+**Auditor:** Milo (continuing agent)
 **Method:** Direct code inspection + test/build execution
 
 ---
@@ -15,7 +15,7 @@
 - **Payments:** Stripe (dependency present, integration in mailing funnel)
 - **Mailing:** MailMyPDF API (provider + server endpoint implemented)
 - **Node:** v20.20.2
-- **Tests:** 490 pass / 0 fail
+- **Tests:** 815 pass / 0 fail
 - **Build:** Succeeds, produces `dist/_worker.js` for Cloudflare Workers
 
 ---
@@ -78,6 +78,9 @@ agent/             — Previous agent checkpoint files
 |-------|------------|-----------|--------|
 | `/workflows/cp2000-response` | cp2000-response | functional | Works but uses generic validation, not two-pass |
 | `/workflows/cp14-response` | cp14-response | authority | Most mature, full quality gates |
+| `/workflows/cp504-response` | cp504-response | functional | Intent to Levy, CDP hearing, route + factory |
+| `/workflows/cp49-response` | cp49-response | functional | Notice classification, extraction, case model, factory |
+| `/workflows/cp523-response` | cp523-response | functional | Installment Agreement Default, full pipeline, factory parity |
 | `/workflows/irs-notice` | irs-notice | functional | Works |
 | `/workflows/court-summons` | court-summons | functional | Works |
 | `/workflows/agency-action` | agency-action | functional | Works |
