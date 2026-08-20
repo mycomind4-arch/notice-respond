@@ -147,6 +147,10 @@ function canEnterConsequentialMailing(state: WorkflowState): boolean {
   return state.approved && Boolean(state.mailing) && hasValidRecipient(state);
 }
 
+function hasCompletedReview(state: WorkflowState): boolean {
+  return state.draftValidation?.passed === true && state.reviewChecks.length > 0 && state.reviewChecks.every(Boolean);
+}
+
 export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefinition): boolean {
   const phase = state.phase;
 
@@ -160,16 +164,11 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
     case "objective":
       return state.userObjective.trim().length > 0;
     case "draft":
-      // Validation MUST have actually run and passed before entering review.
       return Boolean(state.draft.trim()) && state.draftValidation !== null && state.draftValidation.passed;
     case "review":
-      // Review requires passed validation and every configured review check.
-      return (
-        state.draftValidation?.passed === true &&
-        state.reviewChecks.length > 0 &&
-        state.reviewChecks.every(Boolean) &&
-        state.approved
-      );
+      // Review is complete only when validation passed and every review check passed.
+      // Explicit approval is a separate transition and is required before mailing.
+      return hasCompletedReview(state) && state.approved;
     case "attachments":
       return true;
     case "recipient":
@@ -177,8 +176,6 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
     case "mailing":
       return canEnterConsequentialMailing(state);
     case "checkout":
-      // Checkout can only complete after explicit approval, complete recipient,
-      // and a provider order that has actually entered the submitted/mailed path.
       return (
         canEnterConsequentialMailing(state) &&
         Boolean(state.mailing?.providerOrderId) &&
@@ -229,7 +226,6 @@ export function goToStep(state: WorkflowState, definition: MasterWorkflowDefinit
       lastUpdated: new Date().toISOString(),
     };
   }
-  // Forward navigation is deliberately limited to one validated transition.
   if (stepIndex !== state.step + 1 || !canAdvance(state, definition)) return state;
   return {
     ...state,
@@ -277,9 +273,17 @@ export function setReviewChecks(state: WorkflowState, checks: boolean[]): Workfl
   return {
     ...state,
     reviewChecks: checks,
-    approved: checks.length > 0 && checks.every(Boolean),
     lastUpdated: new Date().toISOString(),
   };
+}
+
+export function approveWorkflow(state: WorkflowState): WorkflowState {
+  if (!hasCompletedReview(state)) return state;
+  return { ...state, approved: true, lastUpdated: new Date().toISOString() };
+}
+
+export function revokeApproval(state: WorkflowState): WorkflowState {
+  return { ...state, approved: false, lastUpdated: new Date().toISOString() };
 }
 
 export function setMailing(state: WorkflowState, mailing: MailingState): WorkflowState {
