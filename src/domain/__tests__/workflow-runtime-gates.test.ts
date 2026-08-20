@@ -28,6 +28,7 @@ const definition = {
   },
   ux: {
     steps: [
+      { id: "document", label: "Document" },
       { id: "draft", label: "Draft" },
       { id: "review", label: "Review" },
       { id: "recipient", label: "Recipient" },
@@ -45,6 +46,22 @@ function atPhase(phase: WorkflowState["phase"]): WorkflowState {
   return { ...base, phase, step };
 }
 
+test("requires successful extraction before leaving document phase", () => {
+  const uploadedOnly = { ...atPhase("document"), upload: { fileName: "notice.pdf", fileSize: 100, fileType: "application/pdf", rawText: "", uploadedAt: new Date().toISOString() } };
+  assert.equal(canAdvance(uploadedOnly, definition), false);
+
+  const extracted = {
+    noticeType: "cp2000" as never,
+    classificationConfidence: 0.99,
+    facts: [],
+    deadlines: [],
+    rawText: "CP2000 notice",
+    extractionConfidence: 0.99,
+  };
+  const withExtraction = { ...uploadedOnly, extraction: extracted };
+  assert.equal(canAdvance(withExtraction, definition), true);
+});
+
 test("requires validation to have run before leaving draft", () => {
   const drafted = setDraft(atPhase("draft"), "complete draft");
   assert.equal(canAdvance(drafted, definition), false);
@@ -55,7 +72,7 @@ test("requires validation to have run before leaving draft", () => {
 
 test("cannot jump directly to a later consequential phase", () => {
   const state = atPhase("draft");
-  const jumped = goToStep(state, definition, 3);
+  const jumped = goToStep(state, definition, 4);
   assert.equal(jumped.step, state.step);
   assert.equal(jumped.phase, "draft");
 });
