@@ -1,18 +1,18 @@
 /* ═══════════════════════════════════════════════════════════
    WORKFLOW RUNTIME — reusable state machine for all workflows.
-   
+
    Owns:
    - workflow definition (from catalog)
    - current step / step navigation
    - collected workflow state (facts, deadlines, evidence, draft)
    - transition validation
    - lifecycle awareness
-   
+
    Does NOT own:
    - domain intelligence (domain services do that)
    - UI rendering (components do that)
    - persistence (repository does that)
-   
+
    The runtime is generic: CP2000, IRS notice, and court summons
    all use the same runtime with different definitions.
    ═══════════════════════════════════════════════════════════ */
@@ -22,8 +22,6 @@ import type { NoticeFact } from "./fact";
 import type { Deadline } from "./deadline";
 import type { Evidence } from "./evidence";
 import type { NoticeType } from "./notice-type";
-
-// ── State ─────────────────────────────────────────────────────
 
 export type WorkflowPhase =
   | "intro"
@@ -94,47 +92,29 @@ export interface WorkflowState {
   workflowId: string;
   step: number;
   phase: WorkflowPhase;
-  
-  // Document
   upload: DocumentUpload | null;
   extraction: ExtractionResult | null;
   isProcessing: boolean;
-  
-  // Facts
   extractedFacts: NoticeFact[];
   userFacts: string;
   userObjective: string;
-  
-  // Deadline
   deadline: Deadline | null;
-  
-  // Evidence
   evidence: Evidence[];
-  
-  // Draft
   draft: string;
   draftValidation: DraftValidationResult | null;
-  
-  // Review
   reviewChecks: boolean[];
   approved: boolean;
-  
-  // Mailing
   mailing: MailingState | null;
-  
-  // Audit
   startedAt: string;
   lastUpdated: string;
 }
-
-// ── Factory ──────────────────────────────────────────────────
 
 export function createWorkflowState(definition: MasterWorkflowDefinition): WorkflowState {
   const steps = definition.ux?.steps ?? [];
   return {
     workflowId: definition.id,
     step: 0,
-    phase: steps[0]?.id as WorkflowPhase ?? "intro",
+    phase: (steps[0]?.id as WorkflowPhase | undefined) ?? "intro",
     upload: null,
     extraction: null,
     isProcessing: false,
@@ -153,45 +133,60 @@ export function createWorkflowState(definition: MasterWorkflowDefinition): Workf
   };
 }
 
-// ── Step Navigation ──────────────────────────────────────────
-
 export function getSteps(definition: MasterWorkflowDefinition): { id: string; label: string }[] {
   return definition.ux?.steps ?? [];
 }
 
+function hasValidRecipient(state: WorkflowState): boolean {
+  if (!state.mailing) return false;
+  const r = state.mailing.recipient;
+  return Boolean(r.name.trim() && r.address1.trim() && r.city.trim() && r.state.trim() && r.zip.trim());
+}
+
+function canEnterConsequentialMailing(state: WorkflowState): boolean {
+  return state.approved && Boolean(state.mailing) && hasValidRecipient(state);
+}
+
 export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefinition): boolean {
-  const steps = getSteps(definition);
   const phase = state.phase;
-  
+
   switch (phase) {
     case "document":
-      // Need an upload or manual entry
-      return true; // Allow manual entry even without upload
+      return Boolean(state.upload) || state.extraction !== null;
     case "extraction":
-      // Need extraction to be done (or user confirmed manual entry)
-      return true;
+      return state.extraction !== null;
     case "facts":
       return state.userFacts.trim().length > 0;
     case "objective":
       return state.userObjective.trim().length > 0;
     case "draft":
-      // P0: A draft with blocking validation errors must NOT advance to review.
-      // If validation has run and failed (errors > 0), block.
-      // If validation hasn't run yet (null), allow (route generates draft + validation together).
-      if (state.draftValidation && !state.draftValidation.passed) {
-        return false;
-      }
-      return true;
+      // Validation MUST have actually run and passed before entering review.
+      return Boolean(state.draft.trim()) && state.draftValidation !== null && state.draftValidation.passed;
     case "review":
-      // P0: Review also checks validation passed — no mailing without clean validation.
-      if (state.draftValidation && !state.draftValidation.passed) {
-        return false;
-      }
-      return state.reviewChecks.every(Boolean);
+      // Review requires passed validation and every configured review check.
+      return (
+        state.draftValidation?.passed === true &&
+        state.reviewChecks.length > 0 &&
+        state.reviewChecks.every(Boolean) &&
+        state.approved
+      );
+    case "attachments":
+      return true;
     case "recipient":
-      if (!state.mailing) return false;
-      const r = state.mailing.recipient;
-      return !!(r.name && r.address1 && r.city && r.state && r.zip);
+      return hasValidRecipient(state);
+    case "mailing":
+      return canEnterConsequentialMailing(state);
+    case "checkout":
+      // Checkout can only complete after explicit approval, complete recipient,
+      // and a provider order that has actually entered the submitted/mailed path.
+      return (
+        canEnterConsequentialMailing(state) &&
+        Boolean(state.mailing?.providerOrderId) &&
+        ["submitted", "mailed", "in_transit", "delivered"].includes(state.mailing?.status ?? "not_started")
+      );
+    case "submitted":
+      return false;
+    case "intro":
     default:
       return true;
   }
@@ -200,7 +195,8 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
 export function advanceStep(state: WorkflowState, definition: MasterWorkflowDefinition): WorkflowState {
   const steps = getSteps(definition);
   if (state.step >= steps.length - 1) return state;
-  
+  if (!canAdvance(state, definition)) return state;
+
   const nextStep = state.step + 1;
   return {
     ...state,
@@ -225,6 +221,16 @@ export function retreatStep(state: WorkflowState, definition: MasterWorkflowDefi
 export function goToStep(state: WorkflowState, definition: MasterWorkflowDefinition, stepIndex: number): WorkflowState {
   const steps = getSteps(definition);
   if (stepIndex < 0 || stepIndex >= steps.length) return state;
+  if (stepIndex <= state.step) {
+    return {
+      ...state,
+      step: stepIndex,
+      phase: steps[stepIndex].id as WorkflowPhase,
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+  // Forward navigation is deliberately limited to one validated transition.
+  if (stepIndex !== state.step + 1 || !canAdvance(state, definition)) return state;
   return {
     ...state,
     step: stepIndex,
@@ -232,8 +238,6 @@ export function goToStep(state: WorkflowState, definition: MasterWorkflowDefinit
     lastUpdated: new Date().toISOString(),
   };
 }
-
-// ── State Updates ─────────────────────────────────────────────
 
 export function setUpload(state: WorkflowState, upload: DocumentUpload): WorkflowState {
   return { ...state, upload, lastUpdated: new Date().toISOString() };
@@ -270,14 +274,24 @@ export function setDraftValidation(state: WorkflowState, validation: DraftValida
 }
 
 export function setReviewChecks(state: WorkflowState, checks: boolean[]): WorkflowState {
-  return { ...state, reviewChecks: checks, approved: checks.every(Boolean), lastUpdated: new Date().toISOString() };
+  return {
+    ...state,
+    reviewChecks: checks,
+    approved: checks.length > 0 && checks.every(Boolean),
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 export function setMailing(state: WorkflowState, mailing: MailingState): WorkflowState {
   return { ...state, mailing, lastUpdated: new Date().toISOString() };
 }
 
-export function setMailingStatus(state: WorkflowState, status: MailingState["status"], providerOrderId?: string, trackingNumber?: string): WorkflowState {
+export function setMailingStatus(
+  state: WorkflowState,
+  status: MailingState["status"],
+  providerOrderId?: string,
+  trackingNumber?: string,
+): WorkflowState {
   if (!state.mailing) return state;
   return {
     ...state,
@@ -290,8 +304,6 @@ export function setMailingStatus(state: WorkflowState, status: MailingState["sta
     lastUpdated: new Date().toISOString(),
   };
 }
-
-// ── Lifecycle / Quality Gate ─────────────────────────────────
 
 export function evaluateQualityGate(definition: MasterWorkflowDefinition): {
   gate: MasterWorkflowDefinition["qualityGate"];
@@ -306,8 +318,6 @@ export function evaluateQualityGate(definition: MasterWorkflowDefinition): {
     canBeAuthority,
   };
 }
-
-// ── Validation Helpers ───────────────────────────────────────
 
 export function isLastStep(state: WorkflowState, definition: MasterWorkflowDefinition): boolean {
   const steps = getSteps(definition);
