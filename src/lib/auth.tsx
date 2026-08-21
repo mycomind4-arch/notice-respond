@@ -17,6 +17,7 @@ interface AuthResult {
 
 interface AuthContextValue {
   user: MailMyPDFUser | null;
+  accessToken: string | null;
   loading: boolean;
   isConfigured: boolean;
   signUp: (email: string, password: string) => Promise<AuthResult>;
@@ -29,19 +30,15 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-interface SupabaseAuthUser {
-  id: string;
-  email?: string;
-  user_metadata?: { full_name?: string; role?: string; is_admin?: boolean };
-}
-interface SupabaseSession { user?: SupabaseAuthUser | null }
+interface SupabaseAuthUser { id: string; email?: string; user_metadata?: { full_name?: string; role?: string; is_admin?: boolean } }
+interface SupabaseSession { user?: SupabaseAuthUser | null; access_token?: string }
 
 type SupabaseClient = {
   auth: {
     getSession: () => Promise<{ data: { session: SupabaseSession | null }; error: unknown }>;
     onAuthStateChange: (cb: (event: string, session: SupabaseSession | null) => void) => { data: { subscription: { unsubscribe: () => void } } };
     signUp: (args: { email: string; password: string; options?: { emailRedirectTo?: string } }) => Promise<{ data: { session: SupabaseSession | null }; error: { message: string } | null }>;
-    signInWithPassword: (args: { email: string; password: string }) => Promise<{ error: { message: string } | null }>;
+    signInWithPassword: (args: { email: string; password: string }) => Promise<{ data?: { session?: SupabaseSession | null }; error: { message: string } | null }>;
     signInWithOtp: (args: { email: string; options?: { emailRedirectTo?: string } }) => Promise<{ error: { message: string } | null }>;
     resetPasswordForEmail: (email: string, opts?: { redirectTo?: string }) => Promise<{ error: { message: string } | null }>;
     signOut: () => Promise<{ error: { message: string } | null }>;
@@ -56,7 +53,7 @@ async function loadSupabase(): Promise<SupabaseClient | null> {
   if (!url || !anonKey) return null;
   try {
     const { createClient } = await import("@supabase/supabase-js");
-    return createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } }) as SupabaseClient;
+    return createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) as SupabaseClient;
   } catch {
     return null;
   }
@@ -70,37 +67,38 @@ function mapUser(user: SupabaseAuthUser): MailMyPDFUser {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<MailMyPDFUser | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
     void loadSupabase().then(async (client) => {
-      if (!client) {
-        setLoading(false);
-        setIsConfigured(false);
-        clearOwnerContext();
-        return;
-      }
+      if (!client) { setLoading(false); setIsConfigured(false); clearOwnerContext(); setAccessToken(null); return; }
       setIsConfigured(true);
       const sessionResult = await client.auth.getSession();
-      const sessionUser = sessionResult.data.session?.user;
-      if (sessionUser?.id) {
+      const session = sessionResult.data.session;
+      const sessionUser = session?.user;
+      if (sessionUser?.id && session?.access_token) {
         setOwnerContext(sessionUser.id);
         setUser(mapUser(sessionUser));
+        setAccessToken(session.access_token);
       } else {
         clearOwnerContext();
         setUser(null);
+        setAccessToken(null);
       }
       setLoading(false);
-      const { data } = client.auth.onAuthStateChange((_event, session) => {
-        const nextUser = session?.user;
-        if (nextUser?.id) {
+      const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+        const nextUser = nextSession?.user;
+        if (nextUser?.id && nextSession?.access_token) {
           setOwnerContext(nextUser.id);
           setUser(mapUser(nextUser));
+          setAccessToken(nextSession.access_token);
         } else {
           clearOwnerContext();
           setUser(null);
+          setAccessToken(null);
         }
         setLoading(false);
       });
@@ -114,14 +112,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) return { error: "MailMyPDF Account is not configured." };
     const { data, error } = await client.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/dashboard` } });
     if (error) return { error: error.message };
+    if (data.session?.access_token && data.session.user?.id) {
+      setOwnerContext(data.session.user.id);
+      setUser(mapUser(data.session.user));
+      setAccessToken(data.session.access_token);
+    }
     return { error: null, needsConfirmation: !data.session };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     const client = await loadSupabase();
     if (!client) return { error: "MailMyPDF Account is not configured." };
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    if (data?.session?.access_token && data.session.user?.id) {
+      setOwnerContext(data.session.user.id);
+      setUser(mapUser(data.session.user));
+      setAccessToken(data.session.access_token);
+    }
+    return { error: null };
   }, []);
 
   const signInWithMagicLink = useCallback(async (email: string): Promise<AuthResult> => {
@@ -144,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await client.auth.signOut();
     clearOwnerContext();
     setUser(null);
+    setAccessToken(null);
   }, []);
 
   const updateProfile = useCallback(async (data: { fullName?: string }): Promise<AuthResult> => {
@@ -155,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, isConfigured, signUp, signIn, signInWithMagicLink, resetPassword, signOut, updateProfile }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, accessToken, loading, isConfigured, signUp, signIn, signInWithMagicLink, resetPassword, signOut, updateProfile }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
