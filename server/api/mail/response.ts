@@ -1,217 +1,196 @@
 /**
  * POST /api/mail/response
  *
- * Server-side mailing endpoint that uses the MailMyPDF platform integration
- * to physically mail a response document.
+ * Payment-protected, authenticated Notice Respond mailing endpoint.
  *
- * Accepts multipart/form-data produced by the MailingFunnel component:
- *   - file: the response document to mail
- *   - workflowId: the workflow that generated the response
- *   - recipientName, recipientOrg, recipientAddress1, recipientAddress2,
- *     recipientCity, recipientState, recipientZip
- *   - mailType: first_class | certified | registered
- *   - matterReference: notice reference number
- *   - matterType: notice-respond
+ * The client supplies only the Stripe Checkout Session ID.
+ * The server verifies:
+ *   1. The caller is an authenticated MailMyPDF Account user.
+ *   2. The Stripe session is paid.
+ *   3. The Stripe session belongs to the same user and workflow.
+ *   4. The durable mailing intent exists and has not already been submitted.
  *
- * This endpoint calls the real MailMyPDF API:
- * 1. Uploads the document to MailMyPDF
- * 2. Creates a communication (mailing order) with the recipient and mail type
- * 3. Returns the provider order ID, status, and tracking number
- *
- * If MAILMYPDF_API_URL or MAILMYPDF_API_KEY are not set, returns a 503 error
- * explaining that the mailing service is not configured — never simulates success.
+ * The server then reconstructs the response document from the intent,
+ * uploads it to MailMyPDF, creates the communication, and records the
+ * provider order/tracking state. The client never controls recipient,
+ * price, or payment state at the point of mailing.
  */
 
-import { defineEventHandler, readFormData, createError, getMethod } from "h3";
-import {
-  uploadDocument,
-  createCommunication,
-  type MailType,
-} from "../../../src/platform/mailmypdf";
+import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, type H3Event } from "h3";
+import { createClient } from "@supabase/supabase-js";
+import { requireAuthenticatedUser } from "../../../src/lib/auth-guard";
+import { uploadDocument, createCommunication, type MailType } from "../../../src/platform/mailmypdf";
 
-// Allowed mail types — validated server-side, never trusts client input
-const ALLOWED_MAIL_TYPES: Set<string> = new Set([
+const ALLOWED_MAIL_TYPES = new Set<MailType>([
   "first_class",
   "certified",
   "certified_return_receipt",
   "registered",
 ]);
 
-// Max document size: 10 MB
-const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const MAX_DRAFT_SIZE = 500_000;
+
+function toAuthRequest(event: H3Event): Request {
+  return new Request(getRequestURL(event).toString(), {
+    headers: getRequestHeaders(event) as HeadersInit,
+  });
+}
+
+function getSupabaseServiceClient() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRole) throw createError({ statusCode: 503, statusMessage: "Supabase server configuration is incomplete." });
+  return createClient(url, serviceRole, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+function getConfiguredStripe() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) throw createError({ statusCode: 503, statusMessage: "Stripe is not configured." });
+  return import("stripe").then(({ default: Stripe }) => new Stripe(secretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion }));
+}
 
 export default defineEventHandler(async (event) => {
-  // Only accept POST
-  if (getMethod(event) !== "POST") {
-    throw createError({
-      statusCode: 405,
-      statusMessage: "Method not allowed. Use POST.",
-    });
-  }
+  if (event.method !== "POST") throw createError({ statusCode: 405, statusMessage: "Method not allowed." });
 
-  // Read the form data using the standard Web FormData API
-  // (works on Cloudflare Workers, Node, Bun — all Nitro presets)
-  let formData: FormData | null;
+  const user = await requireAuthenticatedUser(toAuthRequest(event));
+  const input = await readBody<{ stripeSessionId?: string }>(event);
+  const stripeSessionId = input?.stripeSessionId?.trim();
+
+  if (!stripeSessionId) throw createError({ statusCode: 400, statusMessage: "Stripe Checkout Session ID is required." });
+
+  const supabase = getSupabaseServiceClient();
+  const stripe = await getConfiguredStripe();
+
+  let session;
   try {
-    formData = await readFormData(event);
+    session = await stripe.checkout.sessions.retrieve(stripeSessionId);
   } catch {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        "Invalid request body. Expected multipart/form-data with a file and recipient fields.",
-    });
-  }
-  if (!formData) {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        "No form data received. Expected multipart/form-data with a file and recipient fields.",
-    });
+    throw createError({ statusCode: 400, statusMessage: "Invalid Stripe Checkout Session." });
   }
 
-  // ── Extract and validate fields ──
-  const file = formData.get("file");
-  const workflowId = formData.get("workflowId")?.toString().trim();
-  const recipientName = formData.get("recipientName")?.toString().trim();
-  const recipientOrg = formData.get("recipientOrg")?.toString().trim() || "";
-  const recipientAddress1 = formData.get("recipientAddress1")?.toString().trim();
-  const recipientAddress2 = formData.get("recipientAddress2")?.toString().trim() || "";
-  const recipientCity = formData.get("recipientCity")?.toString().trim();
-  const recipientState = formData.get("recipientState")?.toString().trim();
-  const recipientZip = formData.get("recipientZip")?.toString().trim();
-  const mailType = formData.get("mailType")?.toString().trim();
-  const matterReference = formData.get("matterReference")?.toString().trim() || "";
-  const matterType = formData.get("matterType")?.toString().trim() || "notice-respond";
-
-  // Validate file presence
-  if (!file || !(file instanceof File)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        "No file uploaded. Please include the response document as a file field.",
-    });
+  if (session.payment_status !== "paid") {
+    throw createError({ statusCode: 409, statusMessage: "Payment has not been completed." });
   }
 
-  // Validate file size
-  if (file.size > MAX_DOCUMENT_SIZE) {
-    throw createError({
-      statusCode: 413,
-      statusMessage: `Document too large. Maximum size is ${MAX_DOCUMENT_SIZE / 1024 / 1024} MB.`,
-    });
+  const ownerUserId = session.metadata?.owner_user_id;
+  const intentId = session.metadata?.mailing_intent_id;
+  if (!ownerUserId || ownerUserId !== user.id || !intentId) {
+    throw createError({ statusCode: 403, statusMessage: "This payment session does not belong to the authenticated account." });
   }
 
-  // Validate required string fields
-  const requiredFields: Record<string, string | undefined> = {
-    workflowId,
-    recipientName,
-    recipientAddress1,
-    recipientCity,
-    recipientState,
-    recipientZip,
-    mailType,
-  };
+  const { data: intent, error: intentError } = await supabase
+    .from("mailing_intents")
+    .select("*")
+    .eq("id", intentId)
+    .eq("owner_id", user.id)
+    .single();
 
-  for (const [fieldName, value] of Object.entries(requiredFields)) {
-    if (!value) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `Missing required field: ${fieldName}`,
-      });
-    }
+  if (intentError || !intent) throw createError({ statusCode: 404, statusMessage: "Mailing intent not found." });
+
+  if (intent.stripe_session_id && intent.stripe_session_id !== stripeSessionId) {
+    throw createError({ statusCode: 409, statusMessage: "Stripe session does not match the stored mailing intent." });
   }
 
-  // Validate mail type against allowlist
-  if (!ALLOWED_MAIL_TYPES.has(mailType!)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: `Invalid mail type: ${mailType}. Allowed: ${[...ALLOWED_MAIL_TYPES].join(", ")}`,
-    });
+  if (intent.provider_order_id) {
+    return {
+      success: true,
+      providerOrderId: intent.provider_order_id,
+      trackingNumber: intent.tracking_number ?? null,
+      status: intent.status,
+      idempotent: true,
+    };
   }
 
-  // Validate state code (2-letter US state abbreviation)
-  if (recipientState!.length !== 2) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Recipient state must be a 2-letter US state abbreviation.",
-    });
+  if (!ALLOWED_MAIL_TYPES.has(intent.mailing_method as MailType)) {
+    throw createError({ statusCode: 409, statusMessage: "Stored mailing method is invalid." });
+  }
+  if (typeof intent.draft !== "string" || intent.draft.length < 20 || intent.draft.length > MAX_DRAFT_SIZE) {
+    throw createError({ statusCode: 409, statusMessage: "Stored response draft is invalid or too large." });
   }
 
-  // Validate ZIP code (5 digits, optionally with +4)
-  if (!/^\d{5}(-\d{4})?$/.test(recipientZip!)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Recipient ZIP code must be 5 digits (optionally with +4).",
-    });
+  const recipient = intent.recipient as {
+    name?: string;
+    org?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  } | null;
+
+  if (!recipient?.name || !recipient.address1 || !recipient.city || !recipient.state || !recipient.zip) {
+    throw createError({ statusCode: 409, statusMessage: "Stored mailing recipient is incomplete." });
   }
+  if (!/^[A-Za-z]{2}$/.test(recipient.state)) throw createError({ statusCode: 409, statusMessage: "Stored recipient state is invalid." });
+  if (!/^\d{5}(-\d{4})?$/.test(recipient.zip)) throw createError({ statusCode: 409, statusMessage: "Stored recipient ZIP code is invalid." });
 
-  // ── Check MailMyPDF configuration ──
-  const apiUrl = process.env.MAILMYPDF_API_URL;
-  const apiKey = process.env.MAILMYPDF_API_KEY;
+  const { error: paidError } = await supabase
+    .from("mailing_intents")
+    .update({
+      status: "paid",
+      stripe_session_id: stripeSessionId,
+      stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
+    })
+    .eq("id", intent.id)
+    .eq("owner_id", user.id)
+    .is("provider_order_id", null);
 
-  if (!apiUrl || !apiKey) {
-    // Return 503 — do NOT fake success
-    throw createError({
-      statusCode: 503,
-      statusMessage:
-        "MailMyPDF platform is not configured. Set MAILMYPDF_API_URL and MAILMYPDF_API_KEY environment variables to enable mailing.",
-    });
-  }
+  if (paidError) throw createError({ statusCode: 502, statusMessage: `Unable to record payment: ${paidError.message}` });
 
-  // ── Step 1: Upload the document to MailMyPDF ──
-  let documentId: string;
   try {
+    const file = new File([intent.draft], `response-${intent.workflow_id}-${intent.id}.txt`, { type: "text/plain" });
     const document = await uploadDocument(file);
-    documentId = document.id;
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error uploading document";
-    throw createError({
-      statusCode: 502,
-      statusMessage: `MailMyPDF document upload failed: ${message}`,
-    });
-  }
+    const idempotencyKey = `stripe:${stripeSessionId}`;
 
-  // ── Step 2: Create the communication (mailing order) ──
-  const idempotencyKey = `${workflowId}:${documentId}:${Date.now()}`;
-
-  try {
     const communication = await createCommunication({
-      document_id: documentId,
+      document_id: document.id,
       recipient: {
-        name: recipientName!,
-        address_line1: recipientAddress1!,
-        address_line2: recipientAddress2 || null,
-        city: recipientCity!,
-        state: recipientState!,
-        postal_code: recipientZip!,
+        name: recipient.name,
+        address_line1: recipient.address1,
+        address_line2: recipient.address2 || null,
+        city: recipient.city,
+        state: recipient.state.toUpperCase(),
+        postal_code: recipient.zip,
         country: "US",
       },
-      mail_type: mailType as MailType,
-      matter_reference: matterReference || workflowId!,
-      matter_type: matterType,
+      mail_type: intent.mailing_method as MailType,
+      matter_reference: intent.matter_reference || intent.workflow_id,
+      matter_type: intent.matter_type || "notice-respond",
       metadata: {
-        workflow_id: workflowId!,
+        workflow_id: intent.workflow_id,
         source: "notice-respond",
+        stripe_session_id: stripeSessionId,
+        stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
+        owner_user_id: user.id,
       },
       idempotency_key: idempotencyKey,
     });
+
+    await supabase
+      .from("mailing_intents")
+      .update({
+        status: "submitted",
+        provider_order_id: communication.id,
+        tracking_number: communication.tracking_number ?? null,
+        error_message: null,
+      })
+      .eq("id", intent.id)
+      .eq("owner_id", user.id);
 
     return {
       success: true,
       providerOrderId: communication.id,
       trackingNumber: communication.tracking_number ?? null,
       status: communication.status ?? "submitted",
+      idempotent: false,
     };
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown error creating communication";
-    const statusCode =
-      err && typeof err === "object" && "status" in err && typeof err.status === "number"
-        ? err.status
-        : 502;
-    throw createError({
-      statusCode,
-      statusMessage: `MailMyPDF communication creation failed: ${message}`,
-    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Mailing submission failed.";
+    await supabase
+      .from("mailing_intents")
+      .update({ status: "failed", error_message: message })
+      .eq("id", intent.id)
+      .eq("owner_id", user.id);
+    throw createError({ statusCode: 502, statusMessage: `MailMyPDF mailing submission failed: ${message}` });
   }
 });
