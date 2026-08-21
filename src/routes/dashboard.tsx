@@ -4,8 +4,6 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { NarrationButton, VoiceBadge } from "@/components/voice-controls";
 import { buildScript, createSegment } from "@/domain/voice";
-import { getRepository } from "@/platform/repository";
-import { getOwnerId } from "@/platform/owner-context";
 import { useAuth } from "@/lib/auth";
 import type { CaseSummary } from "@/domain/notice";
 import { NOTICE_TYPE_META } from "@/domain/notice-type";
@@ -22,18 +20,46 @@ function formatDate(iso: string): string {
   try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch { return iso; }
 }
 
+function normalizeSummary(row: Record<string, unknown>): CaseSummary {
+  return {
+    id: String(row.id),
+    workflowId: typeof row.workflow_id === "string" ? row.workflow_id : undefined,
+    status: String(row.status || "intake") as CaseSummary["status"],
+    noticeType: String(row.notice_type || "other"),
+    agency: typeof row.agency === "string" ? row.agency : undefined,
+    referenceNumber: typeof row.reference_number === "string" ? row.reference_number : undefined,
+    noticeDate: typeof row.notice_date === "string" ? row.notice_date : undefined,
+    deadlineDate: typeof row.deadline_date === "string" ? row.deadline_date : undefined,
+    readinessScore: Number(row.readiness_score || 0),
+    hasDraft: Boolean(row.has_draft),
+    hasMailing: Boolean(row.has_mailing),
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  } as CaseSummary;
+}
+
 function DashboardPage() {
-  const { user, loading: authLoading, isConfigured } = useAuth();
+  const { user, accessToken, loading: authLoading, isConfigured } = useAuth();
   const [summaries, setSummaries] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !accessToken) return;
     let active = true;
     setLoading(true);
-    void getRepository().listSummaries(getOwnerId()).then((data) => { if (active) setSummaries(data); }).catch(() => { if (active) setSummaries([]); }).finally(() => { if (active) setLoading(false); });
+    setError(null);
+    void fetch("/api/cases", { headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" } })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(payload?.error || `Unable to load cases (${response.status}).`);
+        return Array.isArray(payload?.cases) ? payload.cases.map(normalizeSummary) : [];
+      })
+      .then((data) => { if (active) setSummaries(data); })
+      .catch((cause) => { if (active) { setSummaries([]); setError(cause instanceof Error ? cause.message : "Unable to load cases."); } })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [authLoading, user]);
+  }, [authLoading, user, accessToken]);
 
   const stats = useMemo(() => {
     const total = summaries.length;
@@ -52,5 +78,5 @@ function DashboardPage() {
   if (authLoading) return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-3xl px-6 py-24 text-center"><p className="text-sm text-muted-foreground">Loading your MailMyPDF Account…</p></main><SiteFooter /></div>;
   if (!isConfigured || !user) return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-3xl px-6 py-24 text-center"><div className="postmark mx-auto w-fit">MailMyPDF Account</div><h1 className="mt-6 font-serif text-4xl">Sign in to view your cases.</h1><p className="mt-3 text-sm text-muted-foreground">Your Notice Respond records are private to your MailMyPDF Account.</p><Link to="/auth" className="mt-8 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">Sign in</Link></main><SiteFooter /></div>;
 
-  return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-5xl px-6 py-10"><div className="flex items-center justify-between flex-wrap gap-3"><div><div className="flex items-center gap-2"><div className="postmark w-fit">My Cases</div><VoiceBadge active={true} /></div><h1 className="mt-3 font-serif text-4xl">Your case records</h1><p className="mt-1 text-sm text-muted-foreground">Track your notice responses and case status.</p></div><div className="flex items-center gap-3"><NarrationButton script={summaryScript} label="Listen to summary" /><Link to="/account" className="rounded-full border border-input px-4 py-2 text-sm font-medium">Account</Link><Link to="/workflows/analyze" className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-stamp">Analysis Studio →</Link></div></div><div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{stats.map((s) => <div key={s.label} className="envelope-card p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">{s.label}</div><div className="mt-2 text-2xl font-serif">{s.value}</div></div>)}</div><div className="mt-8 envelope-card overflow-hidden"><div className="flex items-center justify-between border-b border-rule/60 px-5 py-4"><h2 className="font-serif text-lg">Recent cases</h2></div>{loading ? <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading cases…</div> : summaries.length === 0 ? <div className="px-5 py-10 text-center"><p className="text-sm text-muted-foreground">No saved cases yet.</p><Link to="/workflows/analyze" className="mt-3 inline-flex items-center gap-2 rounded-full border border-stamp px-4 py-2 text-sm font-medium text-stamp">Analyze your first notice</Link></div> : <><div className="hidden md:block"><table className="w-full text-sm"><thead className="bg-paper-deep/30 text-left text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Type</th><th className="px-5 py-3 font-medium">Agency</th><th className="px-5 py-3 font-medium">Reference</th><th className="px-5 py-3 font-medium">Deadline</th><th className="px-5 py-3 font-medium">Readiness</th><th className="px-5 py-3 font-medium">Status</th><th className="px-5 py-3 font-medium">Updated</th></tr></thead><tbody className="divide-y divide-rule/40">{summaries.map((s) => <tr key={s.id}><td className="px-5 py-3.5 text-ink-soft">{(NOTICE_TYPE_META as Record<string, { label?: string }>)[s.noticeType]?.label || s.noticeType}</td><td className="px-5 py-3.5 text-ink-soft">{s.agency || "—"}</td><td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">{s.referenceNumber || "—"}</td><td className="px-5 py-3.5 text-muted-foreground">{s.deadlineDate ? formatDate(s.deadlineDate) : "—"}</td><td className="px-5 py-3.5"><div className="flex items-center gap-2"><div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${s.readinessScore}%` }} /></div><span className="text-xs text-muted-foreground">{s.readinessScore}%</span></div></td><td className="px-5 py-3.5"><span className={`font-mono text-xs ${STATUS_BADGE[s.status] || "text-muted-foreground"}`}>{STATUS_LABEL[s.status] || s.status}</span></td><td className="px-5 py-3.5 text-muted-foreground">{formatDate(s.updatedAt)}</td></tr>)}</tbody></table></div><div className="divide-y divide-rule/40 md:hidden">{summaries.map((s) => <div key={s.id} className="p-4"><div className="flex items-center justify-between"><span className="font-medium text-foreground">{(NOTICE_TYPE_META as Record<string, { label?: string }>)[s.noticeType]?.label || s.noticeType}</span><span className={`font-mono text-xs ${STATUS_BADGE[s.status] || "text-muted-foreground"}`}>{STATUS_LABEL[s.status] || s.status}</span></div><p className="mt-1 text-sm text-muted-foreground">{s.agency || "Unknown agency"}</p><div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground"><span>{formatDate(s.updatedAt)}</span>{s.deadlineDate && <><span>·</span><span>Deadline: {formatDate(s.deadlineDate)}</span></>}<span>·</span><span>{s.readinessScore}% ready</span></div></div>)}</div></>}</div></main><SiteFooter /></div>;
+  return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-5xl px-6 py-10"><div className="flex items-center justify-between flex-wrap gap-3"><div><div className="flex items-center gap-2"><div className="postmark w-fit">My Cases</div><VoiceBadge active={true} /></div><h1 className="mt-3 font-serif text-4xl">Your case records</h1><p className="mt-1 text-sm text-muted-foreground">Track your notice responses and case status.</p></div><div className="flex items-center gap-3"><NarrationButton script={summaryScript} label="Listen to summary" /><Link to="/account" className="rounded-full border border-input px-4 py-2 text-sm font-medium">Account</Link><Link to="/workflows/analyze" className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-stamp">Analysis Studio →</Link></div></div>{error && <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}<div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{stats.map((s) => <div key={s.label} className="envelope-card p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">{s.label}</div><div className="mt-2 text-2xl font-serif">{s.value}</div></div>)}</div><div className="mt-8 envelope-card overflow-hidden"><div className="flex items-center justify-between border-b border-rule/60 px-5 py-4"><h2 className="font-serif text-lg">Recent cases</h2></div>{loading ? <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading cases…</div> : summaries.length === 0 ? <div className="px-5 py-10 text-center"><p className="text-sm text-muted-foreground">No saved cases yet.</p><Link to="/workflows/analyze" className="mt-3 inline-flex items-center gap-2 rounded-full border border-stamp px-4 py-2 text-sm font-medium text-stamp">Analyze your first notice</Link></div> : <><div className="hidden md:block"><table className="w-full text-sm"><thead className="bg-paper-deep/30 text-left text-xs uppercase tracking-wider text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Type</th><th className="px-5 py-3 font-medium">Agency</th><th className="px-5 py-3 font-medium">Reference</th><th className="px-5 py-3 font-medium">Deadline</th><th className="px-5 py-3 font-medium">Readiness</th><th className="px-5 py-3 font-medium">Status</th><th className="px-5 py-3 font-medium">Updated</th></tr></thead><tbody className="divide-y divide-rule/40">{summaries.map((s) => <tr key={s.id}><td className="px-5 py-3.5 text-ink-soft">{(NOTICE_TYPE_META as Record<string, { label?: string }>)[s.noticeType]?.label || s.noticeType}</td><td className="px-5 py-3.5 text-ink-soft">{s.agency || "—"}</td><td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">{s.referenceNumber || "—"}</td><td className="px-5 py-3.5 text-muted-foreground">{s.deadlineDate ? formatDate(s.deadlineDate) : "—"}</td><td className="px-5 py-3.5"><div className="flex items-center gap-2"><div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${s.readinessScore}%` }} /></div><span className="text-xs text-muted-foreground">{s.readinessScore}%</span></div></td><td className="px-5 py-3.5"><span className={`font-mono text-xs ${STATUS_BADGE[s.status] || "text-muted-foreground"}`}>{STATUS_LABEL[s.status] || s.status}</span></td><td className="px-5 py-3.5 text-muted-foreground">{formatDate(s.updatedAt)}</td></tr>)}</tbody></table></div><div className="divide-y divide-rule/40 md:hidden">{summaries.map((s) => <div key={s.id} className="p-4"><div className="flex items-center justify-between"><span className="font-medium text-foreground">{(NOTICE_TYPE_META as Record<string, { label?: string }>)[s.noticeType]?.label || s.noticeType}</span><span className={`font-mono text-xs ${STATUS_BADGE[s.status] || "text-muted-foreground"}`}>{STATUS_LABEL[s.status] || s.status}</span></div><p className="mt-1 text-sm text-muted-foreground">{s.agency || "Unknown agency"}</p><div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground"><span>{formatDate(s.updatedAt)}</span>{s.deadlineDate && <><span>·</span><span>Deadline: {formatDate(s.deadlineDate)}</span></>}<span>·</span><span>{s.readinessScore}% ready</span></div></div>)}</div></>}</div></main><SiteFooter /></div>;
 }
