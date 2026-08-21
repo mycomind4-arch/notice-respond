@@ -5,7 +5,7 @@
  * No mailing is submitted until the Stripe session is verified as paid.
  */
 
-import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody } from "h3";
+import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, type H3Event } from "h3";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuthenticatedUser } from "../../src/lib/auth-guard";
 
@@ -28,7 +28,7 @@ function getSupabaseServiceClient() {
   return createClient(url, serviceRole, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-function toAuthRequest(event: Parameters<typeof defineEventHandler>[0]) {
+function toAuthRequest(event: H3Event): Request {
   return new Request(getRequestURL(event).toString(), {
     headers: getRequestHeaders(event) as HeadersInit,
   });
