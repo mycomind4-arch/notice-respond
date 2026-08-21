@@ -1,17 +1,6 @@
 -- ═══════════════════════════════════════════════════════════
 -- NOTICE RESPOND — Database Schema with Row Level Security
---
--- Creates the cases and audit_entries tables for the Supabase
--- case repository. Each case is stored as a single JSONB document
--- with extracted summary columns for fast querying.
---
--- ROW LEVEL SECURITY:
--- Both tables enforce RLS based on owner_id (cases) and the
--- case's owner_id (audit_entries). Users can only access their
--- own data — cross-user access is denied at the database level.
 -- ═══════════════════════════════════════════════════════════
-
--- ── Cases table ──
 
 CREATE TABLE IF NOT EXISTS cases (
   id UUID PRIMARY KEY,
@@ -31,13 +20,10 @@ CREATE TABLE IF NOT EXISTS cases (
   data JSONB NOT NULL
 );
 
--- Indexes for common queries
 CREATE INDEX IF NOT EXISTS cases_owner_id_idx ON cases(owner_id);
 CREATE INDEX IF NOT EXISTS cases_status_idx ON cases(status);
 CREATE INDEX IF NOT EXISTS cases_owner_status_idx ON cases(owner_id, status);
 CREATE INDEX IF NOT EXISTS cases_updated_at_idx ON cases(updated_at DESC);
-
--- ── Audit entries table (immutable append-only log) ──
 
 CREATE TABLE IF NOT EXISTS audit_entries (
   id UUID PRIMARY KEY,
@@ -57,37 +43,56 @@ CREATE INDEX IF NOT EXISTS audit_entries_case_id_idx ON audit_entries(case_id);
 CREATE INDEX IF NOT EXISTS audit_entries_owner_id_idx ON audit_entries(owner_id);
 CREATE INDEX IF NOT EXISTS audit_entries_action_idx ON audit_entries(action);
 
--- ── Row Level Security ──
+-- Payment/mailing intents are created server-side before Stripe Checkout.
+-- They are the durable bridge across the Stripe redirect.
+CREATE TABLE IF NOT EXISTS mailing_intents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  workflow_id TEXT NOT NULL,
+  stripe_session_id TEXT UNIQUE,
+  stripe_payment_intent_id TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  mailing_method TEXT NOT NULL,
+  draft TEXT NOT NULL,
+  recipient JSONB NOT NULL,
+  matter_reference TEXT,
+  matter_type TEXT NOT NULL DEFAULT 'notice-respond',
+  provider_order_id TEXT,
+  tracking_number TEXT,
+  error_message TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
 
--- Enable RLS on both tables
+CREATE INDEX IF NOT EXISTS mailing_intents_owner_idx ON mailing_intents(owner_id);
+CREATE INDEX IF NOT EXISTS mailing_intents_status_idx ON mailing_intents(status);
+CREATE INDEX IF NOT EXISTS mailing_intents_stripe_idx ON mailing_intents(stripe_session_id);
+CREATE INDEX IF NOT EXISTS mailing_intents_provider_idx ON mailing_intents(provider_order_id);
+
 ALTER TABLE cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mailing_intents ENABLE ROW LEVEL SECURITY;
 
--- Cases: users can only see/modify their own cases
-CREATE POLICY cases_select_own ON cases
-  FOR SELECT USING (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS cases_select_own ON cases;
+CREATE POLICY cases_select_own ON cases FOR SELECT USING (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS cases_insert_own ON cases;
+CREATE POLICY cases_insert_own ON cases FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS cases_update_own ON cases;
+CREATE POLICY cases_update_own ON cases FOR UPDATE USING (auth.uid()::text = owner_id) WITH CHECK (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS cases_delete_own ON cases;
+CREATE POLICY cases_delete_own ON cases FOR DELETE USING (auth.uid()::text = owner_id);
 
-CREATE POLICY cases_insert_own ON cases
-  FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS audit_select_own ON audit_entries;
+CREATE POLICY audit_select_own ON audit_entries FOR SELECT USING (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS audit_insert_own ON audit_entries;
+CREATE POLICY audit_insert_own ON audit_entries FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
 
-CREATE POLICY cases_update_own ON cases
-  FOR UPDATE USING (auth.uid()::text = owner_id)
-  WITH CHECK (auth.uid()::text = owner_id);
-
-CREATE POLICY cases_delete_own ON cases
-  FOR DELETE USING (auth.uid()::text = owner_id);
-
--- Audit entries: users can only see/insert their own audit entries
-CREATE POLICY audit_select_own ON audit_entries
-  FOR SELECT USING (auth.uid()::text = owner_id);
-
-CREATE POLICY audit_insert_own ON audit_entries
-  FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
-
--- Audit entries are immutable — NO UPDATE or DELETE policies.
--- This enforces audit immutability at the database level.
-
--- ── Updated_at trigger for cases ──
+DROP POLICY IF EXISTS mailing_intents_select_own ON mailing_intents;
+CREATE POLICY mailing_intents_select_own ON mailing_intents FOR SELECT USING (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS mailing_intents_insert_own ON mailing_intents;
+CREATE POLICY mailing_intents_insert_own ON mailing_intents FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS mailing_intents_update_own ON mailing_intents;
+CREATE POLICY mailing_intents_update_own ON mailing_intents FOR UPDATE USING (auth.uid()::text = owner_id) WITH CHECK (auth.uid()::text = owner_id);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -98,17 +103,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS cases_updated_at ON cases;
-CREATE TRIGGER cases_updated_at
-  BEFORE UPDATE ON cases
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER cases_updated_at BEFORE UPDATE ON cases FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- ── Prevent owner_id from being changed on update ──
+DROP TRIGGER IF EXISTS mailing_intents_updated_at ON mailing_intents;
+CREATE TRIGGER mailing_intents_updated_at BEFORE UPDATE ON mailing_intents FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE OR REPLACE FUNCTION prevent_owner_change()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- owner_id must never change after insert — prevents privilege escalation
   IF NEW.owner_id IS DISTINCT FROM OLD.owner_id THEN
     RAISE EXCEPTION 'Cannot change owner_id after case creation';
   END IF;
@@ -117,7 +119,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS cases_prevent_owner_change ON cases;
-CREATE TRIGGER cases_prevent_owner_change
-  BEFORE UPDATE ON cases
-  FOR EACH ROW
-  EXECUTE FUNCTION prevent_owner_change();
+CREATE TRIGGER cases_prevent_owner_change BEFORE UPDATE ON cases FOR EACH ROW EXECUTE FUNCTION prevent_owner_change();
+
+CREATE OR REPLACE FUNCTION prevent_mailing_intent_owner_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.owner_id IS DISTINCT FROM OLD.owner_id THEN
+    RAISE EXCEPTION 'Cannot change owner_id on mailing intent';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS mailing_intents_prevent_owner_change ON mailing_intents;
+CREATE TRIGGER mailing_intents_prevent_owner_change BEFORE UPDATE ON mailing_intents FOR EACH ROW EXECUTE FUNCTION prevent_mailing_intent_owner_change();
