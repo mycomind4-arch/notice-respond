@@ -5,7 +5,7 @@
  * No mailing is submitted until the Stripe session is verified as paid.
  */
 
-import { createError, defineEventHandler, getRequestURL, readBody } from "h3";
+import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody } from "h3";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuthenticatedUser } from "../../src/lib/auth-guard";
 
@@ -28,15 +28,16 @@ function getSupabaseServiceClient() {
   return createClient(url, serviceRole, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function toAuthRequest(event: Parameters<typeof defineEventHandler>[0]) {
+  return new Request(getRequestURL(event).toString(), {
+    headers: getRequestHeaders(event) as HeadersInit,
+  });
+}
+
 export default defineEventHandler(async (event) => {
   if (event.method !== "POST") throw createError({ statusCode: 405, statusMessage: "Method not allowed." });
 
-  let user;
-  try {
-    user = await requireAuthenticatedUser(event.node.req as unknown as Request);
-  } catch (error) {
-    throw error;
-  }
+  const user = await requireAuthenticatedUser(toAuthRequest(event));
 
   const input = await readBody<{
     draft?: string;
@@ -66,7 +67,8 @@ export default defineEventHandler(async (event) => {
   if (!stripeSecretKey) throw createError({ statusCode: 503, statusMessage: "Stripe is not configured." });
 
   const supabase = getSupabaseServiceClient();
-  const stripe = new (await import("stripe")).default(stripeSecretKey, { apiVersion: "2024-06-20" as never });
+  const { default: Stripe } = await import("stripe");
+  const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   const appUrl = process.env.APP_URL || getRequestURL(event).origin;
 
   const { data: intent, error: intentError } = await supabase
@@ -95,7 +97,7 @@ export default defineEventHandler(async (event) => {
           currency: "usd",
           product_data: {
             name: LABELS[mailingMethod],
-            description: `${input.workflowTitle?.trim() || workflowId} · ${LABELS[mailingMethod]}`,
+            description: `${input?.workflowTitle?.trim() || workflowId} · ${LABELS[mailingMethod]}`,
           },
           unit_amount: PRICES[mailingMethod],
         },
