@@ -45,11 +45,7 @@ export interface MailMyPDFCommunication {
 }
 
 export class MailMyPDFPlatformError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly code?: string,
-  ) {
+  constructor(message: string, readonly status: number, readonly code?: string) {
     super(message);
     this.name = "MailMyPDFPlatformError";
   }
@@ -58,9 +54,7 @@ export class MailMyPDFPlatformError extends Error {
 function getConfig() {
   const baseUrl = process.env.MAILMYPDF_API_URL?.replace(/\/$/, "");
   const apiKey = process.env.MAILMYPDF_API_KEY;
-  if (!baseUrl || !apiKey) {
-    throw new Error("MailMyPDF platform is not configured. Set MAILMYPDF_API_URL and MAILMYPDF_API_KEY.");
-  }
+  if (!baseUrl || !apiKey) throw new Error("MailMyPDF platform is not configured. Set MAILMYPDF_API_URL and MAILMYPDF_API_KEY.");
   return { baseUrl, apiKey };
 }
 
@@ -69,7 +63,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${apiKey}`);
   headers.set("Accept", "application/json");
-  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+  // Never set an explicit JSON Content-Type for multipart FormData. The runtime
+  // must supply the boundary or MailMyPDF /v1/documents cannot parse the upload.
+  if (init.body && !headers.has("Content-Type") && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const response = await fetch(`${baseUrl}${path}`, { ...init, headers });
   const text = await response.text();
@@ -80,11 +79,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const error = payload && typeof payload === "object" && "error" in payload
       ? (payload as { error?: { message?: string; code?: string } }).error
       : undefined;
-    throw new MailMyPDFPlatformError(
-      error?.message ?? `MailMyPDF request failed (${response.status})`,
-      response.status,
-      error?.code,
-    );
+    throw new MailMyPDFPlatformError(error?.message ?? `MailMyPDF request failed (${response.status})`, response.status, error?.code);
   }
   return payload as T;
 }
@@ -92,20 +87,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export async function uploadDocument(file: File): Promise<MailMyPDFDocument> {
   const form = new FormData();
   form.append("file", file, file.name);
-  const result = await request<{ document: MailMyPDFDocument }>("/v1/documents", {
-    method: "POST",
-    body: form,
-  });
+  const result = await request<{ document: MailMyPDFDocument }>("/v1/documents", { method: "POST", body: form });
   return result.document;
 }
 
-export async function createCommunication(
-  input: CreateNoticeCommunicationInput,
-): Promise<MailMyPDFCommunication> {
-  return request<MailMyPDFCommunication>("/v1/communications", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
+export async function createCommunication(input: CreateNoticeCommunicationInput): Promise<MailMyPDFCommunication> {
+  return request<MailMyPDFCommunication>("/v1/communications", { method: "POST", body: JSON.stringify(input) });
 }
 
 export async function getCommunication(id: string): Promise<MailMyPDFCommunication> {
