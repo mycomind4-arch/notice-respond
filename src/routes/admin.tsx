@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/lib/auth";
@@ -33,4 +33,4 @@ function AdminPage() {
 }
 
 function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-rule bg-card p-6"><div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div><div className="mt-2 text-2xl font-serif">{value}</div></div>; }
-function Page({ children }: { children: React.ReactNode }) { return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-5xl px-6 py-12">{children}</main><SiteFooter /></div>; }
+function Page({ children }: { children: ReactNode }) { return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-5xl px-6 py-12">{children}</main><SiteFooter /></div>; }
