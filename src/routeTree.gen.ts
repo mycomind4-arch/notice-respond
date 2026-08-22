@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,6 +21,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RespondToAGovernmentNoticeRouteImport } from './routes/respond-to-a-government-notice'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiDocumentsRouteImport } from './routes/api/documents'
 import { Route as ResourcesIndexRouteImport } from './routes/resources/index'
 import { Route as ResourcesSlugRouteImport } from './routes/resources/$slug'
 import { Route as WorkflowsAgencyActionRouteImport } from './routes/workflows/agency-action'
@@ -45,6 +48,9 @@ import { Route as WorkflowsRespondToCodeEnforcementNoticeRouteImport } from './r
 import { Route as WorkflowsRespondToCp14NoticeRouteImport } from './routes/workflows/respond-to-cp14-notice'
 import { Route as WorkflowsRespondToCp2000NoticeRouteImport } from './routes/workflows/respond-to-cp2000-notice'
 import { Route as WorkflowsTransunionDisputeRouteImport } from './routes/workflows/transunion-dispute'
+import { Route as ApiAdminHealthRouteImport } from './routes/api/admin/health'
+import { Route as ApiAuthStatusRouteImport } from './routes/api/auth/status'
+import { Route as ApiCasesIndexRouteImport } from './routes/api/cases/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +60,16 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -95,6 +111,11 @@ const RespondToAGovernmentNoticeRoute =
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocumentsRoute = ApiDocumentsRouteImport.update({
+  id: '/api/documents',
+  path: '/api/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
@@ -241,10 +262,27 @@ const WorkflowsTransunionDisputeRoute =
     path: '/workflows/transunion-dispute',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminHealthRoute = ApiAdminHealthRouteImport.update({
+  id: '/api/admin/health',
+  path: '/api/admin/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthStatusRoute = ApiAuthStatusRouteImport.update({
+  id: '/api/auth/status',
+  path: '/api/auth/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCasesIndexRoute = ApiCasesIndexRouteImport.update({
+  id: '/api/cases/',
+  path: '/api/cases/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -253,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
+  '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
@@ -279,10 +318,15 @@ export interface FileRoutesByFullPath {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/api/admin/health': typeof ApiAdminHealthRoute
+  '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases/': typeof ApiCasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -291,6 +335,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
+  '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
@@ -317,11 +362,16 @@ export interface FileRoutesByTo {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources': typeof ResourcesIndexRoute
+  '/api/admin/health': typeof ApiAdminHealthRoute
+  '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases': typeof ApiCasesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
@@ -330,6 +380,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
   '/terms': typeof TermsRoute
+  '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/workflows/agency-action': typeof WorkflowsAgencyActionRoute
   '/workflows/analyze': typeof WorkflowsAnalyzeRoute
@@ -356,12 +407,17 @@ export interface FileRoutesById {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/api/admin/health': typeof ApiAdminHealthRoute
+  '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases/': typeof ApiCasesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -370,6 +426,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/respond-to-a-government-notice'
     | '/terms'
+    | '/api/documents'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
@@ -396,10 +453,15 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources/'
+    | '/api/admin/health'
+    | '/api/auth/status'
+    | '/api/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -408,6 +470,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/respond-to-a-government-notice'
     | '/terms'
+    | '/api/documents'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
@@ -434,10 +497,15 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources'
+    | '/api/admin/health'
+    | '/api/auth/status'
+    | '/api/cases'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/auth'
     | '/contact'
     | '/dashboard'
@@ -446,6 +514,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/respond-to-a-government-notice'
     | '/terms'
+    | '/api/documents'
     | '/resources/$slug'
     | '/workflows/agency-action'
     | '/workflows/analyze'
@@ -472,11 +541,16 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources/'
+    | '/api/admin/health'
+    | '/api/auth/status'
+    | '/api/cases/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
@@ -485,6 +559,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RespondToAGovernmentNoticeRoute: typeof RespondToAGovernmentNoticeRoute
   TermsRoute: typeof TermsRoute
+  ApiDocumentsRoute: typeof ApiDocumentsRoute
   ResourcesSlugRoute: typeof ResourcesSlugRoute
   WorkflowsAgencyActionRoute: typeof WorkflowsAgencyActionRoute
   WorkflowsAnalyzeRoute: typeof WorkflowsAnalyzeRoute
@@ -511,6 +586,9 @@ export interface RootRouteChildren {
   WorkflowsRespondToCp2000NoticeRoute: typeof WorkflowsRespondToCp2000NoticeRoute
   WorkflowsTransunionDisputeRoute: typeof WorkflowsTransunionDisputeRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
+  ApiAdminHealthRoute: typeof ApiAdminHealthRoute
+  ApiAuthStatusRoute: typeof ApiAuthStatusRoute
+  ApiCasesIndexRoute: typeof ApiCasesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -527,6 +605,20 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -583,6 +675,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/documents': {
+      id: '/api/documents'
+      path: '/api/documents'
+      fullPath: '/api/documents'
+      preLoaderRoute: typeof ApiDocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resources/': {
@@ -767,12 +866,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsTransunionDisputeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/health': {
+      id: '/api/admin/health'
+      path: '/api/admin/health'
+      fullPath: '/api/admin/health'
+      preLoaderRoute: typeof ApiAdminHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/status': {
+      id: '/api/auth/status'
+      path: '/api/auth/status'
+      fullPath: '/api/auth/status'
+      preLoaderRoute: typeof ApiAuthStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cases/': {
+      id: '/api/cases/'
+      path: '/api/cases'
+      fullPath: '/api/cases/'
+      preLoaderRoute: typeof ApiCasesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
@@ -781,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RespondToAGovernmentNoticeRoute: RespondToAGovernmentNoticeRoute,
   TermsRoute: TermsRoute,
+  ApiDocumentsRoute: ApiDocumentsRoute,
   ResourcesSlugRoute: ResourcesSlugRoute,
   WorkflowsAgencyActionRoute: WorkflowsAgencyActionRoute,
   WorkflowsAnalyzeRoute: WorkflowsAnalyzeRoute,
@@ -810,6 +933,9 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRespondToCp2000NoticeRoute: WorkflowsRespondToCp2000NoticeRoute,
   WorkflowsTransunionDisputeRoute: WorkflowsTransunionDisputeRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
+  ApiAdminHealthRoute: ApiAdminHealthRoute,
+  ApiAuthStatusRoute: ApiAuthStatusRoute,
+  ApiCasesIndexRoute: ApiCasesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

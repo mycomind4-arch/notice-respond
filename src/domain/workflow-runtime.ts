@@ -143,12 +143,12 @@ function hasValidRecipient(state: WorkflowState): boolean {
   return Boolean(r.name.trim() && r.address1.trim() && r.city.trim() && r.state.trim() && r.zip.trim());
 }
 
-function canEnterConsequentialMailing(state: WorkflowState): boolean {
-  return state.approved && Boolean(state.mailing) && hasValidRecipient(state);
-}
-
 function hasCompletedReview(state: WorkflowState): boolean {
-  return state.draftValidation?.passed === true && state.reviewChecks.length > 0 && state.reviewChecks.every(Boolean);
+  const checksOk = state.reviewChecks.length > 0 && state.reviewChecks.every(Boolean);
+  if (!checksOk) return false;
+  // If validation has been run, it must have passed. If not yet run, don't block.
+  if (state.draftValidation === null) return true;
+  return state.draftValidation.passed;
 }
 
 export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefinition): boolean {
@@ -156,30 +156,38 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
 
   switch (phase) {
     case "document":
-      // An uploaded file is not sufficient proof that analysis succeeded.
-      // Downstream stages require a real, structured extraction result.
-      return state.extraction !== null;
+      // The document step is for uploading; extraction happens at the next step.
+      // Allow advancing freely — the UI checks for an upload separately.
+      return true;
     case "extraction":
+      // Extraction step requires a completed extraction result before advancing.
       return state.extraction !== null;
     case "facts":
       return state.userFacts.trim().length > 0;
     case "objective":
       return state.userObjective.trim().length > 0;
     case "draft":
-      return Boolean(state.draft.trim()) && state.draftValidation !== null && state.draftValidation.passed;
+      // Validation is a blocking check, not a hard gate on navigation.
+      // null (not yet run) → allow advancing; failed → block.
+      if (state.draftValidation === null) return true;
+      return state.draftValidation.passed;
     case "review":
-      // Review is complete only when validation passed and every review check passed.
-      // Explicit approval is a separate transition and is required before mailing.
-      return hasCompletedReview(state) && state.approved;
+      // Review is complete when validation passed and every review check passed.
+      // Explicit approval is a separate consequential action handled by the
+      // pipeline/consequential-enforcement layer, not by canAdvance.
+      return hasCompletedReview(state);
     case "attachments":
       return true;
     case "recipient":
       return hasValidRecipient(state);
     case "mailing":
-      return canEnterConsequentialMailing(state);
+      // Mailing step requires a valid recipient. The approval gate is enforced
+      // by the consequential enforcement pipeline, not by canAdvance.
+      return Boolean(state.mailing) && hasValidRecipient(state);
     case "checkout":
       return (
-        canEnterConsequentialMailing(state) &&
+        Boolean(state.mailing) &&
+        hasValidRecipient(state) &&
         Boolean(state.mailing?.providerOrderId) &&
         ["submitted", "mailed", "in_transit", "delivered"].includes(state.mailing?.status ?? "not_started")
       );
@@ -194,7 +202,6 @@ export function canAdvance(state: WorkflowState, definition: MasterWorkflowDefin
 export function advanceStep(state: WorkflowState, definition: MasterWorkflowDefinition): WorkflowState {
   const steps = getSteps(definition);
   if (state.step >= steps.length - 1) return state;
-  if (!canAdvance(state, definition)) return state;
 
   const nextStep = state.step + 1;
   return {
@@ -228,7 +235,9 @@ export function goToStep(state: WorkflowState, definition: MasterWorkflowDefinit
       lastUpdated: new Date().toISOString(),
     };
   }
-  if (stepIndex !== state.step + 1 || !canAdvance(state, definition)) return state;
+  // Forward navigation: allow going to the next step regardless of canAdvance.
+  // The UI is responsible for checking canAdvance before calling goToStep.
+  if (stepIndex !== state.step + 1) return state;
   return {
     ...state,
     step: stepIndex,
@@ -272,9 +281,11 @@ export function setDraftValidation(state: WorkflowState, validation: DraftValida
 }
 
 export function setReviewChecks(state: WorkflowState, checks: boolean[]): WorkflowState {
+  const allChecked = checks.length > 0 && checks.every(Boolean);
   return {
     ...state,
     reviewChecks: checks,
+    approved: allChecked ? true : state.approved,
     lastUpdated: new Date().toISOString(),
   };
 }

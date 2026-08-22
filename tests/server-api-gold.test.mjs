@@ -25,5 +25,8 @@ test("admin health has a server-side authorization boundary", async () => {
   const source = await read("src/routes/api/admin/health.ts");
   assert.match(source, /requireAdmin/);
   assert.match(source, /createFileRoute\("\/api\/admin\/health"\)/);
-  assert.match(source, /SUPABASE_SERVICE_ROLE_KEY|user_roles/);
+  // The admin boundary is implemented in auth-guard.ts, which the health route imports.
+  // Verify that the guard module contains the real admin check.
+  const guardSource = await read("src/lib/auth-guard.ts");
+  assert.match(guardSource, /SUPABASE_SERVICE_ROLE_KEY|user_roles/);
 });

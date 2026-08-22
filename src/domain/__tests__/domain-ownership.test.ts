@@ -12,7 +12,8 @@
 
    ═══════════════════════════════════════════════════════════ */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, before, after } from "node:test";
+import { strict as assert } from "node:assert";
 import {
   CANONICAL_DOMAINS,
   validateDomainOwnership,
@@ -41,42 +42,42 @@ function registryToOwnershipEntries(): WorkflowOwnershipEntry[] {
 describe("Canonical Domains Registry", () => {
   it("has all 12 canonical domains", () => {
     const domains = listDomains();
-    expect(domains.length).toBe(12);
+    assert.equal(domains.length, 12);
   });
 
   it("every domain has a unique canonical repo", () => {
     const repos = listDomains().map((d) => d.canonicalRepo);
     const unique = new Set(repos);
-    expect(unique.size).toBe(repos.length);
+    assert.equal(unique.size, repos.length);
   });
 
   it("every domain has required fields", () => {
     for (const domain of listDomains()) {
-      expect(domain.id).toBeTruthy();
-      expect(domain.name).toBeTruthy();
-      expect(domain.canonicalRepo).toBeTruthy();
-      expect(domain.description).toBeTruthy();
-      expect(domain.primaryEngines.length).toBeGreaterThan(0);
-      expect(domain.ownershipRule).toBeTruthy();
-      expect(domain.repoExists).toBe(true);
-      expect(["active", "planned", "research"]).toContain(domain.status);
+      assert.ok(domain.id);
+      assert.ok(domain.name);
+      assert.ok(domain.canonicalRepo);
+      assert.ok(domain.description);
+      assert.ok(domain.primaryEngines.length > 0);
+      assert.ok(domain.ownershipRule);
+      assert.equal(domain.repoExists, true);
+      assert.ok(["active", "planned", "research"].includes(domain.status));
     }
   });
 
   it("notice-respond domain is correctly defined", () => {
     const domain = getDomain("notice-respond");
-    expect(domain).toBeDefined();
-    expect(domain!.canonicalRepo).toBe("notice-respond");
-    expect(domain!.primaryEngines).toContain("document-action");
-    expect(domain!.status).toBe("active");
+    assert.ok(domain);
+    assert.equal(domain!.canonicalRepo, "notice-respond");
+    assert.ok(domain!.primaryEngines.includes("document-action"));
+    assert.equal(domain!.status, "active");
   });
 
   it("dispute-mail domain is correctly defined", () => {
     const domain = getDomain("dispute-mail");
-    expect(domain).toBeDefined();
-    expect(domain!.canonicalRepo).toBe("dispute-mail");
-    expect(domain!.primaryEngines).toContain("dispute");
-    expect(domain!.status).toBe("active");
+    assert.ok(domain);
+    assert.equal(domain!.canonicalRepo, "dispute-mail");
+    assert.ok(domain!.primaryEngines.includes("dispute"));
+    assert.equal(domain!.status, "active");
   });
 });
 
@@ -88,8 +89,8 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "notice-respond",
       engine: "document-action",
     });
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
+    assert.equal(result.valid, true);
+    assert.equal(result.errors.length, 0);
   });
 
   it("passes for valid dispute-mail workflow", () => {
@@ -99,8 +100,8 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "dispute-mail",
       engine: "dispute",
     });
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
+    assert.equal(result.valid, true);
+    assert.equal(result.errors.length, 0);
   });
 
   it("fails when vertical/repo mismatch — dispute workflow in notice-respond repo", () => {
@@ -110,10 +111,10 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "notice-respond",
       engine: "dispute",
     });
-    expect(result.valid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Repo mismatch");
-    expect(result.errors.join(" ")).toContain("dispute-mail");
-    expect(result.errors.join(" ")).toContain("notice-respond");
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.join(" ").includes("Repo mismatch"));
+    assert.ok(result.errors.join(" ").includes("dispute-mail"));
+    assert.ok(result.errors.join(" ").includes("notice-respond"));
   });
 
   it("fails when vertical/repo mismatch — IRS notice in dispute-mail repo", () => {
@@ -123,8 +124,8 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "dispute-mail",
       engine: "document-action",
     });
-    expect(result.valid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Repo mismatch");
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.join(" ").includes("Repo mismatch"));
   });
 
   it("fails for unknown vertical", () => {
@@ -134,8 +135,8 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "nonexistent-domain",
       engine: "document-action",
     });
-    expect(result.valid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Unknown vertical");
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.join(" ").includes("Unknown vertical"));
   });
 
   it("fails for unknown repo", () => {
@@ -145,8 +146,8 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "nonexistent-repo",
       engine: "document-action",
     });
-    expect(result.valid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Unknown repo");
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.join(" ").includes("Unknown repo"));
   });
 
   it("warns when engine is not a primary engine for the domain", () => {
@@ -156,9 +157,9 @@ describe("validateDomainOwnership — single entry", () => {
       repo: "notice-respond",
       engine: "appeal" as any,
     });
-    expect(result.valid).toBe(true);
-    expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.join(" ")).toContain("not a primary engine");
+    assert.equal(result.valid, true);
+    assert.ok(result.warnings.length > 0);
+    assert.ok(result.warnings.join(" ").includes("not a primary engine"));
   });
 });
 
@@ -166,9 +167,9 @@ describe("validateRegistryOwnership — full registry", () => {
   it("all current registry entries pass ownership validation", () => {
     const entries = registryToOwnershipEntries();
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(true);
-    expect(result.invalidCount).toBe(0);
-    expect(result.errors).toHaveLength(0);
+    assert.equal(result.allValid, true);
+    assert.equal(result.invalidCount, 0);
+    assert.equal(result.errors.length, 0);
   });
 
   it("detects duplicate workflow IDs", () => {
@@ -177,9 +178,9 @@ describe("validateRegistryOwnership — full registry", () => {
       { id: "cp2000-response", vertical: "notice-respond", repo: "notice-respond", engine: "document-action" },
     ];
     const result = validateRegistryOwnership(entries);
-    expect(result.duplicateIds).toContain("cp2000-response");
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Duplicate workflow ID");
+    assert.ok(result.duplicateIds.includes("cp2000-response"));
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("Duplicate workflow ID"));
   });
 
   it("detects cross-domain contamination — credit dispute in notice-respond", () => {
@@ -187,10 +188,10 @@ describe("validateRegistryOwnership — full registry", () => {
       { id: "equifax-dispute", vertical: "notice-respond", repo: "notice-respond", engine: "dispute" },
     ];
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Cross-domain contamination");
-    expect(result.errors.join(" ")).toContain("equifax-dispute");
-    expect(result.errors.join(" ")).toContain("dispute-mail");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("Cross-domain contamination"));
+    assert.ok(result.errors.join(" ").includes("equifax-dispute"));
+    assert.ok(result.errors.join(" ").includes("dispute-mail"));
   });
 
   it("detects cross-domain contamination — IRS notice in dispute-mail", () => {
@@ -198,10 +199,10 @@ describe("validateRegistryOwnership — full registry", () => {
       { id: "cp14-response", vertical: "dispute-mail", repo: "dispute-mail", engine: "document-action" },
     ];
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Cross-domain contamination");
-    expect(result.errors.join(" ")).toContain("cp14-response");
-    expect(result.errors.join(" ")).toContain("notice-respond");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("Cross-domain contamination"));
+    assert.ok(result.errors.join(" ").includes("cp14-response"));
+    assert.ok(result.errors.join(" ").includes("notice-respond"));
   });
 
   it("detects cross-domain contamination — FOIA in notice-respond", () => {
@@ -209,10 +210,10 @@ describe("validateRegistryOwnership — full registry", () => {
       { id: "foia-request", vertical: "notice-respond", repo: "notice-respond", engine: "records" },
     ];
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Cross-domain contamination");
-    expect(result.errors.join(" ")).toContain("foia-request");
-    expect(result.errors.join(" ")).toContain("records-requests");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("Cross-domain contamination"));
+    assert.ok(result.errors.join(" ").includes("foia-request"));
+    assert.ok(result.errors.join(" ").includes("records-requests"));
   });
 
   it("detects cross-domain contamination — insurance in notice-respond", () => {
@@ -220,9 +221,9 @@ describe("validateRegistryOwnership — full registry", () => {
       { id: "insurance-claim-denied", vertical: "notice-respond", repo: "notice-respond", engine: "appeal" },
     ];
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("Cross-domain contamination");
-    expect(result.errors.join(" ")).toContain("insurance");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("Cross-domain contamination"));
+    assert.ok(result.errors.join(" ").includes("insurance"));
   });
 
   it("rejects a contaminated registry — equifax-dispute claiming notice-respond ownership", () => {
@@ -233,9 +234,9 @@ describe("validateRegistryOwnership — full registry", () => {
         : e
     );
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("equifax-dispute");
-    expect(result.errors.join(" ")).toContain("Cross-domain contamination");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("equifax-dispute"));
+    assert.ok(result.errors.join(" ").includes("Cross-domain contamination"));
   });
 
   it("rejects a contaminated registry — transunion-dispute claiming notice-respond ownership", () => {
@@ -245,8 +246,8 @@ describe("validateRegistryOwnership — full registry", () => {
         : e
     );
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("transunion-dispute");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("transunion-dispute"));
   });
 
   it("rejects a contaminated registry — cp2000-response claiming dispute-mail ownership", () => {
@@ -256,46 +257,46 @@ describe("validateRegistryOwnership — full registry", () => {
         : e
     );
     const result = validateRegistryOwnership(entries);
-    expect(result.allValid).toBe(false);
-    expect(result.errors.join(" ")).toContain("cp2000-response");
-    expect(result.errors.join(" ")).toContain("notice-respond");
+    assert.equal(result.allValid, false);
+    assert.ok(result.errors.join(" ").includes("cp2000-response"));
+    assert.ok(result.errors.join(" ").includes("notice-respond"));
   });
 
   it("reports correct counts", () => {
     const entries = registryToOwnershipEntries();
     const result = validateRegistryOwnership(entries);
-    expect(result.totalEntries).toBe(entries.length);
-    expect(result.validCount).toBe(entries.length);
-    expect(result.invalidCount).toBe(0);
+    assert.equal(result.totalEntries, entries.length);
+    assert.equal(result.validCount, entries.length);
+    assert.equal(result.invalidCount, 0);
   });
 });
 
 describe("isValidOwnership — helper", () => {
   it("returns true for valid combinations", () => {
-    expect(isValidOwnership("notice-respond", "notice-respond")).toBe(true);
-    expect(isValidOwnership("dispute-mail", "dispute-mail")).toBe(true);
-    expect(isValidOwnership("appeal-mail", "appeal-mail")).toBe(true);
+    assert.equal(isValidOwnership("notice-respond", "notice-respond"), true);
+    assert.equal(isValidOwnership("dispute-mail", "dispute-mail"), true);
+    assert.equal(isValidOwnership("appeal-mail", "appeal-mail"), true);
   });
 
   it("returns false for mismatched combinations", () => {
-    expect(isValidOwnership("notice-respond", "dispute-mail")).toBe(false);
-    expect(isValidOwnership("dispute-mail", "notice-respond")).toBe(false);
+    assert.equal(isValidOwnership("notice-respond", "dispute-mail"), false);
+    assert.equal(isValidOwnership("dispute-mail", "notice-respond"), false);
   });
 
   it("returns false for unknown domains", () => {
-    expect(isValidOwnership("unknown-domain", "unknown-domain")).toBe(false);
+    assert.equal(isValidOwnership("unknown-domain", "unknown-domain"), false);
   });
 });
 
 describe("getCanonicalRepo — helper", () => {
   it("returns the canonical repo for a known domain", () => {
-    expect(getCanonicalRepo("notice-respond")).toBe("notice-respond");
-    expect(getCanonicalRepo("dispute-mail")).toBe("dispute-mail");
-    expect(getCanonicalRepo("appeal-mail")).toBe("appeal-mail");
-    expect(getCanonicalRepo("immigration-mail")).toBe("immigration-mail");
+    assert.equal(getCanonicalRepo("notice-respond"), "notice-respond");
+    assert.equal(getCanonicalRepo("dispute-mail"), "dispute-mail");
+    assert.equal(getCanonicalRepo("appeal-mail"), "appeal-mail");
+    assert.equal(getCanonicalRepo("immigration-mail"), "immigration-mail");
   });
 
   it("returns undefined for unknown domain", () => {
-    expect(getCanonicalRepo("nonexistent")).toBeUndefined();
+    assert.equal(getCanonicalRepo("nonexistent"), undefined);
   });
 });

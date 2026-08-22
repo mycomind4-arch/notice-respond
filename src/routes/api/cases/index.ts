@@ -18,7 +18,7 @@ function requestToken(request: Request): string {
   return header.slice("Bearer ".length).trim();
 }
 
-export const Route = createFileRoute("/api/cases")({
+export const Route = createFileRoute("/api/cases/")({
   server: {
     handlers: {
       GET: async ({ request }) => {
