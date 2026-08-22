@@ -51,6 +51,8 @@ import { Route as WorkflowsTransunionDisputeRouteImport } from './routes/workflo
 import { Route as ApiAdminHealthRouteImport } from './routes/api/admin/health'
 import { Route as ApiAuthStatusRouteImport } from './routes/api/auth/status'
 import { Route as ApiCasesIndexRouteImport } from './routes/api/cases/index'
+import { Route as ApiCasesCaseIdRouteImport } from './routes/api/cases/$caseId'
+import { Route as ApiCasesCreateRouteImport } from './routes/api/cases/create'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -277,6 +279,16 @@ const ApiCasesIndexRoute = ApiCasesIndexRouteImport.update({
   path: '/api/cases/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCasesCaseIdRoute = ApiCasesCaseIdRouteImport.update({
+  id: '/api/cases/$caseId',
+  path: '/api/cases/$caseId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCasesCreateRoute = ApiCasesCreateRouteImport.update({
+  id: '/api/cases/create',
+  path: '/api/cases/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -320,6 +332,8 @@ export interface FileRoutesByFullPath {
   '/resources/': typeof ResourcesIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
+  '/api/cases/create': typeof ApiCasesCreateRoute
   '/api/cases/': typeof ApiCasesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -364,6 +378,8 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
+  '/api/cases/create': typeof ApiCasesCreateRoute
   '/api/cases': typeof ApiCasesIndexRoute
 }
 export interface FileRoutesById {
@@ -409,6 +425,8 @@ export interface FileRoutesById {
   '/resources/': typeof ResourcesIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
+  '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
+  '/api/cases/create': typeof ApiCasesCreateRoute
   '/api/cases/': typeof ApiCasesIndexRoute
 }
 export interface FileRouteTypes {
@@ -455,6 +473,8 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/api/admin/health'
     | '/api/auth/status'
+    | '/api/cases/$caseId'
+    | '/api/cases/create'
     | '/api/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -499,6 +519,8 @@ export interface FileRouteTypes {
     | '/resources'
     | '/api/admin/health'
     | '/api/auth/status'
+    | '/api/cases/$caseId'
+    | '/api/cases/create'
     | '/api/cases'
   id:
     | '__root__'
@@ -543,6 +565,8 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/api/admin/health'
     | '/api/auth/status'
+    | '/api/cases/$caseId'
+    | '/api/cases/create'
     | '/api/cases/'
   fileRoutesById: FileRoutesById
 }
@@ -588,6 +612,8 @@ export interface RootRouteChildren {
   ResourcesIndexRoute: typeof ResourcesIndexRoute
   ApiAdminHealthRoute: typeof ApiAdminHealthRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
+  ApiCasesCaseIdRoute: typeof ApiCasesCaseIdRoute
+  ApiCasesCreateRoute: typeof ApiCasesCreateRoute
   ApiCasesIndexRoute: typeof ApiCasesIndexRoute
 }
 
@@ -887,6 +913,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCasesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cases/$caseId': {
+      id: '/api/cases/$caseId'
+      path: '/api/cases/$caseId'
+      fullPath: '/api/cases/$caseId'
+      preLoaderRoute: typeof ApiCasesCaseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cases/create': {
+      id: '/api/cases/create'
+      path: '/api/cases/create'
+      fullPath: '/api/cases/create'
+      preLoaderRoute: typeof ApiCasesCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -935,6 +975,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesIndexRoute: ResourcesIndexRoute,
   ApiAdminHealthRoute: ApiAdminHealthRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
+  ApiCasesCaseIdRoute: ApiCasesCaseIdRoute,
+  ApiCasesCreateRoute: ApiCasesCreateRoute,
   ApiCasesIndexRoute: ApiCasesIndexRoute,
 }
 export const routeTree = rootRouteImport

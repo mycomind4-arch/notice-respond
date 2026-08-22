@@ -100,6 +100,9 @@ export const caseSchema = z.object({
   /* ── User inputs ── */
   userObjective: z.string().default(""),
   userFacts: z.string().default(""),
+
+  /* ── Workflow runtime state (persisted) ── */
+  workflowState: z.any().optional(),  // Serialized WorkflowState
 });
 export type NoticeCase = z.infer<typeof caseSchema>;
 
