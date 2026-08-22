@@ -103,6 +103,9 @@ export const caseSchema = z.object({
 
   /* ── Workflow runtime state (persisted) ── */
   workflowState: z.any().optional(),  // Serialized WorkflowState
+
+  /* ── Draft provenance (persisted) ── */
+  draftProvenance: z.any().optional(),  // DraftProvenance
 });
 export type NoticeCase = z.infer<typeof caseSchema>;
 

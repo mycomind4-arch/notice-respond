@@ -18,7 +18,7 @@ test("case listing is server-authorized and scoped to the authenticated owner", 
   assert.match(source, /requireAuthenticatedUser/);
   assert.match(source, /Bearer/);
   assert.match(source, /\.eq\("owner_id", user\.id\)/);
-  assert.match(source, /createFileRoute\("\/api\/cases"\)/);
+  assert.match(source, /createFileRoute\("\/api\/cases\/?"\)/);
 });
 
 test("admin health has a server-side authorization boundary", async () => {
