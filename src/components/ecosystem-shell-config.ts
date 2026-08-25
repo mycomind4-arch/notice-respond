@@ -9,7 +9,7 @@ export function useShellConfig(): EcosystemShellConfig {
   return {
     brand: "Notice Respond",
     brandTagline: "A MailMyPDF product",
-    mailPdfUrl: "https://mailmypdf.ai/mail-a-pdf",
+    mailPdfUrl: "https://mailmypdf-etc.pages.dev/mail-a-pdf",
     workflowsUrl: "/workflows",
     howItWorksUrl: "/how-it-works",
     pricingUrl: "/pricing",
