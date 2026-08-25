@@ -1,21 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { NOTICE_WORKFLOWS, WorkflowPage, WorkflowHead, WorkflowStructuredData } from "@/components/notice-workflow-directory";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-const workflow = NOTICE_WORKFLOWS.find((w) => w.slug === "cp14-response")!;
-
+/** Compatibility redirect — canonical URL is /workflows/cp14-response */
 export const Route = createFileRoute("/workflows/respond-to-cp14-notice")({
-  head: () => ({
-    ...WorkflowHead({ workflow }),
-    links: [{ rel: "canonical", href: "/workflows/respond-to-cp14-notice" }],
-    scripts: [WorkflowStructuredData({ workflow })],
-  }),
-  component: () => (
-    <>
-      <SiteHeader />
-      <WorkflowPage workflow={workflow} />
-      <SiteFooter />
-    </>
-  ),
+  beforeLoad: () => { throw redirect({ to: "/workflows/cp14-response" }); },
+  component: () => null,
 });

@@ -5,6 +5,7 @@ import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, Recipien
 
 export const Route = createFileRoute("/workflows/court-summons")({
   head: () => ({ meta: [
+    { rel: 'canonical', href: '/workflows/court-summons' },
     { title: "Respond to a Court Summons — Notice Respond" },
     { name: "description", content: "Prepare a written response to a court summons or complaint and file it by mail with proof of delivery." },
   ] }),

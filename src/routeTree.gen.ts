@@ -17,13 +17,18 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as MailAPdfRouteImport } from './routes/mail-a-pdf'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as RespondToAGovernmentNoticeRouteImport } from './routes/respond-to-a-government-notice'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiDocumentsRouteImport } from './routes/api/documents'
 import { Route as ResourcesIndexRouteImport } from './routes/resources/index'
 import { Route as ResourcesSlugRouteImport } from './routes/resources/$slug'
+import { Route as WorkflowsIndexRouteImport } from './routes/workflows/index'
 import { Route as WorkflowsAgencyActionRouteImport } from './routes/workflows/agency-action'
 import { Route as WorkflowsAnalyzeRouteImport } from './routes/workflows/analyze'
 import { Route as WorkflowsCourtSummonsRouteImport } from './routes/workflows/court-summons'
@@ -94,6 +99,16 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MailAPdfRoute = MailAPdfRouteImport.update({
+  id: '/mail-a-pdf',
+  path: '/mail-a-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -104,12 +119,22 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RespondToAGovernmentNoticeRoute =
   RespondToAGovernmentNoticeRouteImport.update({
     id: '/respond-to-a-government-notice',
     path: '/respond-to-a-government-notice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -128,6 +153,11 @@ const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
 const ResourcesSlugRoute = ResourcesSlugRouteImport.update({
   id: '/resources/$slug',
   path: '/resources/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkflowsIndexRoute = WorkflowsIndexRouteImport.update({
+  id: '/workflows/',
+  path: '/workflows/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowsAgencyActionRoute = WorkflowsAgencyActionRouteImport.update({
@@ -299,9 +329,13 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/mail-a-pdf': typeof MailAPdfRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
@@ -330,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/workflows/': typeof WorkflowsIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
   '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
@@ -345,9 +380,13 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/mail-a-pdf': typeof MailAPdfRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
@@ -376,6 +415,7 @@ export interface FileRoutesByTo {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources': typeof ResourcesIndexRoute
+  '/workflows': typeof WorkflowsIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
   '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
@@ -392,9 +432,13 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/dashboard': typeof DashboardRoute
   '/faq': typeof FaqRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/mail-a-pdf': typeof MailAPdfRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/products': typeof ProductsRoute
   '/respond-to-a-government-notice': typeof RespondToAGovernmentNoticeRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/documents': typeof ApiDocumentsRoute
   '/resources/$slug': typeof ResourcesSlugRoute
@@ -423,6 +467,7 @@ export interface FileRoutesById {
   '/workflows/respond-to-cp2000-notice': typeof WorkflowsRespondToCp2000NoticeRoute
   '/workflows/transunion-dispute': typeof WorkflowsTransunionDisputeRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/workflows/': typeof WorkflowsIndexRoute
   '/api/admin/health': typeof ApiAdminHealthRoute
   '/api/auth/status': typeof ApiAuthStatusRoute
   '/api/cases/$caseId': typeof ApiCasesCaseIdRoute
@@ -440,9 +485,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/faq'
+    | '/how-it-works'
+    | '/mail-a-pdf'
     | '/pricing'
     | '/privacy'
+    | '/products'
     | '/respond-to-a-government-notice'
+    | '/start'
     | '/terms'
     | '/api/documents'
     | '/resources/$slug'
@@ -471,6 +520,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources/'
+    | '/workflows/'
     | '/api/admin/health'
     | '/api/auth/status'
     | '/api/cases/$caseId'
@@ -486,9 +536,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/faq'
+    | '/how-it-works'
+    | '/mail-a-pdf'
     | '/pricing'
     | '/privacy'
+    | '/products'
     | '/respond-to-a-government-notice'
+    | '/start'
     | '/terms'
     | '/api/documents'
     | '/resources/$slug'
@@ -517,6 +571,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources'
+    | '/workflows'
     | '/api/admin/health'
     | '/api/auth/status'
     | '/api/cases/$caseId'
@@ -532,9 +587,13 @@ export interface FileRouteTypes {
     | '/contact'
     | '/dashboard'
     | '/faq'
+    | '/how-it-works'
+    | '/mail-a-pdf'
     | '/pricing'
     | '/privacy'
+    | '/products'
     | '/respond-to-a-government-notice'
+    | '/start'
     | '/terms'
     | '/api/documents'
     | '/resources/$slug'
@@ -563,6 +622,7 @@ export interface FileRouteTypes {
     | '/workflows/respond-to-cp2000-notice'
     | '/workflows/transunion-dispute'
     | '/resources/'
+    | '/workflows/'
     | '/api/admin/health'
     | '/api/auth/status'
     | '/api/cases/$caseId'
@@ -579,9 +639,13 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DashboardRoute: typeof DashboardRoute
   FaqRoute: typeof FaqRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  MailAPdfRoute: typeof MailAPdfRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProductsRoute: typeof ProductsRoute
   RespondToAGovernmentNoticeRoute: typeof RespondToAGovernmentNoticeRoute
+  StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiDocumentsRoute: typeof ApiDocumentsRoute
   ResourcesSlugRoute: typeof ResourcesSlugRoute
@@ -610,6 +674,7 @@ export interface RootRouteChildren {
   WorkflowsRespondToCp2000NoticeRoute: typeof WorkflowsRespondToCp2000NoticeRoute
   WorkflowsTransunionDisputeRoute: typeof WorkflowsTransunionDisputeRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
+  WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   ApiAdminHealthRoute: typeof ApiAdminHealthRoute
   ApiAuthStatusRoute: typeof ApiAuthStatusRoute
   ApiCasesCaseIdRoute: typeof ApiCasesCaseIdRoute
@@ -675,6 +740,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mail-a-pdf': {
+      id: '/mail-a-pdf'
+      path: '/mail-a-pdf'
+      fullPath: '/mail-a-pdf'
+      preLoaderRoute: typeof MailAPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -689,11 +768,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/respond-to-a-government-notice': {
       id: '/respond-to-a-government-notice'
       path: '/respond-to-a-government-notice'
       fullPath: '/respond-to-a-government-notice'
       preLoaderRoute: typeof RespondToAGovernmentNoticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -722,6 +815,13 @@ declare module '@tanstack/react-router' {
       path: '/resources/$slug'
       fullPath: '/resources/$slug'
       preLoaderRoute: typeof ResourcesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workflows/': {
+      id: '/workflows/'
+      path: '/workflows'
+      fullPath: '/workflows/'
+      preLoaderRoute: typeof WorkflowsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workflows/agency-action': {
@@ -939,9 +1039,13 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
   FaqRoute: FaqRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  MailAPdfRoute: MailAPdfRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ProductsRoute: ProductsRoute,
   RespondToAGovernmentNoticeRoute: RespondToAGovernmentNoticeRoute,
+  StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiDocumentsRoute: ApiDocumentsRoute,
   ResourcesSlugRoute: ResourcesSlugRoute,
@@ -973,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsRespondToCp2000NoticeRoute: WorkflowsRespondToCp2000NoticeRoute,
   WorkflowsTransunionDisputeRoute: WorkflowsTransunionDisputeRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
+  WorkflowsIndexRoute: WorkflowsIndexRoute,
   ApiAdminHealthRoute: ApiAdminHealthRoute,
   ApiAuthStatusRoute: ApiAuthStatusRoute,
   ApiCasesCaseIdRoute: ApiCasesCaseIdRoute,

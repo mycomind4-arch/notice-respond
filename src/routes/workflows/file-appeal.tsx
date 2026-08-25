@@ -5,6 +5,7 @@ import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, Recipien
 
 export const Route = createFileRoute("/workflows/file-appeal")({
   head: () => ({ meta: [
+    { rel: 'canonical', href: '/workflows/file-appeal' },
     { title: "File an Appeal — Notice Respond" },
     { name: "description", content: "Prepare an appeal letter for a denied claim, decision, or ruling and mail it with proof of delivery." },
   ] }),

@@ -39,6 +39,7 @@ import { executeSave, type SaveStatus, initialSaveStatus } from "@/platform/save
 export const Route = createFileRoute("/workflows/analyze")({
   head: () => ({
     meta: [
+      { rel: 'canonical', href: '/workflows/analyze' },
       { title: "Analyze a Notice — Notice Respond" },
       { name: "description", content: "Upload or paste a notice. Get instant analysis with voice narration, deadline tracking, and response drafting." },
     ],

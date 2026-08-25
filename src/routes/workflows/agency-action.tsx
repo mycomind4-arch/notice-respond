@@ -5,6 +5,7 @@ import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, Recipien
 
 export const Route = createFileRoute("/workflows/agency-action")({
   head: () => ({ meta: [
+    { rel: 'canonical', href: '/workflows/agency-action' },
     { title: "Respond to an Agency Action — Notice Respond" },
     { name: "description", content: "Prepare a written response to a regulatory agency notice, licensing board action, or FOIA determination." },
   ] }),
