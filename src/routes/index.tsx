@@ -1,11 +1,10 @@
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { NOTICE_WORKFLOWS, WorkflowCard } from "@/components/notice-workflow-directory";
 
 const SITE_ORIGIN = "https://notice-respond.pages.dev";
 const HERO_IMAGE = "https://media.base44.com/images/public/6a8bd310dfdf9ad92cf26415/06e033fed_generated_image.png";
-
 const FEATURED_SLUGS = ["irs-notice", "cp14-response", "cp2000-response", "code-enforcement", "court-summons", "agency-action"];
 
 function featuredWorkflows() {
@@ -21,7 +20,6 @@ export const Route = createFileRoute("/")({
       { name: "robots", content: "index,follow" },
     ],
     links: [{ rel: "canonical", href: SITE_ORIGIN + "/" }],
-    scripts: [{ type: "application/ld+json", children: JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: "Notice Respond", url: SITE_ORIGIN }) }],
   }),
   component: HomePage,
 });
@@ -92,8 +90,4 @@ function HomePage() {
       <SiteFooter />
     </div>
   );
-}
-
-function createFileRoute(path: string) {
-  return (globalThis as { __createRoute?: (p: string) => unknown }).__createRoute?.(path) ?? ({ head: () => ({}), component: HomePage } as unknown);
 }
