@@ -459,7 +459,7 @@ function AnalyzeNotice() {
   const missingSummary = useMemo(() => missingInfoSummary(missingItems), [missingItems]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-6 py-10" role="main">
         {/* Header */}

@@ -99,7 +99,7 @@ function IRSNotice() {
 
   if (state.phase === "submitted" || state.phase === "done") {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen command-center">
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-4 py-20 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-stamp/10">
@@ -118,7 +118,7 @@ function IRSNotice() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-2">

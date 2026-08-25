@@ -362,7 +362,7 @@ function CP2000Response() {
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-2">

@@ -58,5 +58,27 @@ function ProtectedContent() {
 }
 
 function NotFoundPage() {
-  return <div className="min-h-screen"><SiteHeader /><main className="mx-auto max-w-lg px-6 py-32 text-center"><div className="postmark mx-auto w-fit">404</div><h1 className="mt-6 text-6xl" style={{ fontFamily: "var(--font-serif)" }}>Filed in the <span className="italic text-stamp">wrong place.</span></h1><p className="mt-4 text-muted-foreground">The page you're looking for doesn't exist or has moved. Let's get you back on track.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/" className="inline-flex items-center rounded-full border border-input px-5 py-3 text-sm font-medium">← Home</Link><Link to="/workflows/irs-notice" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp">Respond to a notice</Link></div></main><SiteFooter /></div>;
+  return (
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="mx-auto max-w-lg px-6 py-32 text-center">
+        <div className="postmark mx-auto w-fit">404</div>
+        <h1 className="mt-6 font-serif text-5xl">
+          Filed in the <span className="italic text-stamp">wrong place.</span>
+        </h1>
+        <p className="mt-4 text-muted-foreground">
+          The page you're looking for doesn't exist or has moved. Let's get you back on track.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link to="/" className="inline-flex items-center rounded-full border border-input px-5 py-3 text-sm font-medium transition-colors hover:bg-muted">
+            ← Home
+          </Link>
+          <Link to="/workflows/analyze" className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+            Analyze a notice
+          </Link>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
 }

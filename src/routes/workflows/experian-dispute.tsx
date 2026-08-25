@@ -129,7 +129,7 @@ function ExperianDispute() {
   const defaultRecipient = { name: "", org: bureauCfg.mailingAddress.org, address1: bureauCfg.mailingAddress.line1, address2: bureauCfg.mailingAddress.line2, city: bureauCfg.mailingAddress.city, state: bureauCfg.mailingAddress.state, zip: bureauCfg.mailingAddress.zip };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-2"><Link to="/" className="text-sm text-muted-foreground hover:text-stamp transition-colors">← Notice Respond</Link></div>
