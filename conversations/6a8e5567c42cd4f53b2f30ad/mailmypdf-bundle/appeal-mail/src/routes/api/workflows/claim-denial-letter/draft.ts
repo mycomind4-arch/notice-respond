@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/workflows/claim-denial-letter/draft")
       const validation = await callGemini(validationConfig, [`Audit this claim-denial response for: ${workflow.title}.`, "Return strict JSON with valid, issues, unsupportedClaims, missingEvidence, suggestions.", "Flag unsupported claims, invented authority, missing evidence, contradictions, deadline problems, and factual uncertainty.", `CASE ANALYSIS:\n${JSON.stringify(analysis)}`, `DRAFT:\n${draft}`].join("\n\n"));
       const finalDraft = `${draft}\n\nSincerely,\n[Your Name]`;
       const draftValidation = validateAppealDraft(draft, appeal.decision || ({} as any), Array.isArray(appeal.grounds) ? appeal.grounds : [], Array.isArray(appeal.evidence) ? appeal.evidence : []);
-      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      const blockingFindings = draftValidation.findings.filter((f) => (f.severity === "block" || f.severity === "error") && !f.passed);
       if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const currentVersion = appeal.version ?? 1;
       const { error: updateError } = await supabase.from("appeals").update({ draft: finalDraft, status: "in_progress", version: currentVersion + 1, updated_at: new Date().toISOString() }).eq("id", appeal.id).eq("user_id", user.id).eq("version", currentVersion);

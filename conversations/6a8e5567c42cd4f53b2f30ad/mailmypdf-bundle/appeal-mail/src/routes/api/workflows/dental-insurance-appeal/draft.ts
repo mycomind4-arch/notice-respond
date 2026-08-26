@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/workflows/dental-insurance-appeal/dra
         `CASE ANALYSIS:\n${JSON.stringify(analysis)}`, `DRAFT:\n${draft}`,
       ].join("\n\n"));
       const draftValidation = validateAppealDraft(draft, appeal.decision || ({} as any), Array.isArray(appeal.grounds) ? appeal.grounds : [], Array.isArray(appeal.evidence) ? appeal.evidence : []);
-      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      const blockingFindings = draftValidation.findings.filter((f) => (f.severity === "block" || f.severity === "error") && !f.passed);
       if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const persisted = `${draft}\n\nSincerely,\n[Your Name]`;
       const currentVersion = appeal.version ?? 1;

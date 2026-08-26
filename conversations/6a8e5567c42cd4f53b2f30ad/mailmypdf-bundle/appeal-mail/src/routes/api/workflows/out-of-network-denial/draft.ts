@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/workflows/out-of-network-denial/draft
       `CASE ANALYSIS:\n${JSON.stringify(analysis)}`, `DRAFT:\n${draft}`,
     ].join("\n\n"));
     const draftValidation = validateAppealDraft(draft, appeal.decision || ({} as any), Array.isArray(appeal.grounds) ? appeal.grounds : [], Array.isArray(appeal.evidence) ? appeal.evidence : []);
-      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      const blockingFindings = draftValidation.findings.filter((f) => (f.severity === "block" || f.severity === "error") && !f.passed);
       if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const persisted = `${draft}\n\nSincerely,\n[Your Name]`; const version = appeal.version ?? 1;
     const { error: updateError } = await supabase.from("appeals").update({ draft: persisted, status: "in_progress", version: version + 1, updated_at: new Date().toISOString() }).eq("id", appeal.id).eq("user_id", user.id).eq("version", version);

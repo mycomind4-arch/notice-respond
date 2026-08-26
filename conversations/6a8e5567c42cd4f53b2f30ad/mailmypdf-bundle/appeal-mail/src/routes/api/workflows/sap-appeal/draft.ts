@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/workflows/sap-appeal/draft")({server:
     ].join("\n\n"));
     const persisted = `${draft}\n\nSincerely,\n[Your Name]`;
     const draftValidation = validateAppealDraft(draft, a.decision || ({} as any), Array.isArray(a.grounds) ? a.grounds : [], Array.isArray(a.evidence) ? a.evidence : []);
-      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      const blockingFindings = draftValidation.findings.filter((f) => (f.severity === "block" || f.severity === "error") && !f.passed);
       if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const ver = a.version ?? 1;
     const { error: updateError } = await s.from("appeals").update({ draft: persisted, status: "in_progress", version: ver + 1, updated_at: new Date().toISOString() }).eq("id", a.id).eq("user_id", user.id).eq("version", ver);

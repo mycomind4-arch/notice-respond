@@ -120,7 +120,7 @@ export function validateAppealDraft(
 
   // ── Check amounts ──
   const knownAmounts = new Set<string>();
-  for (const fact of decision.facts) {
+  for (const fact of decision.facts ?? []) {
     if (/\$?\d/.test(fact.value)) knownAmounts.add(fact.value);
   }
 

@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/workflows/denied-claim/draft")({
       evidence[0].groundIds = [groundId];
 
       const draftValidation = validateAppealDraft(draft, existing.decision || ({} as any), grounds, evidence);
-      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      const blockingFindings = draftValidation.findings.filter((f) => (f.severity === "block" || f.severity === "error") && !f.passed);
       if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const nextVersion = (existing.version ?? 1) + 1;
       const { error: updateError } = await supabase
