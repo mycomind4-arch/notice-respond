@@ -1,0 +1,62 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+
+export const Route = createFileRoute("/pricing")({
+  head: () => ({ meta: [
+    { title: "Pricing — Notice Respond" },
+    { name: "description", content: "Simple per-mailing pricing. Standard $4.99, Certified $14.94, Registered $32.49. No subscription." },
+  ] }),
+  component: PricingPage,
+});
+
+const tiers = [
+  { type: "Standard", price: "$4.99", desc: "Standard delivery for non-urgent mail", features: ["3–7 business days", "USPS tracking included", "Professional printing & envelope", "Mailing record retained"] },
+  { type: "Certified", price: "$14.94", desc: "Trackable delivery with confirmation", features: ["3–7 business days", "Delivery tracking + confirmation", "Proof of delivery", "Mailing record retained"], featured: true },
+  { type: "Registered", price: "$32.49", desc: "Highest security for sensitive documents", features: ["5–10 business days", "Secure handling + tracking", "Insured delivery", "Signature required"] },
+];
+
+const faqs = [
+  { q: "Is there a subscription?", a: "No. You pay per mailing — no monthly fee, no commitment." },
+  { q: "What payment methods do you accept?", a: "All major credit and debit cards via Stripe." },
+  { q: "Can I get a refund?", a: "If your mailing hasn't been submitted for processing yet, you can request a full refund." },
+  { q: "Does the price include postage?", a: "Yes. Printing, paper, envelope, and USPS postage are all included." },
+];
+
+function PricingPage() {
+  return (
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main>
+        <section className="border-b border-rule/60"><div className="mx-auto max-w-4xl px-6 py-20">
+          <div className="postmark w-fit">Pricing</div>
+          <h1 className="mt-4 font-serif text-4xl md:text-5xl">Pay per mailing. No subscription.</h1>
+          <p className="mt-4 text-muted-foreground">Every price includes printing, paper, envelope, and postage. Page-count tiers apply.</p>
+        </div></section>
+        <section className="border-b border-rule/60 bg-paper-deep/20"><div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid gap-5 md:grid-cols-3">
+            {tiers.map((t) => (
+              <div key={t.type} className={`envelope-card p-6 ${t.featured ? "ring-1 ring-stamp/40" : ""}`}>
+                {t.featured && <div className="postmark w-fit mb-3">Recommended</div>}
+                <h3 className="font-serif text-2xl">{t.type}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{t.desc}</p>
+                <p className="mt-4 text-4xl font-serif">{t.price}</p>
+                <p className="text-xs text-muted-foreground">per mailing, starting</p>
+                <ul className="mt-5 space-y-2">{t.features.map((f) => (<li key={f} className="flex items-center gap-2 text-sm text-ink-soft"><svg className="h-3.5 w-3.5 text-stamp" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>{f}</li>))}</ul>
+                <Link to="/workflows/irs-notice" className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${t.featured ? "bg-primary text-primary-foreground shadow-stamp" : "border border-input text-foreground hover:bg-muted"}`}>Start <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg></Link>
+              </div>
+            ))}
+          </div>
+        </div></section>
+        <section className="border-b border-rule/60"><div className="mx-auto max-w-2xl px-6 py-16">
+          <div className="postmark w-fit">FAQ</div>
+          <h2 className="mt-4 font-serif text-3xl">Pricing questions</h2>
+          <div className="mt-6 divide-y divide-rule/70 border-y border-rule/70">
+            {faqs.map((f) => (<details key={f.q} className="group py-5"><summary className="flex cursor-pointer items-center justify-between list-none"><span className="font-serif text-xl">{f.q}</span><span className="text-stamp transition-transform group-open:rotate-45">＋</span></summary><p className="mt-3 text-muted-foreground">{f.a}</p></details>))}
+          </div>
+        </div></section>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
