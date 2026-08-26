@@ -18,15 +18,16 @@
     "lucide-react": "^0.511.0",
     "next": "^15.3.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "stripe": "^16.12.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.0.0",
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.4",
-    "@opennextjs/cloudflare": "^1.0.0",
     "wrangler": "^4.0.0"
   }
 }
