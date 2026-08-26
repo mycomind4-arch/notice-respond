@@ -1,0 +1,7 @@
+title = "FairProcess secret scanning"
+
+[extend]
+useDefault = true
+
+# Exceptions must be narrowly scoped and documented in
+# docs/security/ci-controls.md. No repository-wide allowlist is active.
