@@ -16,6 +16,34 @@
       "static/chunks/619-ba102abea3e3d0e4.js",
       "static/chunks/app/layout-434d178e1a87c4b6.js"
     ],
+    "/api/llm-providers/route": [
+      "static/chunks/webpack-4a462cecab786e93.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-c5a697ddbf82d774.js",
+      "static/chunks/main-app-86ca3a05238a7448.js",
+      "static/chunks/app/api/llm-providers/route-6297e557cc1df025.js"
+    ],
+    "/api/workflows/[slug]/analyze/route": [
+      "static/chunks/webpack-4a462cecab786e93.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-c5a697ddbf82d774.js",
+      "static/chunks/main-app-86ca3a05238a7448.js",
+      "static/chunks/app/api/workflows/[slug]/analyze/route-6297e557cc1df025.js"
+    ],
+    "/api/workflows/[slug]/checkout/route": [
+      "static/chunks/webpack-4a462cecab786e93.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-c5a697ddbf82d774.js",
+      "static/chunks/main-app-86ca3a05238a7448.js",
+      "static/chunks/app/api/workflows/[slug]/checkout/route-6297e557cc1df025.js"
+    ],
+    "/api/workflows/[slug]/draft/route": [
+      "static/chunks/webpack-4a462cecab786e93.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-c5a697ddbf82d774.js",
+      "static/chunks/main-app-86ca3a05238a7448.js",
+      "static/chunks/app/api/workflows/[slug]/draft/route-6297e557cc1df025.js"
+    ],
     "/workflows/page": [
       "static/chunks/webpack-4a462cecab786e93.js",
       "static/chunks/4bd1b696-c023c6e3521b1417.js",
