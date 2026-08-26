@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAuthenticatedUser, getSupabaseServer } from "@/platform/supabase";
 import { getWorkflow } from "@/domain/workflows";
+import { validateAppealDraft } from "@/domain/draft-validator";
 
 async function resolveGemini(task: "draft" | "validation") {
   const base = process.env.MAILMYPDF_CONTROL_PLANE_URL || "https://mailmypdf.com";
@@ -47,10 +48,13 @@ export const Route = createFileRoute("/api/workflows/sap-appeal/draft")({server:
       `CASE ANALYSIS:\n${JSON.stringify(analysis)}`, `DRAFT:\n${draft}`,
     ].join("\n\n"));
     const persisted = `${draft}\n\nSincerely,\n[Your Name]`;
-    const ver = a.version ?? 1;
+    const draftValidation = validateAppealDraft(draft, a.decision || ({} as any), Array.isArray(a.grounds) ? a.grounds : [], Array.isArray(a.evidence) ? a.evidence : []);
+      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
+      const ver = a.version ?? 1;
     const { error: updateError } = await s.from("appeals").update({ draft: persisted, status: "in_progress", version: ver + 1, updated_at: new Date().toISOString() }).eq("id", a.id).eq("user_id", user.id).eq("version", ver);
     if (updateError) throw new Error(`Unable to persist draft: ${updateError.message}`);
-    return Response.json({ ok: true, appealId: a.id, draft: persisted, validation, provider: "gemini", draftModel: d.model, validationModel: v.model });
+    return Response.json({ ok: true, appealId: a.id, draft: persisted, validation, draftValidation, provider: "gemini", draftModel: d.model, validationModel: v.model });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create SAP appeal response.";
     return Response.json({ error: message }, { status: /authentication|required|token/i.test(message) ? 401 : 502 });

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAuthenticatedUser, getSupabaseServer } from "@/platform/supabase";
 import { getWorkflow } from "@/domain/workflows";
+import { validateAppealDraft } from "@/domain/draft-validator";
 
 async function resolveGemini(task: "draft" | "validation") {
   const base = process.env.MAILMYPDF_CONTROL_PLANE_URL || "https://mailmypdf.com";
@@ -48,11 +49,14 @@ export const Route = createFileRoute("/api/workflows/dental-insurance-appeal/dra
         "Flag unsupported dental/clinical claims, invented policy or legal authority, missing documentation, contradictions, deadline problems, and uncertainty.",
         `CASE ANALYSIS:\n${JSON.stringify(analysis)}`, `DRAFT:\n${draft}`,
       ].join("\n\n"));
+      const draftValidation = validateAppealDraft(draft, appeal.decision || ({} as any), Array.isArray(appeal.grounds) ? appeal.grounds : [], Array.isArray(appeal.evidence) ? appeal.evidence : []);
+      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const persisted = `${draft}\n\nSincerely,\n[Your Name]`;
       const currentVersion = appeal.version ?? 1;
       const { error: updateError } = await supabase.from("appeals").update({ draft: persisted, status: "in_progress", version: currentVersion + 1, updated_at: new Date().toISOString() }).eq("id", appeal.id).eq("user_id", user.id).eq("version", currentVersion);
       if (updateError) throw new Error(`Unable to persist draft: ${updateError.message}`);
-      return Response.json({ ok: true, appealId: appeal.id, draft: persisted, validation, provider: "gemini", draftModel: draftConfig.model, validationModel: validationConfig.model });
+      return Response.json({ ok: true, appealId: appeal.id, draft: persisted, validation, draftValidation, provider: "gemini", draftModel: draftConfig.model, validationModel: validationConfig.model });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to create dental insurance appeal response.";
       return Response.json({ error: message }, { status: /authentication|required|token/i.test(message) ? 401 : 502 });
