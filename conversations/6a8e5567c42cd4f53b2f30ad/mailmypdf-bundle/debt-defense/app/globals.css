@@ -33,4 +33,4 @@ a{text-decoration:none;color:inherit}
 .evidence-list li{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;color:#cbd5e1}
 .evidence-list li:last-child{border-bottom:none}
 .evidence-list li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#f87171;margin-right:12px;vertical-align:middle}
-@media(max-width:700px){.container{padding:0 18px}.section{padding:48px 0}.grid-workflows{grid-template-columns:1fr}}
+@media(max-width:700px){.container{padding:0 18px}.section{padding:48px 0}.grid-workflows{grid-template-columns:1fr}}.ecosystem-dropdown:hover .ecosystem-menu{display:block!important}

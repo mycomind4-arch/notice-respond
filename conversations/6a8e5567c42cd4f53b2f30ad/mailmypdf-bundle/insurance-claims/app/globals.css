@@ -35,3 +35,4 @@ a{text-decoration:none;color:inherit}
 .evidence-list li:last-child{border-bottom:none}
 .evidence-list li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#67e8f9;margin-right:12px;vertical-align:middle}
 @media(max-width:700px){.container{padding:0 18px}.section{padding:48px 0}.grid-workflows{grid-template-columns:1fr}}
+.ecosystem-dropdown:hover .ecosystem-menu{display:block!important}
