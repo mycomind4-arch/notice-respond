@@ -4,11 +4,53 @@ import { SiteFooter } from "@/components/site-footer";
 import { NOTICE_WORKFLOWS, workflowCategories } from "@/components/notice-workflow-directory";
 import { SectionHeader } from "@/components/ui-primitives";
 
+const SITE_ORIGIN = "https://notice-respond.pages.dev";
+
 export const Route = createFileRoute("/workflows/")({
   head: () => ({
     meta: [
-      { title: "Workflows — Notice Respond" },
-      { name: "description", content: "Browse all Notice Respond workflows for government notices, agency actions, and formal responses." },
+      { title: "Notice Response Workflows | Notice Respond" },
+      { name: "description", content: "Browse all Notice Respond workflows for government notices, agency actions, and formal responses — IRS, USCIS, DMV, SSA, court, code enforcement, and more." },
+      { property: "og:title", content: "Notice Response Workflows | Notice Respond" },
+      { property: "og:description", content: "Browse all Notice Respond workflows for government notices, agency actions, and formal responses." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond" },
+      { property: "og:url", content: SITE_ORIGIN + "/workflows" },
+      { property: "og:image", content: "https://media.base44.com/images/public/6a8bd310dfdf9ad92cf26415/06e033fed_generated_image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Notice Response Workflows | Notice Respond" },
+      { name: "twitter:description", content: "Browse all Notice Respond workflows for government notices, agency actions, and formal responses." },
+      { name: "twitter:image", content: "https://media.base44.com/images/public/6a8bd310dfdf9ad92cf26415/06e033fed_generated_image.png" },
+    ],
+    links: [{ rel: "canonical", href: SITE_ORIGIN + "/workflows" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "Notice Respond Workflows",
+          itemListElement: NOTICE_WORKFLOWS.map((w, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: w.title,
+            url: SITE_ORIGIN + w.route,
+          })),
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: SITE_ORIGIN + "/" },
+            { "@type": "ListItem", position: 2, name: "Workflows", item: SITE_ORIGIN + "/workflows" },
+          ],
+        }),
+      },
     ],
   }),
   component: WorkflowsDirectory,
