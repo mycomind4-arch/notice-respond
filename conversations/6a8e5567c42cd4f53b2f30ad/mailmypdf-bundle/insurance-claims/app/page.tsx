@@ -151,15 +151,6 @@ export default function Home() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'40px 0'}}>
-        <div className="container" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:16}}>
-          <div>
-            <div style={{fontWeight:800,fontSize:16}}>Insurance Claims</div>
-            <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>{totalWorkflows} workflows · {families.length} categories</div>
-          </div>
-          <div style={{fontSize:13,color:'#64748b'}}>Insurance Claims is not a law firm and does not provide legal advice. Insurance procedures vary by policy, insurer, and jurisdiction.</div>
-        </div>
-      </footer>
-    </main>
+      </main>
   )
 }

@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "preview": "opennextjs-cloudflare build && wrangler dev"
   },
   "dependencies": {
     "lucide-react": "^0.511.0",
@@ -22,6 +25,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "typescript": "^5.8.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@opennextjs/cloudflare": "^1.0.0",
+    "wrangler": "^4.0.0"
   }
 }

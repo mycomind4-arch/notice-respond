@@ -55,16 +55,6 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
   return (
     <main>
       {/* ── Header ── */}
-      <header style={{borderBottom:'1px solid rgba(255,255,255,.08)',position:'sticky',top:0,background:'rgba(6,16,24,.85)',backdropFilter:'blur(12px)',zIndex:100}}>
-        <div className="container" style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'18px 0'}}>
-          <Link href="/" style={{fontWeight:800,fontSize:18,letterSpacing:'-.02em'}}>Insurance Claims</Link>
-          <nav style={{display:'flex',gap:28,fontSize:14,color:'#94a3b8'}}>
-            <Link href="/workflows">All workflows</Link>
-            <Link href="/">Home</Link>
-          </nav>
-        </div>
-      </header>
-
       {/* ── Breadcrumb ── */}
       <div className="container" style={{paddingTop:20}}>
         <div style={{fontSize:13,color:'#64748b',display:'flex',gap:8,alignItems:'center'}}>
@@ -249,15 +239,6 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{borderTop:'1px solid rgba(255,255,255,.08)',padding:'40px 0'}}>
-        <div className="container" style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:16}}>
-          <div>
-            <Link href="/" style={{fontWeight:800,fontSize:16}}>Insurance Claims</Link>
-            <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>{INSURANCE_WORKFLOWS.length} workflows</div>
-          </div>
-          <div style={{fontSize:13,color:'#64748b'}}>Insurance Claims is not a law firm and does not provide legal advice.</div>
-        </div>
-      </footer>
-    </main>
+      </main>
   )
 }
