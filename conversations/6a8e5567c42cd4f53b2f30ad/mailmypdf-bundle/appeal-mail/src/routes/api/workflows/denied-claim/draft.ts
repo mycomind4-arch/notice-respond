@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAuthenticatedUser, getSupabaseServer } from "@/platform/supabase";
+import { validateAppealDraft } from "@/domain/draft-validator";
 
 type ProviderConfig = { provider: "anthropic" | "openai" | "gemini"; apiKey: string; apiBaseUrl?: string | null; model: string; promptOverride?: string | null };
 
@@ -75,6 +76,9 @@ export const Route = createFileRoute("/api/workflows/denied-claim/draft")({
       }];
       evidence[0].groundIds = [groundId];
 
+      const draftValidation = validateAppealDraft(draft, existing.decision || ({} as any), grounds, evidence);
+      const blockingFindings = draftValidation.findings.filter((f) => f.severity === "block" || f.severity === "error");
+      if (blockingFindings.length > 0) return Response.json({ error: "Draft failed validation.", draftValidation, blockingFindings }, { status: 422 });
       const nextVersion = (existing.version ?? 1) + 1;
       const { error: updateError } = await supabase
         .from("appeals")
@@ -84,7 +88,7 @@ export const Route = createFileRoute("/api/workflows/denied-claim/draft")({
         .eq("version", existing.version ?? 1);
       if (updateError) throw new Error(`Unable to save appeal draft: ${updateError.message}`);
 
-      return Response.json({ ok: true, appealId: payload.appealId, draft, validation, draftProvider: draftConfig.provider, validationProvider: validationConfig.provider, groundsCount: grounds.length, evidenceCount: evidence.length, issueCount: rawIssues.length });
+      return Response.json({ ok: true, appealId: payload.appealId, draft, validation, draftValidation, draftProvider: draftConfig.provider, validationProvider: validationConfig.provider, groundsCount: grounds.length, evidenceCount: evidence.length, issueCount: rawIssues.length });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to create appeal draft.";
       const status = /authentication|required|token/i.test(message) ? 401 : 502;
