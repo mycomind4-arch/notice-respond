@@ -1,0 +1,1 @@
+{"id":"document.accessibility-audit","version":"1.0.0","status":"promoted","source":"mycomind4-arch/AccessForge","provides":["weighted-accessibility-score","grade","machine-verdict","manual-review-boundary","format-aware-audit-contract"],"note":"This is an audit contract; provider-specific WCAG/PDF analyzers remain adapters."}

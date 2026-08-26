@@ -1,0 +1,41 @@
+{
+  "id": "immigration-mail",
+  "type": "vertical",
+  "status": "reference",
+  "repository": "mycomind4-arch/immigration-mail",
+  "role": "flagship reference vertical for the MailMyPDF ecosystem",
+  "sharedCapabilities": [
+    "documents-security-provenance",
+    "document-intelligence",
+    "structured-ai",
+    "voice",
+    "evidence-timeline-deadlines",
+    "ecosystem-identity-usage",
+    "mailing-tracking-proof"
+  ],
+  "verticalCapabilities": [
+    "immigration-document-taxonomy",
+    "agency-classification",
+    "source-backed-immigration-facts",
+    "immigration-deadline-interpretation",
+    "immigration-response-workflows",
+    "multilingual-preferences",
+    "immigration-safety-policy"
+  ],
+  "workflow": [
+    "understand",
+    "structure",
+    "prepare",
+    "review",
+    "preflight",
+    "approve",
+    "send",
+    "track",
+    "prove",
+    "follow-up"
+  ],
+  "mailingOwner": "mycomind4-arch/mailmypdf",
+  "platformOwner": "mycomind4-arch/mailmypdf-platform",
+  "productionVerified": true,
+  "verification": "npm ci + npm test + npm run build"
+}

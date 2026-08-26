@@ -1,0 +1,121 @@
+{
+  "name": "FairProcess - Scheduled Recorder Polling",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24 }]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily at Midnight",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.FAIRPROCESS_API_URL }}/api/cases",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.FAIRPROCESS_API_TOKEN }}" }
+          ]
+        }
+      },
+      "id": "fetch-open-cases",
+      "name": "Fetch Open Cases",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "splitOut",
+        "fieldToSplitOut": "cases",
+        "options": {}
+      },
+      "id": "split-cases",
+      "name": "Split Into Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const caseData = $json;\n\nif (caseData.case_status === 'closed') return { skip: true };\nif (caseData.latest_report_status === 'published') return { skip: true };\nif (caseData.expectation_count === 0) return { skip: true };\n\nreturn {\n  caseId: caseData.case_id,\n  jurisdiction: caseData.jurisdiction,\n  expectationCount: caseData.expectation_count,\n  recorderInstrumentCount: caseData.recorder_instrument_count,\n  needsAudit: true\n};"
+      },
+      "id": "filter-needs-audit",
+      "name": "Filter: Needs Audit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($json.skip) return [];\nreturn $json;"
+      },
+      "id": "skip-filter",
+      "name": "Drop Skipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FAIRPROCESS_API_URL }}/api/cases/{{ $json.caseId }}/audit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.FAIRPROCESS_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
+      },
+      "id": "run-audit",
+      "name": "Auto-Run Audit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const auditResults = $items(\"Auto-Run Audit\");\n\nconst digest = auditResults.map((item, idx) => {\n  const caseInfo = $item(idx).json;\n  const audit = item.json;\n  return `Case: ${caseInfo.caseId} (${caseInfo.jurisdiction})\\n  Report: ${audit.reportId}\\n  Findings: ${audit.findings}\\n  Summary: ${JSON.stringify(audit.summary)}`;\n}).join('\\n\\n');\n\nreturn { totalAudited: auditResults.length, digest };"
+      },
+      "id": "build-digest",
+      "name": "Build Daily Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "channelId": "={{ $env.DAILY_DIGEST_CHANNEL_ID }}",
+        "text": "={{ `FairProcess Daily Audit Digest\n\n${$json.digest}` }}"
+      },
+      "id": "send-digest",
+      "name": "Post Daily Digest",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Daily at Midnight": { "main": [[{ "node": "Fetch Open Cases", "type": "main", "index": 0 }]] },
+    "Fetch Open Cases": { "main": [[{ "node": "Split Into Items", "type": "main", "index": 0 }]] },
+    "Split Into Items": { "main": [[{ "node": "Filter: Needs Audit", "type": "main", "index": 0 }]] },
+    "Filter: Needs Audit": { "main": [[{ "node": "Drop Skipped", "type": "main", "index": 0 }]] },
+    "Drop Skipped": { "main": [[{ "node": "Auto-Run Audit", "type": "main", "index": 0 }]] },
+    "Auto-Run Audit": { "main": [[{ "node": "Build Daily Digest", "type": "main", "index": 0 }]] },
+    "Build Daily Digest": { "main": [[{ "node": "Post Daily Digest", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

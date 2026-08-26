@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; connect-src 'self' http://localhost:* https:; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'"
+  >
+  <meta
+    name="description"
+    content="FairProcess — evidence-linked case audits and property discovery for code-enforcement integrity."
+  >
+  <title>FairProcess — Analyst Workspace</title>
+  <link rel="stylesheet" href="./live.css">
+</head>
+<body>
+  <div class="fp-shell">
+    <aside class="fp-shell-sidebar">
+      <a class="brand fp-shell-brand" href="./index.html" aria-label="FairProcess home">
+        <span class="brand-mark" aria-hidden="true">FP</span>
+        <span>FairProcess</span>
+      </a>
+      <div class="topbar-copy fp-shell-status">
+        <strong>Analyst workspace</strong>
+        <span>Real API records only</span>
+      </div>
+
+      <nav class="tab-nav" id="tab-nav" hidden>
+        <div class="fp-shell-nav-label">Workspace</div>
+        <button class="tab-button active" data-tab="cases" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>Cases</span>
+        </button>
+        <button class="tab-button" data-tab="discovery" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Discovery</span>
+          <span class="tab-badge" id="discovery-count">0</span>
+        </button>
+        <button class="tab-button" data-tab="policy" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/></svg>
+          <span>Policy Studio</span>
+        </button>
+      </nav>
+
+      <div class="fp-shell-soon">
+        <div class="fp-shell-nav-label">Coming soon</div>
+        <div class="tab-button-soon">Dashboard <span class="fp-soon-tag">Soon</span></div>
+        <a class="tab-button-soon" href="./search.html" style="text-decoration:none;color:inherit;">Timeline <span class="fp-soon-tag" style="background:var(--blue);color:white;">New</span></a>
+        <div class="tab-button-soon">Communications <span class="fp-soon-tag">Soon</span></div>
+        <div class="tab-button-soon">Questions <span class="fp-soon-tag">Soon</span></div>
+        <a class="tab-button-soon" href="./search.html" style="text-decoration:none;color:inherit;">Public Records <span class="fp-soon-tag" style="background:var(--blue);color:white;">New</span></a>
+        <div class="tab-button-soon">Analytics <span class="fp-soon-tag">Soon</span></div>
+        <div class="tab-button-soon">Settings <span class="fp-soon-tag">Soon</span></div>
+      </div>
+
+      <button id="disconnect-button" class="button button-quiet fp-shell-disconnect" type="button" hidden
+        style="border-color: rgba(255,255,255,0.2); color: #94a3b8;">
+        Disconnect
+      </button>
+    </aside>
+
+    <main class="fp-shell-main">
+    <!-- Connection Panel -->
+    <section id="connection-panel" class="connection-panel" aria-labelledby="connection-heading">
+      <div class="connection-copy">
+        <p class="eyebrow">Authenticated operator tool</p>
+        <h1 id="connection-heading">FairProcess</h1>
+        <p>
+          Evidence-linked case audits for code-enforcement integrity. Supply an API URL and an
+          OIDC access token to connect. The token is held only in memory and cleared on disconnect.
+        </p>
+      </div>
+
+      <form id="connection-form" class="card connection-form">
+        <label>
+          <span>API base URL</span>
+          <input id="api-base" name="apiBase" type="url" value="https://fairprocess-api.mailmypdf.workers.dev" required>
+        </label>
+        <label>
+          <span>AI worker URL <small style="font-weight:normal;opacity:0.7">(optional)</small></span>
+          <input id="ai-base" name="aiBase" type="url" value="https://fairprocess-ai.mailmypdf.workers.dev" placeholder="https://fairprocess-ai.mailmypdf.workers.dev">
+        </label>
+        <label>
+          <span>AI API key <small style="font-weight:normal;opacity:0.7">(optional)</small></span>
+          <input id="ai-key" name="aiKey" type="password" autocomplete="off" placeholder="fp-ai-…">
+        </label>
+        <label>
+          <span>Bearer access token</span>
+          <textarea
+            id="access-token"
+            name="accessToken"
+            rows="4"
+            required
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="Paste a short-lived OIDC access token"
+          ></textarea>
+        </label>
+        <button class="button button-primary" type="submit">Verify and connect</button>
+        <p class="form-note">
+          No password is collected. Obtain the token from the configured identity provider.
+        </p>
+      </form>
+    </section>
+
+    <!-- Cases Tab -->
+    <section id="cases-tab" class="workspace" hidden aria-label="Analyst workspace">
+      <aside class="case-sidebar">
+        <div class="sidebar-heading">
+          <div>
+            <p class="eyebrow">Authenticated as</p>
+            <strong id="identity-name">—</strong>
+            <span id="identity-meta">—</span>
+          </div>
+          <button id="refresh-cases" class="icon-button" type="button" aria-label="Refresh cases">↻</button>
+        </div>
+
+        <div id="permission-list" class="permission-list" aria-label="Assigned roles"></div>
+
+        <details class="create-case" open>
+          <summary>Create case</summary>
+          <form id="create-case-form" class="stack-form">
+            <label>
+              <span>Jurisdiction</span>
+              <input name="jurisdiction" required placeholder="Humboldt County, California">
+            </label>
+            <label>
+              <span>Agency <small>optional</small></span>
+              <input name="agency" placeholder="Planning and Building">
+            </label>
+            <label>
+              <span>Agency case number <small>optional</small></span>
+              <input name="agencyCaseNumber">
+            </label>
+            <label>
+              <span>As-of date</span>
+              <input name="asOf" type="date" required>
+            </label>
+            <label>
+              <span>Parcel APNs</span>
+              <textarea name="apns" rows="3" required placeholder="One APN per line"></textarea>
+            </label>
+            <button id="create-case-button" class="button button-primary" type="submit">Create case</button>
+          </form>
+        </details>
+
+        <div class="case-list-heading">
+          <h2>Cases</h2>
+          <span id="case-count">0</span>
+        </div>
+        <div id="case-list" class="case-list" aria-live="polite"></div>
+      </aside>
+
+      <section class="case-workspace">
+        <div id="empty-case" class="empty-state">
+          <h2>Select a case</h2>
+          <p>Choose an existing case or create one. No synthetic case is preloaded.</p>
+        </div>
+
+        <div id="case-content" hidden>
+          <header class="case-header">
+            <div>
+              <p class="eyebrow">Case workspace</p>
+              <h1 id="case-title">—</h1>
+              <p id="case-subtitle">—</p>
+            </div>
+            <div class="case-actions">
+              <button id="refresh-case" class="button button-quiet" type="button">Refresh case</button>
+              <button id="load-trail" class="button button-quiet" type="button">Load audit trail</button>
+            </div>
+          </header>
+
+          <section class="summary-grid" aria-label="Case summary">
+            <article class="metric">
+              <span>Status</span>
+              <strong id="case-status">—</strong>
+            </article>
+            <article class="metric">
+              <span>APNs</span>
+              <strong id="case-apn-count">0</strong>
+            </article>
+            <article class="metric">
+              <span>Expectations</span>
+              <strong id="case-expectation-count">0</strong>
+            </article>
+            <article class="metric">
+              <span>Recorder instruments</span>
+              <strong id="case-instrument-count">0</strong>
+            </article>
+          </section>
+
+          <div class="workflow-grid">
+            <section class="card workflow-card" aria-labelledby="expectation-heading">
+              <div class="section-heading">
+                <div>
+                  <p class="step">Step 1</p>
+                  <h2 id="expectation-heading">Expected instrument</h2>
+                </div>
+                <span id="policy-status" class="status-pill">No policy selected</span>
+              </div>
+
+              <form id="expectation-form" class="stack-form">
+                <label>
+                  <span>Policy bundle</span>
+                  <select id="policy-select" name="policyBundleId" required></select>
+                </label>
+                <label>
+                  <span>Policy rule</span>
+                  <select id="rule-select" name="ruleId" required></select>
+                </label>
+                <div id="rule-description" class="rule-description"></div>
+                <label>
+                  <span>Verified service date <small>when applicable</small></span>
+                  <input name="servedOn" type="date">
+                </label>
+                <label>
+                  <span>Verified finality date <small>when applicable</small></span>
+                  <input name="becameFinalOn" type="date">
+                </label>
+                <label>
+                  <span>Verified resolution date <small>when applicable</small></span>
+                  <input name="resolvedOn" type="date">
+                </label>
+                <button id="expectation-button" class="button button-primary" type="submit">
+                  Add expectation
+                </button>
+              </form>
+            </section>
+
+            <section class="card workflow-card" aria-labelledby="recorder-heading">
+              <div class="section-heading">
+                <div>
+                  <p class="step">Step 2</p>
+                  <h2 id="recorder-heading">Recorder search import</h2>
+                </div>
+              </div>
+
+              <form id="recorder-form" class="stack-form">
+                <label>
+                  <span>Search date</span>
+                  <input name="searchedOn" type="date" required>
+                </label>
+                <label>
+                  <span>Search scope</span>
+                  <select name="scope" required>
+                    <option value="self_service_index">Self-service index</option>
+                    <option value="certified_search">Certified search</option>
+                    <option value="agency_export">Agency export</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Official source</span>
+                  <input name="source" type="url" required placeholder="https://official-source.example/...">
+                </label>
+                <label>
+                  <span>Coverage notes <small>optional</small></span>
+                  <textarea name="notes" rows="2" placeholder="Names, APNs, date range, document types, and limitations"></textarea>
+                </label>
+                <label class="file-label">
+                  <span>Recorder CSV file</span>
+                  <input id="recorder-file" type="file" accept=".csv,text/csv">
+                </label>
+                <label>
+                  <span>CSV content</span>
+                  <textarea
+                    id="recorder-csv"
+                    name="csv"
+                    rows="8"
+                    required
+                    spellcheck="false"
+                    placeholder="instrument_number,recorded_on,apn,instrument_kind,party"
+                  ></textarea>
+                </label>
+                <button id="recorder-button" class="button button-primary" type="submit">
+                  Import recorder results
+                </button>
+              </form>
+            </section>
+          </div>
+
+          <section class="card workflow-card" aria-labelledby="ai-heading">
+            <div class="section-heading">
+              <div>
+                <p class="step">Step 2b</p>
+                <h2 id="ai-heading">AI document analysis</h2>
+              </div>
+              <span id="ai-status" class="status-text"></span>
+            </div>
+            <p>
+              Paste or drop document text to extract procedural facts automatically. Facts are proposed only —
+              a human must review and accept each one. AI never decides outcomes.
+            </p>
+            <textarea id="ai-doc-text" rows="5" placeholder="Paste notice, lien, deed, or correspondence text here…" style="width:100%;font-size:0.85rem;font-family:inherit;resize:vertical;padding:0.5rem;border:1px solid var(--border,#ddd);border-radius:4px;margin-bottom:0.5rem;"></textarea>
+            <div class="audit-actions">
+              <button id="ai-extract-btn" class="button button-quiet" type="button">Extract facts with AI</button>
+              <button id="ai-classify-btn" class="button button-quiet" type="button">Classify document</button>
+              <button id="ai-deadline-btn" class="button button-quiet" type="button">Check deadlines</button>
+            </div>
+            <div id="ai-classify-result" hidden style="margin-top:1rem;"></div>
+            <div id="ai-facts-result" hidden style="margin-top:1rem;"></div>
+            <div id="ai-deadline-result" hidden style="margin-top:1rem;"></div>
+          </section>
+
+
+          <section class="card workflow-card" id="ordinance-section" aria-labelledby="ordinance-heading">
+            <div class="section-heading">
+              <div>
+                <p class="step">Step 2c</p>
+                <h2 id="ordinance-heading">Ordinance ingestion</h2>
+              </div>
+            </div>
+            <p>
+              Paste raw municipal code text and AI will extract a draft policy bundle — recording deadlines, timing rules, service requirements. Generated rules are always drafts requiring legal review before activation.
+            </p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+              <input id="ordinance-jurisdiction" type="text" placeholder="Jurisdiction (e.g., Humboldt County, California)" style="font-size:0.85rem;padding:0.3rem 0.5rem;flex:1;min-width:200px;border:1px solid var(--border,#ddd);border-radius:4px;">
+              <input id="ordinance-agency" type="text" placeholder="Agency (optional)" style="font-size:0.85rem;padding:0.3rem 0.5rem;flex:1;min-width:150px;border:1px solid var(--border,#ddd);border-radius:4px;">
+              <input id="ordinance-url" type="text" placeholder="Source URL (optional)" style="font-size:0.85rem;padding:0.3rem 0.5rem;flex:1;min-width:150px;border:1px solid var(--border,#ddd);border-radius:4px;">
+            </div>
+            <textarea id="ordinance-text" rows="6" placeholder="Paste municipal code text here — e.g., the chapter on administrative penalties, code enforcement, or nuisance abatement…" style="width:100%;font-size:0.85rem;font-family:inherit;resize:vertical;padding:0.5rem;border:1px solid var(--border,#ddd);border-radius:4px;margin-bottom:0.5rem;"></textarea>
+            <div class="audit-actions">
+              <button id="ingest-ordinance-btn" class="button button-quiet" type="button">Ingest ordinance</button>
+              <button id="download-policy-btn" class="button button-quiet" type="button" disabled>Download policy JSON</button>
+            </div>
+            <div id="ordinance-result" hidden style="margin-top:1rem;"></div>
+          </section>
+
+          <section class="card audit-card" aria-labelledby="audit-heading">
+            <div class="section-heading">
+              <div>
+                <p class="step">Step 3</p>
+                <h2 id="audit-heading">Run deterministic audit</h2>
+              </div>
+              <button id="verify-chain" class="button button-quiet" type="button">Verify tenant audit chain</button>
+            </div>
+            <p>
+              FairProcess compares the selected policy rule, verified trigger dates, parcel identity,
+              and supplied recorder results. A "not located" result is not proof that a record does not exist.
+            </p>
+            <div class="audit-actions">
+              <button id="run-audit" class="button button-primary" type="button">Run audit</button>
+              <span id="chain-result" class="status-text"></span>
+            </div>
+          </section>
+
+          <section id="report-section" class="card report-card" hidden aria-labelledby="report-heading">
+            <div class="section-heading">
+              <div>
+                <p class="step">Step 4</p>
+                <h2 id="report-heading">Report review</h2>
+              </div>
+              <span id="report-status" class="status-pill">Generated</span>
+            </div>
+
+            <div id="report-summary" class="report-summary"></div>
+            <div id="report-warnings" class="warning-list"></div>
+            <div id="report-findings" class="finding-list"></div>
+
+            <div id="narrative-section" style="margin-top:1.5rem;border-top:1px solid var(--border,#ddd);padding-top:1rem;">
+              <h3 style="font-size:0.9rem;margin-bottom:0.5rem;">AI Audit Narrative</h3>
+              <p style="font-size:0.8rem;opacity:0.7;margin-bottom:0.5rem;">Generate a written narrative from the integrity report. AI drafts — human review and authorization required.</p>
+              <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:0.5rem;">
+                <label style="font-size:0.8rem;">
+                  <span style="display:block;margin-bottom:2px;">Purpose</span>
+                  <select id="narrative-purpose" style="font-size:0.85rem;padding:0.3rem 0.5rem;">
+                    <option value="internal_memo">Internal memo</option>
+                    <option value="legal_filing">Legal filing</option>
+                    <option value="appeal_brief">Appeal brief</option>
+                    <option value="public_report">Public report</option>
+                  </select>
+                </label>
+                <label style="font-size:0.8rem;flex:1;min-width:200px;">
+                  <span style="display:block;margin-bottom:2px;">Additional notes <small style="opacity:0.6;">(optional)</small></span>
+                  <input id="narrative-notes" type="text" style="font-size:0.85rem;padding:0.3rem 0.5rem;width:100%;" placeholder="Context to include in the narrative…">
+                </label>
+                <button id="narrative-btn" class="button button-quiet" type="button">Draft narrative</button>
+              </div>
+              <div id="narrative-result" hidden style="margin-top:0.5rem;"></div>
+            </div>
+
+            <div class="report-actions">
+              <button id="download-markdown" class="button button-quiet" type="button">Download Markdown</button>
+              <button id="authorize-report" class="button button-review" type="button">Authorize review</button>
+              <button id="publish-report" class="button button-danger" type="button">Publish authorized report</button>
+            </div>
+            <p class="form-note">
+              Authorization and publication are server-enforced permissions and are recorded in the audit chain.
+            </p>
+          </section>
+
+          <section id="trail-section" class="card trail-card" hidden aria-labelledby="trail-heading">
+            <div class="section-heading">
+              <div>
+                <p class="step">Evidence</p>
+                <h2 id="trail-heading">Audit trail</h2>
+              </div>
+            </div>
+            <div id="audit-trail" class="trail-list"></div>
+          </section>
+        </div>
+      </section>
+    </section>
+
+    <!-- Discovery Tab -->
+    <section id="discovery-tab" class="discovery-panel" hidden aria-label="Property discovery">
+      <div class="discovery-header">
+        <p class="eyebrow">CodeSale Finder integration</p>
+        <h1>Property Discovery</h1>
+        <p>
+          Properties flagged by CodeSale Finder — Humboldt County parcels with code-enforcement notices
+          that later changed ownership. Import a JSON export to review classifications and create
+          FairProcess cases directly from discovered properties.
+        </p>
+      </div>
+
+      <div id="discovery-import-zone" class="discovery-import-zone">
+        <div class="import-icon">📋</div>
+        <h3>Import CodeSale Finder results</h3>
+        <p>Drop a JSON export here or click to browse. Export from CodeSale Finder with:<br>
+          <code style="font-size:11px; background: var(--surface-soft); padding: 2px 6px; border-radius: 4px;">python -c "from export_fairprocess import export; export('discovery.json')"</code>
+        </p>
+        <input id="discovery-file" type="file" accept=".json,application/json" hidden>
+      </div>
+
+      <div id="discovery-content" hidden>
+        <div id="discovery-stats" class="discovery-stats"></div>
+        <div id="discovery-filters" class="discovery-filters">
+          <input id="discovery-search" type="text" placeholder="Search APN, address, owner…">
+        </div>
+        <div id="discovery-list" class="discovery-list"></div>
+      </div>
+
+      <div id="discovery-empty" class="empty-state" hidden>
+        <h2>No properties imported</h2>
+        <p>Import a CodeSale Finder JSON export to see flagged properties here.</p>
+      </div>
+    </section>
+
+    <!-- Policy Studio Tab -->
+    <section id="policy-tab" class="policy-panel" hidden aria-label="Policy Studio">
+      <div class="policy-header">
+        <p class="eyebrow">Rule Management & Enforcement</p>
+        <h1>Policy Studio</h1>
+        <p>
+          Configure, test, and publish deterministic policy rules for code-enforcement compliance and impact assessment.
+        </p>
+      </div>
+
+      <!-- Rule Library -->
+      <div class="card policy-card">
+        <div class="section-heading">
+          <div>
+            <h2>Rule Library (<span id="rule-count">0</span>)</h2>
+          </div>
+          <button id="new-rule-button" class="button button-primary" type="button">+ New Rule</button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="policy-filters">
+          <input id="rule-filter-jurisdiction" type="text" placeholder="Filter jurisdiction…">
+          <select id="rule-filter-category">
+            <option value="">All Categories</option>
+            <option value="deadline">Deadline</option>
+            <option value="notice_requirement">Notice Requirement</option>
+            <option value="documentation_requirement">Documentation Requirement</option>
+            <option value="inspection_requirement">Inspection Requirement</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="rule-filter-status">
+            <option value="">All Statuses</option>
+            <option value="draft">Draft</option>
+            <option value="in_review">In Review</option>
+            <option value="active">Active</option>
+            <option value="superseded">Superseded</option>
+            <option value="archived">Archived</option>
+          </select>
+          <input id="rule-filter-statute" type="text" placeholder="Search statute reference…">
+        </div>
+
+        <!-- Rule List / Table -->
+        <div id="rule-list" class="rule-list"></div>
+      </div>
+
+      <!-- Rule Editor -->
+      <div id="rule-editor" class="card policy-card" hidden>
+        <div class="section-heading">
+          <h2 id="rule-editor-title">New Rule</h2>
+        </div>
+        <form id="rule-editor-form" class="stack-form">
+          <div class="grid-form-2">
+            <label>
+              <span>Jurisdiction</span>
+              <input id="rule-jurisdiction" required placeholder="e.g. Humboldt County, CA">
+            </label>
+            <label>
+              <span>Statute Reference</span>
+              <input id="rule-statute" required placeholder="e.g. HCC § 315-12">
+            </label>
+          </div>
+          <div class="grid-form-2">
+            <label>
+              <span>Enabling Authority</span>
+              <input id="rule-authority" placeholder="e.g. Cal. Gov. Code § 53069.4">
+            </label>
+            <label>
+              <span>Category</span>
+              <select id="rule-category" required>
+                <option value="deadline">Deadline</option>
+                <option value="notice_requirement">Notice Requirement</option>
+                <option value="documentation_requirement">Documentation Requirement</option>
+                <option value="inspection_requirement">Inspection Requirement</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Plain Language Description</span>
+            <textarea id="rule-description" rows="2" placeholder="Brief explanation of the requirement..."></textarea>
+          </label>
+          <div class="grid-form-2">
+            <label>
+              <span>Trigger Event</span>
+              <input id="rule-trigger-event" placeholder="e.g. Notice of Violation served">
+            </label>
+            <label>
+              <span>Comparison Event</span>
+              <input id="rule-comparison-event" placeholder="e.g. Appeal filed">
+            </label>
+          </div>
+          <div class="grid-form-3">
+            <label>
+              <span>Comparison Operator</span>
+              <select id="rule-operator" required>
+                <option value="at_most">At most</option>
+                <option value="at_least">At least</option>
+                <option value="exactly">Exactly</option>
+                <option value="before">Before</option>
+                <option value="after">After</option>
+              </select>
+            </label>
+            <label>
+              <span>Threshold Value</span>
+              <input id="rule-threshold" type="number" min="0" required placeholder="e.g. 10">
+            </label>
+            <label>
+              <span>Threshold Unit</span>
+              <select id="rule-unit" required>
+                <option value="calendar_days">Calendar Days</option>
+                <option value="business_days">Business Days</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Severity If Violated</span>
+            <select id="rule-severity" required>
+              <option value="material_inconsistency">Material Inconsistency</option>
+              <option value="procedural_risk">Procedural Risk</option>
+              <option value="documentation_gap">Documentation Gap</option>
+            </select>
+          </label>
+
+          <!-- Plain-English Live Preview -->
+          <div class="rule-preview-panel card">
+            <strong>Rule Preview:</strong>
+            <p id="rule-preview">—</p>
+          </div>
+
+          <!-- Publishing details -->
+          <div class="grid-form-3">
+            <label>
+              <span>Reviewer <small>for publish</small></span>
+              <input id="rule-reviewer" placeholder="e.g. Legal Counsel">
+            </label>
+            <label>
+              <span>Change Summary <small>for publish</small></span>
+              <input id="rule-change-summary" placeholder="e.g. Initial publication">
+            </label>
+            <label>
+              <span>Effective Start Date</span>
+              <input id="rule-effective-date" type="date">
+            </label>
+          </div>
+
+          <div class="editor-actions">
+            <button id="save-rule-button" class="button button-primary" type="button">Save Draft</button>
+            <button id="submit-review-button" class="button button-review" type="button" hidden>Submit for Review</button>
+            <button id="publish-rule-button" class="button button-primary" type="button" hidden>Publish Rule</button>
+            <button id="cancel-rule-button" class="button button-quiet" type="button">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Public Changelog -->
+      <div class="card policy-card">
+        <div class="section-heading">
+          <h2>Public Changelog</h2>
+        </div>
+        <div id="changelog-list" class="changelog-list"></div>
+      </div>
+
+      <!-- Impact Preview -->
+      <div id="impact-preview" class="card policy-card impact-modal" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Impact Preview</h2>
+            <p class="form-note">Affected cases count: <strong id="impact-count">0</strong></p>
+          </div>
+          <button id="close-impact-button" class="button button-quiet" type="button">Close</button>
+        </div>
+        <div id="impact-cases" class="impact-cases-list"></div>
+      </div>
+    </section>
+    </main>
+  </div><!-- /.fp-shell -->
+
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./live.js"></script>
+</body>
+</html>

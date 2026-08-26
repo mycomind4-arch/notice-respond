@@ -1,0 +1,23 @@
+{
+  "name": "@fairprocess/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --clean && tsc -b tsconfig.json --force",
+    "test": "pnpm build && node --test --test-concurrency=1 test/**/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "migrate": "node dist/migrate.js",
+    "migrate:down": "node dist/migrate.js --down",
+    "migrate:status": "node dist/migrate.js --status",
+    "provision-user": "pnpm build && node dist/provision-user.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
+  }
+}

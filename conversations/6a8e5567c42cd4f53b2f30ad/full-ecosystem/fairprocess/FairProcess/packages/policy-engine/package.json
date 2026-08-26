@@ -1,0 +1,27 @@
+{
+  "name": "@fairprocess/policy-engine",
+  "version": "1.0.0",
+  "description": "FairProcess Policy-as-Code Engine conforming to Section 8.8 of the product spec",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "pnpm build && node --test test/**/*.test.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "fairprocess",
+    "policy-as-code",
+    "procedural-justice",
+    "legaltech"
+  ],
+  "author": "mycomind4-arch",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.24",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+}
