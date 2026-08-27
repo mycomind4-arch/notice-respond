@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { noticeRespondCatalog } from "@/domain/workflow-catalog";
 import type { MasterWorkflowDefinition } from "@/domain/workflow-definition";
-import { SectionHeader } from "@/components/ui-primitives";
 
 export type NoticeWorkflow = {
   slug: string;
@@ -15,6 +14,7 @@ export type NoticeWorkflow = {
   documents: string[];
   lifecycle?: string;
   canonicalPath?: string;
+  disclaimer?: string;
 };
 
 /* ── SEO-only entries (no interactive workflow yet) ── */
@@ -29,6 +29,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Official letters, requests for information, compliance notices, and general agency correspondence.",
     steps: ["Upload the notice", "Extract the agency, reference number, dates, and requested action", "Organize supporting documents", "Prepare and review the response", "Mail and keep the proof"],
     documents: ["Notice or letter", "Attachments", "Supporting records", "Prior agency correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "tax-notice",
@@ -40,6 +41,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Federal, state, or local tax notices that require clarification, documents, disagreement, or another written action.",
     steps: ["Upload the notice", "Record the stated reason and deadline", "Collect the records that address the notice", "Draft a point-by-point response", "Review the mailing details"],
     documents: ["Tax notice", "Returns or schedules", "Payment evidence", "Prior correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "code-enforcement",
@@ -51,6 +53,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Property owners and occupants dealing with municipal code, nuisance, inspection, or compliance notices.",
     steps: ["Upload the notice", "Capture property and case details", "Build the notice timeline", "Attach permits, photos, records, or other evidence", "Prepare a response for review"],
     documents: ["Violation notice", "Inspection reports", "Permits", "Photos", "Property records", "Agency correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "permit-correction",
@@ -62,6 +65,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Building, planning, zoning, inspection, and permit resubmission comments.",
     steps: ["Upload the correction notice", "Extract each correction item", "Match each item to supporting plans or documents", "Draft a point-by-point response", "Prepare the resubmission package"],
     documents: ["Correction notice", "Plans", "Permit application", "Inspection notes", "Supporting correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "dmv-notice",
@@ -73,6 +77,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "License, registration, title, suspension, compliance, or other DMV correspondence.",
     steps: ["Upload the notice", "Identify the action and deadline", "Collect records that support your position", "Prepare the response", "Keep the submission and mailing record"],
     documents: ["DMV notice", "License or registration records", "Proof of insurance", "Supporting correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "ssa-notice",
@@ -84,6 +89,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Social Security notices, requests for information, and administrative decisions that require action.",
     steps: ["Upload the notice", "Record the notice date and response deadline", "Extract the stated reason or request", "Organize supporting evidence", "Prepare and review the response"],
     documents: ["SSA notice", "Benefit records", "Work or identity records when relevant", "Prior correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "uscis-notice",
@@ -95,6 +101,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Requests for Evidence, notices of intent, case correspondence, and other USCIS notices that require a response.",
     steps: ["Upload the notice", "Capture receipt/reference information", "Identify the exact request", "Organize evidence and supporting documents", "Review the response package before submission"],
     documents: ["USCIS notice", "Forms and filing copies", "Identity or status records", "Supporting evidence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
   {
     slug: "benefits-notice",
@@ -106,6 +113,7 @@ const SEO_ONLY_WORKFLOWS: NoticeWorkflow[] = [
     bestFor: "Public benefits, eligibility, overpayment, review, and program-administration notices.",
     steps: ["Upload the notice", "Capture the decision and deadline", "Organize records for each issue", "Draft the response or review request", "Keep proof of what was submitted"],
     documents: ["Benefits notice", "Eligibility records", "Payment statements", "Supporting correspondence"],
+    disclaimer: "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.",
   },
 ];
 
@@ -123,6 +131,7 @@ function catalogToDirectoryEntry(def: MasterWorkflowDefinition): NoticeWorkflow 
     documents: def.directory.documents,
     lifecycle: def.lifecycle,
     canonicalPath: def.searchIntent.canonicalPath,
+    disclaimer: def.ux?.disclaimerText ?? def.disclaimer,
   };
 }
 
@@ -215,27 +224,32 @@ export function WorkflowCard({ workflow, index = 0 }: { workflow: NoticeWorkflow
 }
 
 export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
+  const disclaimer = workflow.disclaimer ?? "Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.";
   return (
     <div className="min-h-screen">
       <main>
+        {/* Hero */}
         <section className="border-b border-rule/60 bg-paper-deep/20">
           <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
-            <Link to="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <Link to="/workflows" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               ← All Notice Respond workflows
             </Link>
             <div className="mt-8 max-w-3xl">
               <div className="postmark w-fit">{workflow.category}</div>
               <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{workflow.title}</h1>
               <p className="mt-5 text-base leading-7 text-ink-soft sm:text-lg">{workflow.description}</p>
+              {disclaimer && (
+                <div className="mt-6 rounded-md border border-rule/70 bg-paper-deep/40 p-4 text-sm text-muted-foreground">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Disclaimer</div>
+                  <p className="mt-2">{disclaimer}</p>
+                </div>
+              )}
               <div className="mt-7 flex flex-wrap gap-3">
                 {workflow.canonicalPath && (
                   <Link to={workflow.canonicalPath} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
                     Start this workflow →
                   </Link>
                 )}
-                <Link to="/dashboard" className="rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30">
-                  Dashboard
-                </Link>
                 <Link to="/workflows/analyze" className="rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30">
                   Analyze a notice
                 </Link>
@@ -244,10 +258,12 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
           </div>
         </section>
 
+        {/* What happens here + documents sidebar */}
         <section>
           <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_.8fr]">
             <div>
-              <SectionHeader eyebrow="Workflow" title="What happens here" />
+              <div className="eyebrow">Workflow</div>
+              <h2 className="mt-3 font-serif text-3xl sm:text-4xl">What happens here</h2>
               <div className="mt-6 space-y-3">
                 {workflow.steps.map((step, index) => (
                   <div key={step} className="flex gap-4 rounded-xl border border-rule bg-card p-4">
@@ -258,7 +274,9 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
                   </div>
                 ))}
               </div>
-              <p className="mt-6 text-sm leading-6 text-muted-foreground">{workflow.bestFor}</p>
+              {workflow.bestFor && (
+                <p className="mt-6 text-sm leading-6 text-muted-foreground">{workflow.bestFor}</p>
+              )}
             </div>
             <aside className="rounded-xl border border-rule bg-card p-6 sm:p-7">
               <div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Bring these documents</div>
@@ -280,6 +298,7 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
           </div>
         </section>
 
+        {/* CTA */}
         <section className="border-y border-rule/60 bg-paper-deep/30">
           <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16">
             <div className="postmark mx-auto w-fit">Ready when you are</div>
@@ -293,8 +312,8 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
                   Start this workflow →
                 </Link>
               )}
-              <Link to="/dashboard" className="inline-flex rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30">
-                Dashboard
+              <Link to="/workflows" className="inline-flex rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30">
+                Browse all workflows
               </Link>
             </div>
           </div>

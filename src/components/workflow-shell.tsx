@@ -335,12 +335,12 @@ export function WorkflowLandingPage({
         {/* Hero */}
         <section className="border-b border-rule/60 bg-paper-deep/20">
           <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
-            <button
-              onClick={() => window.history.length > 1 ? window.history.back() : undefined}
+            <Link
+              to="/workflows"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               ← All Notice Respond workflows
-            </button>
+            </Link>
             <div className="mt-8 max-w-3xl">
               <div className="postmark w-fit">{category}</div>
               <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{title}</h1>
