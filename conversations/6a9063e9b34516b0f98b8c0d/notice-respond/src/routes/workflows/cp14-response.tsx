@@ -35,42 +35,13 @@ import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-prove
 // Wire CP14 domain packs into factory registry
 import "@/domain/cp14-packs";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/cp14-response")({
-  head: () => {
-    const def = getWorkflowById("cp14-response")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? `${def.title} — Notice Respond` },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("cp14-response"),
   component: CP14Response,
 });
 

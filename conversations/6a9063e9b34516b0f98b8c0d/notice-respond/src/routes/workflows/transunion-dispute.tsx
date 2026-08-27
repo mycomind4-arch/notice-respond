@@ -17,42 +17,13 @@ import { recommendStrategies } from "@/domain/strategy";
 // Security
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/transunion-dispute")({
-  head: () => {
-    const def = getWorkflowById("transunion-dispute")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("transunion-dispute"),
   component: TransUnionDispute,
 });
 
@@ -502,6 +473,9 @@ function TransUnionDispute() {
               <button onClick={next} disabled={!canContinue} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">{state.phase === "checkout" ? "Pay and send" : "Continue"} →</button>
             </div>
           )}
+
+        {(() => { const seo = getWorkflowSEO("transunion-dispute"); return seo ? <FAQSection faq={seo.faq} /> : null; })()}
+
         </div>
 
         {state.phase === "intro" && definition.seo?.faq && (

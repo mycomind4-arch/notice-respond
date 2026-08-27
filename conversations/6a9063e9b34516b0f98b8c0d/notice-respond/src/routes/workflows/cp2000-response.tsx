@@ -35,42 +35,13 @@ import { classifyContent, validateTextInput, validateFilename, validateFileSize,
 import "@/domain/cp2000-packs";
 import { buildDraftProvenance, type DraftProvenance } from "@/domain/draft-provenance";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/cp2000-response")({
-  head: () => {
-    const def = getWorkflowById("cp2000-response")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? `${def.title} — Notice Respond` },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("cp2000-response"),
   component: CP2000Response,
 });
 
@@ -81,6 +52,7 @@ function CP2000Response() {
   const [cp2000Extraction, setCP2000Extraction] = useState<CP2000Extraction | null>(null);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const llmAnalysis = useCombinedAnalysis("cp2000-response");
   const [mailingFunnelState, setMailingFunnelState] = useState<MailingFunnelState | null>(null);
   // P0-2: Gold-standard pipeline state
   const [cp2000Case, setCP2000Case] = useState<CP2000Case | null>(null);
@@ -268,7 +240,10 @@ function CP2000Response() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update, buildGoldStandardPipeline]);
+
+    // ── LLM-powered analysis (runs alongside deterministic extraction) ──
+    llmAnalysis.analyzeWithLLM(file, sanitizedText);
+  }, [update, buildGoldStandardPipeline, llmAnalysis]);
 
   // ── Draft generation (P0-2: uses two-pass validation) ──
   const handleGenerateDraft = useCallback(() => {
@@ -796,10 +771,38 @@ function CP2000Response() {
               )}
 
               <button
-                onClick={handleGenerateDraft}
-                className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const draft = await llmAnalysis.analyzeWithLLM(null, '');
+                    // Use the draft API directly
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        workflowId: 'cp2000-response',
+                        analysis: llmAnalysis.llmAnalysis,
+                        userFacts: state.userFacts,
+                        userObjective: state.userObjective,
+                        documentText: state.upload?.rawText,
+                      }),
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      update((s) => setDraft(s, data.draft));
+                      if (data.validation) update((s) => setDraftValidation(s, data.validation));
+                    }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
               >
-                Regenerate draft
+                ✦ Generate with AI
+              </button>
+              <button
+                onClick={handleGenerateDraft}
+                className="mt-4 ml-2 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Regenerate draft (template)
               </button>
             </div>
           )}

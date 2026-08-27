@@ -16,32 +16,13 @@ import { validateDraft } from "@/domain/draft-validator";
 import { recommendStrategies } from "@/domain/strategy";
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/experian-dispute")({
-  head: () => {
-    const def = getWorkflowById("experian-dispute")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [{ rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath }],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org", "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({ "@type": "Question", name: f.question, acceptedAnswer: { "@type": "Answer", text: f.answer } })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org", "@type": "WebApplication",
-          name: def.title, description: def.description,
-          applicationCategory: "LegalDocumentService", operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("experian-dispute"),
   component: ExperianDispute,
 });
 
@@ -186,6 +167,9 @@ function ExperianDispute() {
           {state.phase === "mailing" && (<div><div className="postmark w-fit">10 · Mail</div><h2 className="mt-4 font-serif text-3xl">Choose your mail type</h2><p className="mt-3 text-muted-foreground">For FCRA disputes, Certified mail is strongly recommended for proof of timely submission.</p><MailOptions selected={state.mailing?.method ?? "certified"} onSelect={(id) => update((s) => setMailing(s, { ...s.mailing ?? { recipient: defaultRecipient, status: "not_started" }, method: id }))} /></div>)}
           {(state.phase === "checkout" || state.phase === "submitted") && (<MailingFunnel draft={state.draft} workflowId={definition.id} workflowTitle={definition.title} recipient={state.mailing?.recipient ?? null} extractionRef={extraction?.reportNumber ?? null} taxYear={null} mailOptions={definition.ux?.mailOptions ?? MAIL_OPTIONS} disclaimer={definition.ux?.disclaimerText ?? definition.disclaimer} onMailingStateChange={(s) => { if (s.phase === "submitted") update((st) => setMailing(st, { method: s.method, recipient: s.recipient, status: "submitted", providerOrderId: s.providerOrderId ?? undefined, trackingNumber: s.trackingNumber ?? undefined })); }} />)}
           {state.phase !== "checkout" && state.phase !== "submitted" && (<div className="mt-8 flex items-center justify-between"><button onClick={back} disabled={state.step === 0} className="text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30">← Back</button><button onClick={next} disabled={!canContinue} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">{state.phase === "checkout" ? "Pay and send" : "Continue"} →</button></div>)}
+
+        {(() => { const seo = getWorkflowSEO("experian-dispute"); return seo ? <FAQSection faq={seo.faq} /> : null; })()}
+
         </div>
         {state.phase === "intro" && definition.seo?.faq && (<div className="mt-16"><h2 className="font-serif text-2xl">Frequently asked questions</h2><div className="mt-6 space-y-4">{definition.seo.faq.map((item, i) => (<div key={i} className="rounded-xl border border-rule bg-card p-5"><h3 className="font-medium text-foreground">{item.question}</h3><p className="mt-2 text-sm text-muted-foreground">{item.answer}</p></div>))}</div><div className="mt-8 text-sm text-muted-foreground"><Link to="/" className="hover:text-foreground transition-colors">← All Notice Respond workflows</Link></div></div>)}
       </main>

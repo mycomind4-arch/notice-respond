@@ -13,18 +13,13 @@ import { validateDraft } from "@/domain/draft-validator";
 import { extractFromText } from "@/platform/notice-extraction";
 import { createFact } from "@/domain/fact";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/irs-notice")({
-  head: () => {
-    const def = getWorkflowById("irs-notice");
-    return { meta: [
-      { rel: 'canonical', href: '/workflows/irs-notice' },
-      { title: def?.seo?.title ?? `${def?.title} — Notice Respond` },
-      { name: "description", content: def?.seo?.description ?? def?.description ?? "" },
-      { property: "og:title", content: def?.seo?.openGraph?.title ?? def?.title ?? "" },
-      { property: "og:description", content: def?.seo?.openGraph?.description ?? def?.description ?? "" },
-      { property: "og:type", content: "website" },
-    ] };
-  },
+  head: () => createWorkflowHead("irs-notice"),
   component: IRSNotice,
 });
 
