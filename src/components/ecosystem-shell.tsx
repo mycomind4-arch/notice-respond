@@ -46,14 +46,14 @@ export const ECOSYSTEM_PRODUCTS: EcosystemProduct[] = [
   { name: "Immigration Mail", slug: "immigration-mail", href: "https://immigration-mail.pages.dev", description: "Immigration notices, evidence packages, and explanation letters", category: "Immigration", status: "live" },
   { name: "Appeal Mail", slug: "appeal-mail", href: "https://mycomind4-arch-appeal-mail.pages.dev", description: "Appeals, reconsiderations, denials, and adverse decisions", category: "Appeals / Claims", status: "live" },
   { name: "Dispute Mail", slug: "dispute-mail", href: "https://mycomind4-arch-dispute-mail.pages.dev", description: "Debt, credit, billing, collections, and consumer disputes", category: "Disputes", status: "live" },
-  { name: "Tenant Reply", slug: "tenant-reply", href: "https://mailmypdf-etc.pages.dev/tenant-reply", description: "Tenant notices, repair correspondence, and housing responses", category: "Housing", status: "planned" },
-  { name: "Benefits Appeal", slug: "benefits-appeal", href: "https://mailmypdf-etc.pages.dev/benefits-appeal", description: "Benefits denials, reconsideration, and review preparation", category: "Appeals / Claims", status: "planned" },
-  { name: "Claim Proof", slug: "claim-proof", href: "https://mailmypdf-etc.pages.dev/claim-proof", description: "Evidence-first claim documentation and proof packages", category: "Appeals / Claims", status: "planned" },
-  { name: "Records Request", slug: "records-request", href: "https://mailmypdf-etc.pages.dev/records-request", description: "Records and public-information request workflows", category: "Records / Information", status: "planned" },
-  { name: "Permit Reply", slug: "permit-reply", href: "https://mailmypdf-etc.pages.dev/permit-reply", description: "Permit, licensing, and regulatory response workflows", category: "Regulatory / Permit / Rights", status: "planned" },
-  { name: "Small Business Mail", slug: "small-business-mail", href: "https://mycomind4-arch-mailmypdf-smallbusiness.pages.dev", description: "Business correspondence, reminders, demands, and compliance", category: "Business", status: "planned" },
+  { name: "Tenant Reply", slug: "tenant-reply", href: "https://mailmypdf-etc.pages.dev/tenant-reply", description: "Tenant notices, repair correspondence, and housing responses", category: "Housing", status: "live" },
+  { name: "Benefits Appeal", slug: "benefits-appeal", href: "https://mailmypdf-etc.pages.dev/benefits-appeal", description: "Benefits denials, reconsideration, and review preparation", category: "Appeals / Claims", status: "live" },
+  { name: "Claim Proof", slug: "claim-proof", href: "https://mailmypdf-etc.pages.dev/claim-proof", description: "Evidence-first claim documentation and proof packages", category: "Appeals / Claims", status: "live" },
+  { name: "Records Request", slug: "records-request", href: "https://mailmypdf-etc.pages.dev/records-request", description: "FOIA, state public records, and agency document requests by certified mail", category: "Records / Information", status: "live" },
+  { name: "Permit Reply", slug: "permit-reply", href: "https://mailmypdf-etc.pages.dev/permit-reply", description: "Permit, licensing, and regulatory response workflows", category: "Regulatory / Permit / Rights", status: "live" },
+  { name: "Small Business Mail", slug: "small-business-mail", href: "https://mycomind4-arch-mailmypdf-smallbusiness.pages.dev", description: "Business correspondence, reminders, demands, and compliance", category: "Business", status: "live" },
   { name: "Private Office", slug: "private-office", href: "https://mycomind4-arch-mailmypdf-private-office.pages.dev", description: "Professional correspondence, provably delivered", category: "Private Office", status: "live" },
-  { name: "GovReply", slug: "govreply", href: "https://govreply.pages.dev", description: "Government correspondence, handled", category: "Government / Official", status: "planned" },
+  { name: "GovReply", slug: "govreply", href: "https://govreply.pages.dev", description: "Government correspondence, handled", category: "Government / Official", status: "live" },
 ];
 
 export const ECOSYSTEM_PAGE_URL = "https://mailmypdf-etc.pages.dev/products";
