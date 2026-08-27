@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
+  const llmAnalysis = useCombinedAnalysis("irs-notice");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -148,6 +149,13 @@ function IRSNotice() {
           {/* Step 1: Document */}
           {state.phase === "document" && (
             <div>
+
+              {llmAnalysis.llmAnalysis && (
+                <LLMAnalysisPanel analysis={llmAnalysis.llmAnalysis} provider={llmAnalysis.llmProvider} />
+              )}
+              {llmAnalysis.llmLoading && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary animate-pulse">✦ AI is analyzing your document…</div>
+              )}
               <div className="postmark w-fit">2 · Notice</div>
               <h2 className="mt-4 font-serif text-3xl">Start with the notice</h2>
               <p className="mt-3 text-muted-foreground">Upload the IRS notice when document processing is connected, or identify it here so the workflow can begin.</p>

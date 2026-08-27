@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
+  const llmAnalysis = useCombinedAnalysis("transunion-dispute");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -153,7 +154,10 @@ function TransUnionDispute() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+
+    // LLM-powered analysis (alongside deterministic)
+    llmAnalysis.analyzeWithLLM(file, text);
+    }, [update, llmAnalysis]);
 
   // ── Draft generation ──
   const handleGenerateDraft = useCallback(() => {
@@ -269,6 +273,13 @@ function TransUnionDispute() {
           {/* ── Step 2: Extraction Review ── */}
           {state.phase === "extraction" && (
             <div>
+
+              {llmAnalysis.llmAnalysis && (
+                <LLMAnalysisPanel analysis={llmAnalysis.llmAnalysis} provider={llmAnalysis.llmProvider} />
+              )}
+              {llmAnalysis.llmLoading && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary animate-pulse">✦ AI is analyzing your document…</div>
+              )}
               <div className="postmark w-fit">3 · Review</div>
               <h2 className="mt-4 font-serif text-3xl">Review extracted information</h2>
               <p className="mt-3 text-muted-foreground">We extracted the following from your credit report. Verify each item — this information will be used to prepare your dispute.</p>
@@ -408,6 +419,19 @@ function TransUnionDispute() {
               )}
 
               <textarea className="input-field mt-6 min-h-72 font-mono text-sm leading-6" value={state.draft} onChange={(e) => update((s) => setDraft(s, e.target.value))} />
+              <button
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ workflowId: 'transunion-dispute', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
+                    });
+                    if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
+              >✦ Generate with AI</button>
               <button onClick={handleGenerateDraft} className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Regenerate draft</button>
             </div>
           )}

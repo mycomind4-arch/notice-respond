@@ -46,6 +46,7 @@ function FileAppeal() {
   const [mailType, setMailType] = useState("certified");
   const [recipient, setRecipient] = useState({ name: "", org: "", address1: "", address2: "", city: "", state: "", zip: "" });
   const [done, setDone] = useState(false);
+  const llmAnalysis = useCombinedAnalysis("file-appeal");
   const allChecked = checks.every(Boolean);
 
   function generateDraft() {
@@ -78,8 +79,19 @@ Sincerely,
     }
   }
 
-  function next() {
-    if (step === 4 && !draft) setDraft(generateDraft());
+  async function next() {
+    if (step === 4 && !draft) {
+      try {
+        if (llmAnalysis.llmAnalysis) {
+          const r = await fetch("/api/workflows/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workflowId: "file-appeal", analysis: llmAnalysis.llmAnalysis, userFacts: facts, userObjective: objective }),
+          });
+          if (r.ok) { const d = await r.json(); setDraft(d.draft); } else { setDraft(generateDraft()); }
+        } else { setDraft(generateDraft()); }
+      } catch (e) { setDraft(generateDraft()); }
+    }
     if (step === STEPS.length - 1) { setDone(true); return; }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
@@ -98,9 +110,23 @@ Sincerely,
       )}
       {step === 1 && (
         <div>
+
+          {llmAnalysis.llmAnalysis && (
+            <LLMAnalysisPanel analysis={llmAnalysis.llmAnalysis} provider={llmAnalysis.llmProvider} />
+          )}
+          {llmAnalysis.llmLoading && (
+            <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary animate-pulse">✦ AI is analyzing your document…</div>
+          )}
           <div className="postmark w-fit">2 · Notice</div>
           <h2 className="mt-4 font-serif text-3xl">Start with the decision</h2>
-          <UploadZone label="Upload decision letter" sublabel="PDF, JPG, or PNG" />
+          <label className="cursor-pointer block">
+            <input type="file" accept="application/pdf,image/jpeg,image/png" className="sr-only" onChange={async (e) => {
+              const file = e.target.files?.[0]; if (!file) return;
+              let text = ""; if (file.type === "text/plain") text = await file.text();
+              await llmAnalysis.analyzeWithLLM(file, text);
+            }} />
+            <UploadZone label="Upload decision letter" sublabel="PDF, JPG, or PNG" />
+          </label>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div><label className="input-label">Appealing to *</label><input className="input-field" value={appealingTo} onChange={(e) => setAppealingTo(e.target.value)} placeholder="Agency, board, or court" /></div>
             <div><label className="input-label">Case number</label><input className="input-field" value={caseNumber} onChange={(e) => setCaseNumber(e.target.value)} /></div>

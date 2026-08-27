@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
+  const llmAnalysis = useCombinedAnalysis("cp523-response");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -160,7 +161,10 @@ function CP523Response() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+
+    // LLM-powered analysis (alongside deterministic)
+    llmAnalysis.analyzeWithLLM(file, text);
+    }, [update, llmAnalysis]);
 
   // ── Draft generation ──
   const handleGenerateDraft = useCallback(() => {
@@ -318,7 +322,22 @@ function CP523Response() {
             {state.draft ? (
               <pre className="whitespace-pre-wrap rounded-lg border bg-card p-4 text-sm">{state.draft}</pre>
             ) : (
+              <>
+              <button
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ workflowId: 'cp523-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
+                    });
+                    if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
+              >✦ Generate with AI</button>
               <button onClick={handleGenerateDraft} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">Generate Draft</button>
+              </>
             )}
           </div>
         )}
