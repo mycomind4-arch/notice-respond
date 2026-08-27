@@ -5,9 +5,9 @@ import { getDebtWorkflowConfig } from '@/src/domain/workflow-engine'
 
 export const runtime = 'nodejs'
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const slug = params.slug
+    const { slug } = await params
     const config = getDebtWorkflowConfig(slug)
     if (!config) return NextResponse.json({ error: `Unknown workflow: ${slug}` }, { status: 404 })
 

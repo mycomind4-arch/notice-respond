@@ -3,9 +3,9 @@ import { getInsuranceWorkflowConfig, calculateInsurancePricing } from '@/src/dom
 
 export const runtime = 'nodejs'
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const slug = params.slug
+    const { slug } = await params
     const config = getInsuranceWorkflowConfig(slug)
     if (!config) return NextResponse.json({ error: `Unknown workflow: ${slug}` }, { status: 404 })
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     if (!secretKey) return NextResponse.json({ error: 'Stripe is not configured.' }, { status: 503 })
 
     const Stripe = (await import('stripe')).default
-    const stripe = new Stripe(secretKey, { apiVersion: '2024-06-20' as Stripe.LatestApiVersion })
+    const stripe = new Stripe(secretKey, { apiVersion: '2024-06-20' })
     const appUrl = process.env.APP_URL || 'https://insurance-claims.pages.dev'
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
