@@ -1,6 +1,6 @@
 # Master Workflow Registry
 
-**Date:** 2026-08-18
+**Date:** 2026-08-27
 **Status:** Source of truth — every workflow in the ecosystem
 
 ---
@@ -10,10 +10,18 @@
 | cp2000-response | Respond to an IRS CP2000 Notice | notice-respond | notice-respond | document-action | gold | ✅ | ✅ | 1900 | ✅ enforced | ✅ 15 tests | needed | gold | Maintain Gold |
 | cp14-response | Respond to an IRS CP14 Notice | notice-respond | notice-respond | document-action | authority | ✅ | ✅ | TBD | TBD | TBD | needed | authority | Maintain authority |
 | cp504-response | Respond to an IRS CP504 Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1900 | 13 | TBD | needed | functional | Upgrade to authority |
+| cp523-response | Respond to an IRS CP523 Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 390 | 26 | low | needed | functional | Maintain functional |
 | irs-notice | Respond to an IRS Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | TBD | TBD | TBD | needed | functional | Upgrade to authority |
 | court-summons | Respond to a Court Summons | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | TBD | TBD | TBD | needed | functional | Upgrade to authority |
 | agency-action | Respond to an Agency Action | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | TBD | TBD | TBD | needed | functional | Upgrade to authority |
 | file-appeal | File an Appeal | notice-respond | notice-respond | appeal | functional | ✅ | ✅ | 1300 | TBD | TBD | needed | functional | RESEARCH: may belong in appeal-mail |
+| tax-notice | Respond to a Tax Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 2900 | 14 | medium | ✅ done | functional | Maintain functional |
+| code-enforcement | Respond to a Code Enforcement Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 720 | 8 | low | ✅ done | functional | Maintain functional |
+| permit-correction | Respond to a Permit Correction Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 480 | 7 | low | ✅ done | functional | Maintain functional |
+| dmv-notice | Respond to a DMV Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1600 | 9 | medium | ✅ done | functional | Maintain functional |
+| ssa-notice | Respond to an SSA Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1300 | 11 | medium | ✅ done | functional | Maintain functional |
+| uscis-notice | Respond to a USCIS Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 880 | 18 | medium | ✅ done | functional | Maintain functional |
+| benefits-notice | Respond to a Benefits Notice | notice-respond | notice-respond | document-action | functional | ✅ | ✅ | 1100 | 10 | medium | ✅ done | functional | Maintain functional |
 | i-797-analysis | I-797 Analysis | immigration-mail | immigration-mail | document-action | blueprint | — | — | 18100 | TBD | TBD | needed | planned | Build in canonical repo |
 | i-797c-analysis | I-797C Analysis | immigration-mail | immigration-mail | document-action | blueprint | — | — | 8100 | TBD | TBD | needed | planned | Build in canonical repo |
 | uscis-rfe-response | USCIS RFE Response | immigration-mail | immigration-mail | document-action | blueprint | — | — | TBD | TBD | TBD | needed | planned | Build in canonical repo |

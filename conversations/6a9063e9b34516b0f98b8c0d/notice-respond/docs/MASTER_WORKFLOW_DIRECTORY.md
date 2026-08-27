@@ -28,3 +28,44 @@ A workflow deserves a dedicated canonical page when the user intent, supporting 
 ## Architecture rule
 
 Keep shared identity, document storage, payments, mailing, tracking, proof, and design-system primitives in the MailMyPDF/platform layer. Keep notice-specific intelligence and workflow logic here.
+
+
+## Current Status (2026-08-27)
+
+**18 workflows in production** across the notice-respond vertical:
+
+### Tax Notices
+- cp2000-response — IRS CP2000 underreported income (AUTHORITY)
+- cp14-response — IRS CP14 balance due (AUTHORITY)
+- cp504-response — IRS CP504 intent to levy (FUNCTIONAL)
+- cp523-response — IRS CP523 installment agreement default (FUNCTIONAL)
+- irs-notice — Generic IRS notice (FUNCTIONAL)
+- tax-notice — Tax authority notice (FUNCTIONAL, LLM-powered)
+
+### Court & Agency
+- court-summons — Court summons response (FUNCTIONAL)
+- agency-action — Agency action response (FUNCTIONAL)
+- file-appeal — Appeal filing (FUNCTIONAL)
+
+### Property & Local Government
+- code-enforcement — Code enforcement notice (FUNCTIONAL, LLM-powered)
+- permit-correction — Permit correction notice (FUNCTIONAL, LLM-powered)
+
+### State Agencies
+- dmv-notice — DMV notice (FUNCTIONAL, LLM-powered)
+
+### Benefits & Identity
+- ssa-notice — Social Security Administration notice (FUNCTIONAL, LLM-powered)
+- benefits-notice — Benefits notice (FUNCTIONAL, LLM-powered)
+
+### Immigration
+- uscis-notice — USCIS notice (FUNCTIONAL, LLM-powered)
+
+### Credit Disputes (cross-listed from dispute-mail)
+- transunion-dispute — TransUnion (FUNCTIONAL)
+- experian-dispute — Experian (FUNCTIONAL)
+- equifax-dispute — Equifax (FUNCTIONAL)
+
+### LLM Integration
+All workflows support multi-LLM analysis (Gemini default, OpenAI/Claude fallback).
+Upload a notice → LLM analyzes document → extracts facts/deadlines/requirements → generates response draft.

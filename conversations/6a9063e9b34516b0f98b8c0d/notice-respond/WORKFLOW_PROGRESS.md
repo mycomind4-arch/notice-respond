@@ -1,8 +1,8 @@
 # WORKFLOW_PROGRESS.md — Production Pipeline Status
 
-**Last Updated:** 2026-08-18
-**Total Workflows in Registry:** 47
-**Total Workflows in Catalog (Production):** 8
+**Last Updated:** 2026-08-27
+**Total Workflows in Registry:** 54+
+**Total Workflows in Catalog (Production):** 18
 
 ## Status Table
 
@@ -15,7 +15,15 @@
 | agency-action | Respond to Agency Action | document-action | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | file-appeal | File an Appeal | appeal | notice-respond | FUNCTIONAL | ✅ | ✅ | ✅ Generic | — | ✅ Production |
 | cp504-response | Respond to IRS CP504 (Intent to Levy) | document-action | notice-respond | FUNCTIONAL | ✅ 29 tests | ✅ Full | ✅ Generic | — | ✅ Production |
+| cp523-response | Respond to IRS CP523 (Installment Default) | document-action | notice-respond | FUNCTIONAL | ✅ | ✅ Full | ✅ Generic | — | ✅ Production |
 | transunion-dispute | Dispute TransUnion Credit Report | dispute | dispute-mail | FUNCTIONAL | ✅ 26 tests | ✅ Full | ✅ Generic | — | ✅ Production |
+| tax-notice | Respond to a Tax Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| code-enforcement | Respond to Code Enforcement Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| permit-correction | Respond to Permit Correction Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| dmv-notice | Respond to a DMV Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| ssa-notice | Respond to an SSA Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| uscis-notice | Respond to a USCIS Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
+| benefits-notice | Respond to a Benefits Notice | document-action | notice-respond | FUNCTIONAL | ✅ 10 tests | ✅ Full | ✅ LLM | ✅ | ✅ Production |
 
 ### Blueprint Workflows (in registry, not yet implemented)
 
