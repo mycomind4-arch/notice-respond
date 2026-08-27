@@ -819,6 +819,437 @@ export const noticeRespondCatalog: MasterWorkflowDefinition[] = [
       seoDescription: "Identify inaccurate items on your Equifax credit report, prepare an FCRA dispute letter with evidence, and mail with proof of delivery.",
     },
   },
+  {
+    id: "tax-notice",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a Tax Notice",
+    description: "Create a structured response to a tax authority notice without losing the notice deadline, reference number, or supporting evidence.",
+    disclaimer: "Tax notices vary by jurisdiction. Notice Respond is not a tax preparer or financial advisor and does not provide tax advice.",
+    searchIntent: {
+      primary: "respond to a tax notice",
+      secondary: ["tax notice response", "tax authority letter", "tax correspondence response"],
+      canonicalPath: "/workflows/tax-notice",
+      informationalEntryPoints: ["respond to a tax notice"],
+      actionIntents: ["respond to a tax notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a Tax Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "noticeType", "noticeNumber", "taxYear", "noticeDate", "responseDeadline", "issue", "amount", "requestedAction", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["tax returns", "W-2 or 1099", "payment records", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Tax notices vary by jurisdiction. Notice Respond is not a tax preparer or financial advisor and does not provide tax advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a Tax Notice — Notice Respond",
+      description: "Create a structured response to a tax authority notice without losing the notice deadline, reference number, or supporting evidence.",
+      canonical: "/workflows/tax-notice",
+      openGraph: { title: "Respond to a Tax Notice", description: "Create a structured response to a tax authority notice without losing the notice deadline, reference number, or supporting evidence." },
+      faq: [
+        {
+                "question": "How long do I have to respond to a tax notice?",
+                "answer": "Most tax notices include a response deadline, typically 30 days from the notice date. If no deadline is stated, contact the issuing agency immediately to confirm the response window."
+        },
+        {
+                "question": "What should I include in my response to a tax notice?",
+                "answer": "Include the notice or reference number, the tax year in question, a point-by-point response to each issue raised, supporting documentation, and your contact information. Address every item the notice raises."
+        },
+        {
+                "question": "Can I disagree with a tax notice?",
+                "answer": "Yes. If you believe the notice is incorrect, state clearly which items you disagree with and provide evidence supporting your position. Include copies of relevant records, not originals."
+        },
+        {
+                "question": "Should I send original documents with my tax notice response?",
+                "answer": "No. Always send copies, not originals. Keep your original documents and proof of mailing in your records."
+        },
+        {
+                "question": "What mail type should I use for a tax notice response?",
+                "answer": "Certified mail is recommended for tax notice responses because it provides proof of timely delivery, which is important if you need to prove you met the deadline."
+        }
+],
+    },
+    directory: {
+      category: "Tax notices",
+      bestFor: "Federal, state, or local tax notices that require clarification, documents, disagreement, or another written action.",
+      steps: ["Upload the notice", "Record the stated reason and deadline", "Collect the records that address the notice", "Draft a point-by-point response", "Review the mailing details"],
+      documents: ["Tax notice", "Returns or schedules", "Payment evidence", "Prior correspondence"],
+      seoRoute: "/workflows/respond-to-a-tax-notice",
+      seoTitle: "Respond to a Tax Notice",
+      seoDescription: "Create a structured response to a tax authority notice without losing the notice deadline, reference number, or supporting evidence.",
+    },
+  },
+
+  {
+    id: "code-enforcement",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a Code Enforcement Notice",
+    description: "Organize a code enforcement notice around the property, alleged violations, inspection dates, correction deadline, and evidence you want the agency to consider.",
+    disclaimer: "Code enforcement varies by municipality. Notice Respond is not a law firm and does not provide legal advice.",
+    searchIntent: {
+      primary: "respond to a code enforcement notice",
+      secondary: ["code enforcement response", "municipal violation notice", "property compliance notice"],
+      canonicalPath: "/workflows/code-enforcement",
+      informationalEntryPoints: ["respond to a code enforcement notice"],
+      actionIntents: ["respond to a code enforcement notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a Code Enforcement Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "caseNumber", "propertyAddress", "violationType", "inspectionDate", "noticeDate", "correctionDeadline", "requestedAction", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["property records", "permits", "photos", "inspection reports", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Code enforcement varies by municipality. Notice Respond is not a law firm and does not provide legal advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a Code Enforcement Notice — Notice Respond",
+      description: "Organize a code enforcement notice around the property, alleged violations, inspection dates, correction deadline, and evidence you want the agency to consider.",
+      canonical: "/workflows/code-enforcement",
+      openGraph: { title: "Respond to a Code Enforcement Notice", description: "Organize a code enforcement notice around the property, alleged violations, inspection dates, correction deadline, and evidence you want the agency to consider." },
+      faq: [
+        {
+                "question": "What happens if I miss the correction deadline on a code enforcement notice?",
+                "answer": "Missing a correction deadline can result in fines, liens, or additional enforcement action. If you cannot meet the deadline, respond before it expires to request an extension and show good-faith progress."
+        },
+        {
+                "question": "Can I dispute a code enforcement violation?",
+                "answer": "Yes. If you believe the violation is incorrect or has already been corrected, document your position with photos, permits, or inspection records and include them with your response."
+        },
+        {
+                "question": "What evidence should I include with my code enforcement response?",
+                "answer": "Include photos showing compliance, permits, inspection reports, prior correspondence with the agency, and any other records that support your position."
+        },
+        {
+                "question": "How do I request an extension on a code enforcement deadline?",
+                "answer": "State your request clearly in the response letter, explain why you need more time, describe the corrective steps already taken, and propose a specific completion date."
+        }
+],
+    },
+    directory: {
+      category: "Property & local government",
+      bestFor: "Property owners and occupants dealing with municipal code, nuisance, inspection, or compliance notices.",
+      steps: ["Upload the notice", "Capture property and case details", "Build the notice timeline", "Attach permits, photos, records, or other evidence", "Prepare a response for review"],
+      documents: ["Violation notice", "Inspection reports", "Permits", "Photos", "Property records", "Agency correspondence"],
+      seoRoute: "/workflows/respond-to-code-enforcement-notice",
+      seoTitle: "Respond to a Code Enforcement Notice",
+      seoDescription: "Organize a code enforcement notice around the property, alleged violations, inspection dates, correction deadline, and evidence you want the agency to consider.",
+    },
+  },
+
+  {
+    id: "permit-correction",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a Permit Correction Notice",
+    description: "Turn permit or planning corrections into a tracked response so each requested change is understood, answered, and supported.",
+    disclaimer: "Permit processes vary by jurisdiction. Notice Respond is not a law firm and does not provide legal advice.",
+    searchIntent: {
+      primary: "respond to a permit correction notice",
+      secondary: ["permit correction response", "planning department notice", "building permit resubmission"],
+      canonicalPath: "/workflows/permit-correction",
+      informationalEntryPoints: ["respond to a permit correction notice"],
+      actionIntents: ["respond to a permit correction notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a Permit Correction Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "permitNumber", "projectAddress", "correctionItems", "reviewerName", "noticeDate", "resubmissionDeadline", "requestedAction", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["revised plans", "original application", "inspection notes", "engineering reports", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Permit processes vary by jurisdiction. Notice Respond is not a law firm and does not provide legal advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a Permit Correction Notice — Notice Respond",
+      description: "Turn permit or planning corrections into a tracked response so each requested change is understood, answered, and supported.",
+      canonical: "/workflows/permit-correction",
+      openGraph: { title: "Respond to a Permit Correction Notice", description: "Turn permit or planning corrections into a tracked response so each requested change is understood, answered, and supported." },
+      faq: [
+        {
+                "question": "How should I format my permit correction response?",
+                "answer": "Address each correction item individually by number. For each item, state whether you agree, describe the corrective action taken, and reference the specific plan sheet or document that shows the correction."
+        },
+        {
+                "question": "What if I disagree with a permit correction item?",
+                "answer": "State your disagreement clearly, explain why the original submission meets code requirements, and cite the relevant code section or standard that supports your position."
+        },
+        {
+                "question": "Do I need to resubmit the entire plan set with my correction response?",
+                "answer": "Most jurisdictions require a full resubmission with corrected sheets highlighted. Check the correction notice for specific instructions on what to include."
+        },
+        {
+                "question": "How long do I have to respond to a permit correction notice?",
+                "answer": "Correction notices may or may not include a deadline. If no deadline is stated, respond promptly to keep your application active. Contact the permit office if you need clarification."
+        }
+],
+    },
+    directory: {
+      category: "Property & local government",
+      bestFor: "Building, planning, zoning, inspection, and permit resubmission comments.",
+      steps: ["Upload the correction notice", "Extract each correction item", "Match each item to supporting plans or documents", "Draft a point-by-point response", "Prepare the resubmission package"],
+      documents: ["Correction notice", "Plans", "Permit application", "Inspection notes", "Supporting correspondence"],
+      seoRoute: "/workflows/respond-to-a-permit-correction-notice",
+      seoTitle: "Respond to a Permit Correction Notice",
+      seoDescription: "Turn permit or planning corrections into a tracked response so each requested change is understood, answered, and supported.",
+    },
+  },
+
+  {
+    id: "dmv-notice",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a DMV Notice",
+    description: "Organize a DMV notice, identify the response or hearing date, and assemble the records needed for the written response.",
+    disclaimer: "DMV procedures vary by state. Notice Respond is not a law firm and does not provide legal advice.",
+    searchIntent: {
+      primary: "respond to a DMV notice",
+      secondary: ["DMV notice response", "license suspension response", "vehicle registration notice"],
+      canonicalPath: "/workflows/dmv-notice",
+      informationalEntryPoints: ["respond to a DMV notice"],
+      actionIntents: ["respond to a DMV notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a DMV Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "noticeType", "licenseOrId", "vehicleInfo", "noticeDate", "responseDeadline", "actionProposed", "requestedResponse", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["license records", "registration documents", "proof of insurance", "payment receipts", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "DMV procedures vary by state. Notice Respond is not a law firm and does not provide legal advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a DMV Notice — Notice Respond",
+      description: "Organize a DMV notice, identify the response or hearing date, and assemble the records needed for the written response.",
+      canonical: "/workflows/dmv-notice",
+      openGraph: { title: "Respond to a DMV Notice", description: "Organize a DMV notice, identify the response or hearing date, and assemble the records needed for the written response." },
+      faq: [
+        {
+                "question": "How do I request a DMV hearing?",
+                "answer": "Most DMV notices that propose suspension or revocation include instructions for requesting a hearing. Follow the instructions exactly and submit your request before the deadline stated in the notice."
+        },
+        {
+                "question": "What happens if I miss the response deadline on a DMV notice?",
+                "answer": "Missing the deadline can result in automatic suspension, fines, or other enforcement action. If the deadline has passed, contact the DMV immediately to ask if a late response is possible."
+        },
+        {
+                "question": "Can I respond to a DMV notice by mail?",
+                "answer": "Yes, most DMV notices can be responded to by mail. Certified mail is recommended for proof of timely submission. Check the notice for the accepted response methods."
+        },
+        {
+                "question": "What should I include in my DMV response?",
+                "answer": "Include your license or ID number, the notice reference number, a clear statement of your position, supporting documents, and your contact information. Address every action the notice proposes."
+        }
+],
+    },
+    directory: {
+      category: "State agencies",
+      bestFor: "License, registration, title, suspension, compliance, or other DMV correspondence.",
+      steps: ["Upload the notice", "Identify the action and deadline", "Collect records that support your position", "Prepare the response", "Keep the submission and mailing record"],
+      documents: ["DMV notice", "License or registration records", "Proof of insurance", "Supporting correspondence"],
+      seoRoute: "/workflows/respond-to-a-dmv-notice",
+      seoTitle: "Respond to a DMV Notice",
+      seoDescription: "Organize a DMV notice, identify the response or hearing date, and assemble the records needed for the written response.",
+    },
+  },
+
+  {
+    id: "ssa-notice",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to an SSA Notice",
+    description: "Organize a Social Security notice, its deadline, stated decision or request, and the records you need for a written response or next review step.",
+    disclaimer: "SSA procedures have strict deadlines. Notice Respond is not a law firm and does not provide legal advice.",
+    searchIntent: {
+      primary: "respond to an SSA notice",
+      secondary: ["SSA notice response", "Social Security determination", "benefits appeal"],
+      canonicalPath: "/workflows/ssa-notice",
+      informationalEntryPoints: ["respond to an SSA notice"],
+      actionIntents: ["respond to an SSA notice", "response letter"],
+    },
+    documents: [{ name: "Respond to an SSA Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "noticeType", "ssn", "claimNumber", "noticeDate", "responseDeadline", "decision", "reasonGiven", "appealRights", "requestedResponse", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["benefit records", "work history", "medical records", "identity documents", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "SSA procedures have strict deadlines. Notice Respond is not a law firm and does not provide legal advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to an SSA Notice — Notice Respond",
+      description: "Organize a Social Security notice, its deadline, stated decision or request, and the records you need for a written response or next review step.",
+      canonical: "/workflows/ssa-notice",
+      openGraph: { title: "Respond to an SSA Notice", description: "Organize a Social Security notice, its deadline, stated decision or request, and the records you need for a written response or next review step." },
+      faq: [
+        {
+                "question": "How long do I have to appeal an SSA decision?",
+                "answer": "You typically have 60 days from the date you receive the notice to file an appeal. The SSA assumes you received the notice 5 days after the date on the notice unless you can show otherwise."
+        },
+        {
+                "question": "What are the levels of SSA appeal?",
+                "answer": "The SSA appeal process has four levels: reconsideration, hearing by an administrative law judge, review by the Appeals Council, and federal court. Your notice should tell you which level applies to you."
+        },
+        {
+                "question": "What should I include in my SSA appeal letter?",
+                "answer": "Include your name, Social Security number, the claim number, the decision you are appealing, why you disagree with the decision, and any new evidence that supports your claim."
+        },
+        {
+                "question": "Can I request more time to respond to an SSA notice?",
+                "answer": "The SSA may grant a good-cause extension if you have a valid reason for the delay. Contact the SSA as soon as possible to explain your situation and request more time."
+        },
+        {
+                "question": "Should I send original documents to the SSA?",
+                "answer": "No. Send copies, not originals. Keep your original documents and proof of mailing in your records."
+        }
+],
+    },
+    directory: {
+      category: "Benefits & identity",
+      bestFor: "Social Security notices, requests for information, and administrative decisions that require action.",
+      steps: ["Upload the notice", "Record the notice date and response deadline", "Extract the stated reason or request", "Organize supporting evidence", "Prepare and review the response"],
+      documents: ["SSA notice", "Benefit records", "Work or identity records when relevant", "Prior correspondence"],
+      seoRoute: "/workflows/respond-to-an-ssa-notice",
+      seoTitle: "Respond to an SSA Notice",
+      seoDescription: "Organize a Social Security notice, its deadline, stated decision or request, and the records you need for a written response or next review step.",
+    },
+  },
+
+  {
+    id: "uscis-notice",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a USCIS Notice",
+    description: "Keep the USCIS notice, deadline, receipt number, requested evidence, and response package organized in one workflow.",
+    disclaimer: "Immigration proceedings have strict deadlines and requirements. Notice Respond is not a law firm and does not provide legal or immigration advice.",
+    searchIntent: {
+      primary: "respond to a USCIS notice",
+      secondary: ["USCIS RFE response", "USCIS notice response", "immigration evidence request"],
+      canonicalPath: "/workflows/uscis-notice",
+      informationalEntryPoints: ["respond to a USCIS notice"],
+      actionIntents: ["respond to a USCIS notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a USCIS Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "noticeType", "receiptNumber", "caseType", "noticeDate", "responseDeadline", "evidenceRequested", "requestedAction", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["filing copies", "identity documents", "financial records", "photos", "affidavits", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Immigration proceedings have strict deadlines and requirements. Notice Respond is not a law firm and does not provide legal or immigration advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a USCIS Notice — Notice Respond",
+      description: "Keep the USCIS notice, deadline, receipt number, requested evidence, and response package organized in one workflow.",
+      canonical: "/workflows/uscis-notice",
+      openGraph: { title: "Respond to a USCIS Notice", description: "Keep the USCIS notice, deadline, receipt number, requested evidence, and response package organized in one workflow." },
+      faq: [
+        {
+                "question": "How long do I have to respond to a USCIS Request for Evidence?",
+                "answer": "Most RFEs give you 87 days to respond. The exact deadline is stated on the RFE notice. If you miss the deadline, USCIS may deny your case based on the evidence already on file."
+        },
+        {
+                "question": "What should I include in my RFE response package?",
+                "answer": "Include the RFE notice, a cover letter listing each item of evidence requested, the evidence itself, and a copy of the receipt notice. Label everything clearly and organize by RFE item number."
+        },
+        {
+                "question": "Can I get more time to respond to a USCIS RFE?",
+                "answer": "USCIS generally does not grant extensions for RFE responses. If you cannot gather all evidence in time, submit what you have before the deadline with a letter explaining what is missing and when it will be available."
+        },
+        {
+                "question": "Should I send original documents to USCIS?",
+                "answer": "No. Send copies, not originals, unless USCIS specifically requests originals. USCIS may not return original documents."
+        },
+        {
+                "question": "What mail type should I use for a USCIS response?",
+                "answer": "Use certified mail with tracking or a courier service that provides a delivery confirmation. Keep the tracking number as proof of timely submission."
+        }
+],
+    },
+    directory: {
+      category: "Immigration",
+      bestFor: "Requests for Evidence, notices of intent, case correspondence, and other USCIS notices that require a response.",
+      steps: ["Upload the notice", "Capture receipt/reference information", "Identify the exact request", "Organize evidence and supporting documents", "Review the response package before submission"],
+      documents: ["USCIS notice", "Forms and filing copies", "Identity or status records", "Supporting evidence"],
+      seoRoute: "/workflows/respond-to-a-uscis-notice",
+      seoTitle: "Respond to a USCIS Notice",
+      seoDescription: "Keep the USCIS notice, deadline, receipt number, requested evidence, and response package organized in one workflow.",
+    },
+  },
+
+  {
+    id: "benefits-notice",
+    vertical: "notice-respond",
+    lifecycle: "functional",
+    engine: "document-action",
+    title: "Respond to a Benefits Notice",
+    description: "Understand a benefits notice, preserve the stated deadline, and prepare a factual response or request for review from your records.",
+    disclaimer: "Benefits programs have specific rules and deadlines. Notice Respond is not a law firm and does not provide legal advice.",
+    searchIntent: {
+      primary: "respond to a benefits notice",
+      secondary: ["benefits notice response", "overpayment notice", "eligibility determination response"],
+      canonicalPath: "/workflows/benefits-notice",
+      informationalEntryPoints: ["respond to a benefits notice"],
+      actionIntents: ["respond to a benefits notice", "response letter"],
+    },
+    documents: [{ name: "Respond to a Benefits Notice", identifiers: ["notice", "letter", "determination"], acceptedFormats: ["application/pdf", "image/*"], extractionFields: ["agency", "noticeType", "caseNumber", "programName", "noticeDate", "responseDeadline", "decision", "amount", "reasonGiven", "appealRights", "requestedResponse", "recipient"] }],
+    deadlines: [{ id: "response-deadline", label: "Response deadline shown on notice", trigger: "explicit deadline in notice", sourcePriority: ["uploaded notice", "official agency source"], notes: ["Do not infer a deadline when the notice provides one."] }],
+    requirements: [{ id: "response-content", label: "Address each requested issue", type: "response", source: "uploaded notice", required: true }],
+    evidence: [{ id: "supporting-records", label: "Supporting evidence", purpose: "Support or refute the issue identified in the notice", required: false, examples: ["eligibility records", "payment statements", "income records", "household documentation", "prior correspondence"] }],
+    analysis: { capabilities: [...sharedCapabilities], orderedChecks: ["classify notice type", "extract deadline and instructions", "identify agency assertions", "map supporting facts", "surface contradictions and gaps", "select response strategy"], outputSections: ["notice summary", "deadline", "agency assertions", "supporting facts", "gaps", "strategy"] },
+    drafting: { requiredSections: ["recipient", "reference", "response", "fact and evidence sections", "requested outcome", "attachments"], forbiddenBehavior: ["invent agency requirements", "invent facts"], validationChecks: ["every agency assertion addressed or explicitly marked", "evidence references are accurate", "submission route matches instructions"] },
+    submission: { methods: ["mail", "user-directed submission"], recipientRules: ["preserve the agency's specified recipient and delivery method"], proofRequirements: ["approved response", "submission record", "tracking when applicable"] },
+    capabilities: [...sharedCapabilities],
+    qualityGate: sharedQualityGate,
+    ux: { steps: sharedSteps, reviewChecks: sharedReviewChecks, disclaimerText: "Benefits programs have specific rules and deadlines. Notice Respond is not a law firm and does not provide legal advice.", mailOptions: sharedMailOptions },
+    seo: {
+      title: "Respond to a Benefits Notice — Notice Respond",
+      description: "Understand a benefits notice, preserve the stated deadline, and prepare a factual response or request for review from your records.",
+      canonical: "/workflows/benefits-notice",
+      openGraph: { title: "Respond to a Benefits Notice", description: "Understand a benefits notice, preserve the stated deadline, and prepare a factual response or request for review from your records." },
+      faq: [
+        {
+                "question": "How do I appeal a benefits determination?",
+                "answer": "Most benefits notices include appeal rights and a deadline, typically 30 to 90 days. Follow the instructions on the notice to request an appeal or fair hearing, and submit before the deadline."
+        },
+        {
+                "question": "What should I include in my benefits appeal letter?",
+                "answer": "Include your case number, the decision you are appealing, why you disagree, any new evidence, and a clear statement of the outcome you want."
+        },
+        {
+                "question": "Can I request more time to respond to a benefits notice?",
+                "answer": "Many programs allow extensions for good cause. Contact the agency as soon as possible, explain why you need more time, and document your request."
+        },
+        {
+                "question": "What happens if I miss the response deadline?",
+                "answer": "Missing the deadline may result in the decision becoming final, loss of benefits, or collection action. If the deadline has passed, contact the agency immediately to ask about late appeal options."
+        }
+],
+    },
+    directory: {
+      category: "Benefits & identity",
+      bestFor: "Public benefits, eligibility, overpayment, review, and program-administration notices.",
+      steps: ["Upload the notice", "Capture the decision and deadline", "Organize records for each issue", "Draft the response or review request", "Keep proof of what was submitted"],
+      documents: ["Benefits notice", "Eligibility records", "Payment statements", "Supporting correspondence"],
+      seoRoute: "/workflows/respond-to-a-benefits-notice",
+      seoTitle: "Respond to a Benefits Notice",
+      seoDescription: "Understand a benefits notice, preserve the stated deadline, and prepare a factual response or request for review from your records.",
+    },
+  },
 ];
 
 export const workflowById = Object.fromEntries(

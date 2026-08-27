@@ -578,6 +578,90 @@ export const WORKFLOW_PROMPTS: Record<string, WorkflowPrompt> = {
       ],
     ),
   },
+  "tax-notice": {
+    analyze: buildAnalyzePrompt(
+      "Tax Notice",
+      ["agency", "noticeType", "noticeNumber", "taxYear", "noticeDate", "responseDeadline", "issue", "amount", "requestedAction", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "Tax Notice",
+      ["Tax agency name and address", "Date", "Re: Notice number and tax year", "Salutation", "Acknowledgment of the notice", "Point-by-point response to each issue", "Reference to supporting documents", "Requested outcome", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "code-enforcement": {
+    analyze: buildAnalyzePrompt(
+      "Code Enforcement Notice",
+      ["agency", "caseNumber", "propertyAddress", "violationType", "inspectionDate", "noticeDate", "correctionDeadline", "requestedAction", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "Code Enforcement Notice",
+      ["Agency name and address", "Date", "Re: Case number and property address", "Salutation", "Acknowledgment of the violation notice", "Response to each alleged violation", "Reference to photos, permits, or evidence", "Corrective actions taken or planned", "Requested outcome", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "permit-correction": {
+    analyze: buildAnalyzePrompt(
+      "Permit Correction Notice",
+      ["agency", "permitNumber", "projectAddress", "correctionItems", "reviewerName", "noticeDate", "resubmissionDeadline", "requestedAction", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "Permit Correction Notice",
+      ["Permit office name and address", "Date", "Re: Permit number and project address", "Salutation", "Acknowledgment of the correction notice", "Response to each correction item by number", "Reference to revised plans or documents", "Requested outcome", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "dmv-notice": {
+    analyze: buildAnalyzePrompt(
+      "DMV Notice",
+      ["agency", "noticeType", "licenseOrId", "vehicleInfo", "noticeDate", "responseDeadline", "actionProposed", "requestedResponse", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "DMV Notice",
+      ["DMV office name and address", "Date", "Re: License/ID number and notice type", "Salutation", "Acknowledgment of the notice", "Response to the proposed action", "Reference to supporting records", "Requested outcome or hearing request", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "ssa-notice": {
+    analyze: buildAnalyzePrompt(
+      "SSA Notice",
+      ["agency", "noticeType", "ssn", "claimNumber", "noticeDate", "responseDeadline", "decision", "reasonGiven", "appealRights", "requestedResponse", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "SSA Notice",
+      ["Social Security Administration office address", "Date", "Re: Claim number and notice type", "Salutation", "Acknowledgment of the decision", "Statement of disagreement with specific findings", "New evidence or corrections", "Requested outcome (appeal, reconsideration, etc.)", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "uscis-notice": {
+    analyze: buildAnalyzePrompt(
+      "USCIS Notice",
+      ["agency", "noticeType", "receiptNumber", "caseType", "noticeDate", "responseDeadline", "evidenceRequested", "requestedAction", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "USCIS Notice",
+      ["USCIS office address", "Date", "Re: Receipt number and case type", "Salutation", "Acknowledgment of the notice", "Response to each requested evidence item by number", "Reference to enclosed evidence", "Requested outcome", "List of enclosed documents with item numbers", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
+  "benefits-notice": {
+    analyze: buildAnalyzePrompt(
+      "Benefits Notice",
+      ["agency", "noticeType", "caseNumber", "programName", "noticeDate", "responseDeadline", "decision", "amount", "reasonGiven", "appealRights", "requestedResponse", "mailingAddress"],
+      `{"summary": "", "keyFacts": [], "discrepancies": [], "evidenceNeeded": [], "uncertainties": [], "confidence": "high|medium|low", "extraction": {}}`,
+    ),
+    draft: buildDraftPrompt(
+      "Benefits Notice",
+      ["Agency name and address", "Date", "Re: Case number and program name", "Salutation", "Acknowledgment of the notice", "Response to each issue raised", "Reference to supporting records", "Requested outcome (appeal, review, etc.)", "List of enclosed documents", "Closing and signature"],
+      ["Inventing facts not in the document", "Stating legal conclusions", "Claiming to provide legal representation"],
+    ),
+  },
 };
 
 // ── Fallback prompt for unknown workflows ─────────────────────
