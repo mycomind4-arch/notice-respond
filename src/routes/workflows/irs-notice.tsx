@@ -89,8 +89,9 @@ function IRSNotice() {
 
   const stepOk = canAdvance(state, definition);
 
-  if (state.phase === "submitted" || state.phase === "done") {
   if (!started && definition) return <WorkflowLandingPage definition={definition} onStart={() => setStarted(true)} />;
+
+  if (state.phase === "submitted" || state.phase === "done") {
     return (
       <div className="min-h-screen command-center">
         <SiteHeader />
