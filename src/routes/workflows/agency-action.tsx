@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { workflows } from "../../domain/workflows";
-import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef } from "@/components/workflow-shell";
+import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef, WorkflowLandingPage } from "@/components/workflow-shell";
+import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 
 export const Route = createFileRoute("/workflows/agency-action")({
-  head: () => ({ meta: [
-    { rel: 'canonical', href: '/workflows/agency-action' },
-    { title: "Respond to an Agency Action — Notice Respond" },
-    { name: "description", content: "Prepare a written response to a regulatory agency notice, licensing board action, or FOIA determination." },
-  ] }),
+  head: () => buildWorkflowRouteHead(getWorkflowById("agency-action")!),
   component: AgencyAction,
 });
 
@@ -27,6 +25,8 @@ const REVIEW_CHECKS = [
 ];
 
 function AgencyAction() {
+  const catDef = getWorkflowById("agency-action");
+  const [started, setStarted] = useState(false);
   const definition = workflows["agency-action"];
   const [step, setStep] = useState(0);
   const [agencyName, setAgencyName] = useState("");
@@ -78,6 +78,7 @@ Sincerely,
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
+  if (!started && catDef) return <WorkflowLandingPage definition={catDef} onStart={() => setStarted(true)} />;
   if (done) return <Success title="Your agency response has been submitted" href="/workflows/agency-action" />;
 
   return (

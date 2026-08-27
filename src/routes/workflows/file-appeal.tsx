@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { workflows } from "../../domain/workflows";
-import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef } from "@/components/workflow-shell";
+import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef, WorkflowLandingPage } from "@/components/workflow-shell";
+import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 
 export const Route = createFileRoute("/workflows/file-appeal")({
-  head: () => ({ meta: [
-    { rel: 'canonical', href: '/workflows/file-appeal' },
-    { title: "File an Appeal — Notice Respond" },
-    { name: "description", content: "Prepare an appeal letter for a denied claim, decision, or ruling and mail it with proof of delivery." },
-  ] }),
+  head: () => buildWorkflowRouteHead(getWorkflowById("file-appeal")!),
   component: FileAppeal,
 });
 
@@ -27,6 +25,8 @@ const REVIEW_CHECKS = [
 ];
 
 function FileAppeal() {
+  const catDef = getWorkflowById("file-appeal");
+  const [started, setStarted] = useState(false);
   const definition = workflows["file-appeal"];
   const [step, setStep] = useState(0);
   const [appealingTo, setAppealingTo] = useState("");
@@ -79,6 +79,7 @@ Sincerely,
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
+  if (!started && catDef) return <WorkflowLandingPage definition={catDef} onStart={() => setStarted(true)} />;
   if (done) return <Success title="Your appeal has been submitted" href="/workflows/file-appeal" />;
 
   return (

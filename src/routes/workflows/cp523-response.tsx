@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
+import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS, WorkflowLandingPage } from "@/components/workflow-shell";
 import { MailingFunnel, type MailingFunnelState } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 import {
   createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
@@ -23,46 +24,13 @@ import { classifyContent, validateTextInput, validateFilename, validateFileSize,
 import "@/domain/cp523-packs";
 
 export const Route = createFileRoute("/workflows/cp523-response")({
-  head: () => {
-    const def = getWorkflowById("cp523-response")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => buildWorkflowRouteHead(getWorkflowById("cp523-response")!),
   component: CP523Response,
 });
 
 function CP523Response() {
   const definition = getWorkflowById("cp523-response")!;
+  const [started, setStarted] = useState(false);
   const steps = definition.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));
   const [cp523Extraction, setCP523Extraction] = useState<CP523Extraction | null>(null);
@@ -222,6 +190,7 @@ function CP523Response() {
     if (state.phase === "draft" && !state.draft) {
       handleGenerateDraft();
     }
+  if (!started && definition) return <WorkflowLandingPage definition={definition} onStart={() => setStarted(true)} />;
     if (state.phase === "checkout" || state.phase === "submitted") return;
     update((s) => advanceStep(s, definition));
   };

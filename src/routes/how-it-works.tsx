@@ -7,9 +7,19 @@ const DOCUMENT_IMAGE = "https://media.base44.com/images/public/6a8bd310dfdf9ad92
 export const Route = createFileRoute("/how-it-works")({
   head: () => ({
     meta: [
-      { title: "How It Works — Notice Respond" },
-      { name: "description", content: "How Notice Respond works: upload your document, prepare your response, and mail it with tracking and proof of delivery." },
+      { title: "How It Works — Upload, Prepare, Mail with Proof | Notice Respond" },
+      { name: "description", content: "How Notice Respond works: upload your document, prepare your response, and mail it with tracking and proof of delivery. No subscription required." },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "How It Works | Notice Respond" },
+      { property: "og:description", content: "Upload your document, prepare your response, and mail it with tracking and proof of delivery." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: "https://notice-respond.pages.dev/how-it-works" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "How It Works | Notice Respond" },
+      { name: "twitter:description", content: "Upload, prepare, and mail with proof of delivery." },
     ],
+    links: [{ rel: "canonical", href: "https://notice-respond.pages.dev/how-it-works" }],
   }),
   component: () => (
     <>

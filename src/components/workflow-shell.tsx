@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProgressRail, RESPONSE_LIFECYCLE } from "@/components/ui-primitives";
+import type { MasterWorkflowDefinition } from "@/domain/workflow-definition";
 
 export interface StepDef { id: string; label: string }
 
@@ -301,5 +302,139 @@ export function CheckoutStep({ mailType, recipient }: { mailType: string; recipi
         Payment confirms your selected mailing service. Required approval and fulfillment checks still apply.
       </div>
     </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   WorkflowLandingPage — Editorial landing for interactive workflows.
+   Matches the WorkflowPage pattern used by SEO-only pages so every
+   vertical gets the same light, editorial landing experience before
+   entering the dark command-center.
+   ════════════════════════════════════════════════════════════════════════ */
+
+export function WorkflowLandingPage({
+  definition,
+  onStart,
+}: {
+  definition: MasterWorkflowDefinition;
+  onStart: () => void;
+}) {
+  const dir = definition.directory;
+  const title = dir?.seoTitle ?? definition.title;
+  const description = dir?.seoDescription ?? definition.description;
+  const category = dir?.category ?? "General";
+  const bestFor = dir?.bestFor ?? "";
+  const steps = dir?.steps ?? [];
+  const documents = dir?.documents ?? [];
+  const disclaimer = definition.ux?.disclaimerText ?? definition.disclaimer;
+
+  return (
+    <>
+      <SiteHeader />
+      <main>
+        {/* Hero */}
+        <section className="border-b border-rule/60 bg-paper-deep/20">
+          <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-20">
+            <button
+              onClick={() => window.history.length > 1 ? window.history.back() : undefined}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ← All Notice Respond workflows
+            </button>
+            <div className="mt-8 max-w-3xl">
+              <div className="postmark w-fit">{category}</div>
+              <h1 className="mt-5 font-serif text-4xl leading-tight sm:text-5xl md:text-6xl">{title}</h1>
+              <p className="mt-5 text-base leading-7 text-ink-soft sm:text-lg">{description}</p>
+              {disclaimer && (
+                <div className="mt-6 rounded-md border border-rule/70 bg-paper-deep/40 p-4 text-sm text-muted-foreground">
+                  <div className="font-mono text-xs uppercase tracking-widest text-stamp">Disclaimer</div>
+                  <p className="mt-2">{disclaimer}</p>
+                </div>
+              )}
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button
+                  onClick={onStart}
+                  className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5"
+                >
+                  Start this workflow →
+                </button>
+                <Link
+                  to="/workflows/analyze"
+                  className="rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30"
+                >
+                  Analyze a notice
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* What happens here + documents sidebar */}
+        <section>
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_.8fr]">
+            <div>
+              <div className="eyebrow">Workflow</div>
+              <h2 className="mt-3 font-serif text-3xl sm:text-4xl">What happens here</h2>
+              <div className="mt-6 space-y-3">
+                {steps.map((step, index) => (
+                  <div key={step} className="flex gap-4 rounded-xl border border-rule bg-card p-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper-deep font-mono text-xs text-stamp">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+                    <div className="pt-1 text-sm leading-6 text-foreground">{step}</div>
+                  </div>
+                ))}
+              </div>
+              {bestFor && (
+                <p className="mt-6 text-sm leading-6 text-muted-foreground">{bestFor}</p>
+              )}
+            </div>
+            <aside className="rounded-xl border border-rule bg-card p-6 sm:p-7">
+              <div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">Bring these documents</div>
+              <ul className="mt-4 space-y-3">
+                {documents.map((document) => (
+                  <li key={document} className="flex gap-3 text-sm leading-6">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-stamp" />
+                    <span>{document}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-7 border-t border-rule/60 pt-6">
+                <div className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">What the system tracks</div>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Notice date, response deadline, reference number, agency instructions, supporting documents, response status, and mailing/proof records.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="border-y border-rule/60 bg-paper-deep/30">
+          <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:px-6 sm:py-16">
+            <div className="postmark mx-auto w-fit">Ready when you are</div>
+            <h2 className="mt-4 font-serif text-3xl sm:text-4xl">Start with the document you received.</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
+              Notice Respond helps organize the notice and response process. It is not a law firm and does not provide legal advice.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button
+                onClick={onStart}
+                className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5"
+              >
+                Start this workflow →
+              </button>
+              <Link
+                to="/workflows"
+                className="inline-flex rounded-full border border-rule px-6 py-3 text-sm font-medium transition-colors hover:border-ink/30"
+              >
+                Browse all workflows
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

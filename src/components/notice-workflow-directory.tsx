@@ -159,23 +159,56 @@ export function workflowCategories() {
   return Array.from(groups.entries()).map(([category, workflows]) => ({ category, workflows }));
 }
 
-export function WorkflowCard({ workflow }: { workflow: NoticeWorkflow }) {
+/**
+ * Redesigned editorial workflow card.
+ * Uses a refined layout with a subtle accent bar, numbered index,
+ * and clean typography hierarchy instead of a generic bordered box.
+ */
+export function WorkflowCard({ workflow, index = 0 }: { workflow: NoticeWorkflow; index?: number }) {
   return (
     <Link
       to={workflow.route}
-      className="group flex h-full flex-col rounded-xl border border-rule bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-premium"
+      className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-rule bg-card transition-all duration-200 hover:border-ink/25 hover:shadow-premium"
     >
-      <div className="flex items-start justify-between gap-4">
-        <span className="rounded-full border border-rule bg-paper px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {workflow.category}
-        </span>
-        <span className="text-muted-foreground transition-transform duration-200 group-hover:translate-x-1">→</span>
-      </div>
-      <h3 className="mt-4 font-serif text-2xl leading-tight">{workflow.title}</h3>
-      <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{workflow.description}</p>
-      <div className="mt-4 border-t border-rule/60 pt-4">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Best for</div>
-        <p className="mt-1.5 text-xs leading-5 text-ink-soft">{workflow.bestFor}</p>
+      {/* Accent bar */}
+      <div className="h-px w-full bg-gradient-to-r from-stamp/0 via-stamp/40 to-stamp/0 transition-opacity duration-200 group-hover:via-stamp/70" />
+
+      <div className="flex flex-1 flex-col p-6">
+        {/* Index + category row */}
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[11px] font-medium tracking-[0.14em] text-stamp/80 uppercase">
+            {String(index + 1).padStart(2, "0")} · {workflow.category}
+          </span>
+          <svg
+            className="h-4 w-4 text-muted-foreground/60 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-stamp"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.8}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7v8" />
+          </svg>
+        </div>
+
+        {/* Title */}
+        <h3 className="mt-5 font-serif text-xl leading-snug text-ink transition-colors duration-200 group-hover:text-stamp">
+          {workflow.title}
+        </h3>
+
+        {/* Description */}
+        <p className="mt-2.5 flex-1 text-[13px] leading-6 text-muted-foreground">
+          {workflow.description}
+        </p>
+
+        {/* Best for — minimal footer */}
+        <div className="mt-5 flex items-start gap-2 border-t border-rule/40 pt-4">
+          <span className="mt-0.5 font-mono text-[10px] font-semibold tracking-[0.15em] text-muted-foreground/70 uppercase shrink-0">
+            Best for
+          </span>
+          <span className="text-[12px] leading-5 text-ink-soft">
+            {workflow.bestFor}
+          </span>
+        </div>
       </div>
     </Link>
   );
@@ -272,32 +305,54 @@ export function WorkflowPage({ workflow }: { workflow: NoticeWorkflow }) {
 }
 
 export function WorkflowHead({ workflow }: { workflow: NoticeWorkflow }) {
+  const path = workflow.canonicalPath ?? `/workflows/${workflow.slug}`;
+  const url = `https://notice-respond.pages.dev${path}`;
+  const title = `${workflow.title} | Notice Respond`;
+  const description = `${workflow.description} Organize documents, deadlines, and the written response in one workflow.`;
   return {
     meta: [
-      { title: `${workflow.title} | Notice Respond` },
-      { name: "description", content: `${workflow.description} Organize documents, deadlines, and the written response in one workflow.` },
-      { property: "og:title", content: `${workflow.title} | Notice Respond` },
-      { property: "og:description", content: workflow.description },
+      { title },
+      { name: "description", content: description },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: url },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
     ],
   };
 }
 
 export function WorkflowStructuredData({ workflow }: { workflow: NoticeWorkflow }) {
-  const data: Record<string, unknown> = {
+  const path = workflow.canonicalPath ?? `/workflows/${workflow.slug}`;
+  const url = `https://notice-respond.pages.dev${path}`;
+  const webPage = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: workflow.title,
     description: workflow.description,
+    url,
     about: workflow.searchIntent,
-    isPartOf: { "@type": "WebSite", name: "Notice Respond" },
+    isPartOf: { "@type": "WebSite", name: "Notice Respond", url: "https://notice-respond.pages.dev" },
+    publisher: { "@type": "Organization", name: "MailMyPDF", url: "https://mailmypdf.com" },
+    ...(workflow.canonicalPath ? {
+      potentialAction: { "@type": "Action", name: "Start workflow", target: url },
+    } : {}),
   };
-  if (workflow.canonicalPath) {
-    data["potentialAction"] = {
-      "@type": "Action",
-      name: "Start workflow",
-      target: workflow.canonicalPath,
-    };
-  }
-  return { type: "application/ld+json", children: JSON.stringify(data) };
+  const breadcrumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Notice Respond", item: "https://notice-respond.pages.dev" },
+      { "@type": "ListItem", position: 2, name: "Workflows", item: "https://notice-respond.pages.dev/workflows" },
+      { "@type": "ListItem", position: 3, name: workflow.title, item: url },
+    ],
+  };
+  return [
+    { type: "application/ld+json", children: JSON.stringify(webPage) },
+    { type: "application/ld+json", children: JSON.stringify(breadcrumbs) },
+  ];
 }

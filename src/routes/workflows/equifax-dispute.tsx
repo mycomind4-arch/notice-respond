@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
+import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS, WorkflowLandingPage } from "@/components/workflow-shell";
 import { MailingFunnel } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 import {
   createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
@@ -17,36 +18,13 @@ import { recommendStrategies } from "@/domain/strategy";
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
 export const Route = createFileRoute("/workflows/equifax-dispute")({
-  head: () => {
-    const def = getWorkflowById("equifax-dispute")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [{ rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath }],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org", "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({ "@type": "Question", name: f.question, acceptedAnswer: { "@type": "Answer", text: f.answer } })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org", "@type": "WebApplication",
-          name: def.title, description: def.description,
-          applicationCategory: "LegalDocumentService", operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => buildWorkflowRouteHead(getWorkflowById("equifax-dispute")!),
   component: EquifaxDispute,
 });
 
 function EquifaxDispute() {
   const definition = getWorkflowById("equifax-dispute")!;
+  const [started, setStarted] = useState(false);
   const steps = definition.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));
   const [extraction, setExtraction] = useState<CreditDisputeExtraction | null>(null);
@@ -128,6 +106,7 @@ function EquifaxDispute() {
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
   const defaultRecipient = { name: "", org: bureauCfg.mailingAddress.org, address1: bureauCfg.mailingAddress.line1, address2: bureauCfg.mailingAddress.line2, city: bureauCfg.mailingAddress.city, state: bureauCfg.mailingAddress.state, zip: bureauCfg.mailingAddress.zip };
 
+  if (!started && definition) return <WorkflowLandingPage definition={definition} onStart={() => setStarted(true)} />;
   return (
     <div className="min-h-screen command-center">
       <SiteHeader />

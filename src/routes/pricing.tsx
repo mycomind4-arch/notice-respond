@@ -3,10 +3,22 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/pricing")({
-  head: () => ({ meta: [
-    { title: "Pricing — Notice Respond" },
-    { name: "description", content: "Simple per-mailing pricing. Standard $4.99, Certified $14.94, Registered $32.49. No subscription." },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Pricing — $4.99 Standard, $14.94 Certified, $32.49 Registered | Notice Respond" },
+      { name: "description", content: "Simple per-mailing pricing. Standard $4.99, Certified $14.94, Registered $32.49. No subscription required." },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Pricing | Notice Respond" },
+      { property: "og:description", content: "Simple per-mailing pricing. Standard $4.99, Certified $14.94, Registered $32.49. No subscription." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: "https://notice-respond.pages.dev/pricing" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Pricing | Notice Respond" },
+      { name: "twitter:description", content: "Simple per-mailing pricing. No subscription required." },
+    ],
+    links: [{ rel: "canonical", href: "https://notice-respond.pages.dev/pricing" }],
+  }),
   component: PricingPage,
 });
 
