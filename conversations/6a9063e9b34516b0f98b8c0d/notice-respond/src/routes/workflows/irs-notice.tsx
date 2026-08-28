@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
   const llmAnalysis = useCombinedAnalysis("irs-notice");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -91,7 +91,16 @@ function IRSNotice() {
   };
   const back = () => update((s) => retreatStep(s, definition));
 
+  const [workflowStarted, setWorkflowStarted] = useState(false);
+  const workflowRef = useRef<HTMLDivElement>(null);
   const stepOk = canAdvance(state, definition);
+
+  const startWorkflow = useCallback(() => {
+    setWorkflowStarted(true);
+    setTimeout(() => {
+      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
 
   if (state.phase === "submitted" || state.phase === "done") {
     return (
@@ -114,15 +123,87 @@ function IRSNotice() {
   }
 
   return (
-    <div className="min-h-screen command-center">
+    <div className="min-h-screen bg-paper">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <div className="mb-2">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-stamp transition-colors">← Notice Respond</Link>
-        </div>
-        <h1 className="mb-6 font-serif text-3xl">{definition?.title}</h1>
+      <main>
+        {/* HERO */}
+        <section className="relative overflow-hidden border-b border-rule/60">
+          <div className="absolute inset-0 bg-gradient-to-b from-paper-deep/40 via-paper to-paper" aria-hidden="true" />
+          <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20 md:py-28">
+            <nav className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-stamp transition-colors">Notice Respond</Link>
+              <span className="text-rule">/</span>
+              <Link to="/workflows" className="hover:text-stamp transition-colors">Workflows</Link>
+              <span className="text-rule">/</span>
+              <span className="text-ink-soft">IRS Notice</span>
+            </nav>
+            <div className="postmark w-fit mt-6">IRS Notice</div>
+            <h1 className="mt-6 font-serif text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+              Respond to your <span className="italic text-stamp">IRS notice</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+              You received an IRS notice that doesn't fit a specific workflow. Upload it, extract the key details, and prepare a documented response with your facts and supporting evidence.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                Start your response
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              </button>
+              <Link to="/workflows" className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-6 py-3.5 text-sm font-medium transition-colors hover:border-ink/30">Browse other notices</Link>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-rule/60 bg-rule/60 sm:grid-cols-4">
+              <KeyFact label="Notice type" value="Any IRS" />
+              <KeyFact label="Jurisdiction" value="Federal" />
+              <KeyFact label="Recommended mail" value="Certified" />
+              <KeyFact label="Cost to prepare" value="Free" />
+            </div>
+          </div>
+        </section>
 
-        <Stepper steps={steps} current={state.step} onStep={(i) => update((s) => goToStep(s, definition, i))} />
+        {/* WHAT IS */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Understanding the notice</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">What is an IRS notice?</h2>
+            <div className="mt-6 space-y-4 text-base leading-7 text-ink-soft">
+              <p>The IRS sends hundreds of different notice types, each with a unique CP or LT number. Common ones include CP2000 (proposed adjustment), CP14 (balance due), CP504 (intent to levy), and LT11 (levy). This workflow handles any IRS notice not covered by a specific workflow.</p>
+              <p>IRS notices have strict response deadlines, typically 30 to 60 days. Missing the deadline can result in automatic adjustments, additional penalties, or collection actions. Most notices include appeal rights and instructions for responding.</p>
+              <p>A documented response addresses the specific notice type, provides supporting evidence, and clearly states your position. Responding early gives you the most options and prevents escalation to more serious collection actions.</p>
+            </div>
+            <div className="mt-8 rounded-lg border border-rule/60 bg-paper-deep/30 p-5">
+              <div className="font-mono text-xs uppercase tracking-widest text-stamp">What an IRS notice includes</div>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Notice number (CP/LT)</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Tax year(s) affected</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Amount due or adjustment</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Response deadline</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Appeal rights</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>IRS response address</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Payment instructions</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Required documentation</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="border-b border-rule/60 bg-paper-deep/20">
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">The process</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">How Notice Respond works</h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              <ProcessStep number="01" title="Upload & analyze" text="Upload the IRS notice PDF or paste the text. AI extracts the notice number, deadline, amount, and tax year — and identifies what needs your attention." />
+              <ProcessStep number="02" title="Review & draft" text="Add your facts and supporting evidence. Generate a professional response letter addressing the specific notice type and your position." />
+              <ProcessStep number="03" title="Mail with proof" text="Approve the exact draft. Certified mail provides tracking and delivery confirmation — your record of timely response to the IRS." />
+            </div>
+          </div>
+        </section>
+
+        {/* WORKFLOW */}
+        <section ref={workflowRef} className="border-b border-rule/60" style={{ scrollMarginTop: "80px" }}>
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            {workflowStarted ? (<>
+              <Stepper steps={steps} current={state.step} onStep={(i) => update((s) => goToStep(s, definition, i))} />
 
         <div className="mt-10 envelope-card p-6 md:p-10">
           {/* Step 0: Intro */}
@@ -319,10 +400,83 @@ function IRSNotice() {
             <button onClick={next} disabled={!stepOk} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">
               {state.phase === "checkout" ? "Pay and send" : "Continue"} →
             </button>
+            </>) : (
+              <div className="text-center py-16">
+                <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                  Start your response
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        </section>
+
+        {/* TRUST BAND */}
+        <section className="border-y border-rule/60 bg-ink text-paper">
+          <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-16">
+            <div className="inline-flex items-center gap-0.4rem border border-stamp/40 px-2.5 py-1 font-mono text-[0.68rem] uppercase tracking-[0.15em] text-stamp rounded-full">Trust architecture</div>
+            <h2 className="mt-5 font-serif text-3xl text-paper">You stay in control of every step.</h2>
+            <p className="mt-4 text-base leading-7 text-paper/70">The notice is the source material. Your facts remain under your control. AI assists — it does not decide. You review the response before approval. Approval applies to the exact draft. Payment is distinct from authorization. Mailing creates a documented record.</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <TrustItem title="Your data, your control" text="Documents are processed for extraction. Nothing is shared with third parties." />
+              <TrustItem title="Review before send" text="You approve the exact letter. Nothing is mailed without your explicit confirmation." />
+              <TrustItem title="Proof of delivery" text="Certified mail provides tracking and delivery confirmation — your record of timely response." />
+            </div>
+          </div>
+        </section>
+
+        {/* RELATED */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related workflows</div>
+            <h2 className="mt-3 font-serif text-2xl">Specific IRS notice types</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <RelatedCard href="/workflows/cp2000-response" title="CP2000 - Proposed Adjustment" desc="Income reporting discrepancy notice" />
+              <RelatedCard href="/workflows/cp14-response" title="CP14 - Balance Due" desc="First IRS collection notice" />
+              <RelatedCard href="/workflows/cp504-response" title="CP504 - Intent to Levy" desc="Urgent notice before enforcement action" />
+            </div>
+            <div className="mt-6"><Link to="/workflows" className="text-sm text-stamp hover:text-ink transition-colors">Browse all notice types →</Link></div>
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function KeyFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-paper p-3 text-center">
+      <div className="font-serif text-lg text-ink">{value}</div>
+      <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ProcessStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div>
+      <div className="font-mono text-xs font-semibold text-stamp">{number}</div>
+      <h3 className="mt-2 font-serif text-xl text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+    </div>
+  );
+}
+
+function TrustItem({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-paper/15 p-4">
+      <h3 className="font-medium text-paper">{title}</h3>
+      <p className="mt-1.5 text-sm text-paper/60">{text}</p>
+    </div>
+  );
+}
+
+function RelatedCard({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link to={href} className="block rounded-lg border border-rule/60 bg-card p-4 transition-colors hover:border-stamp/40">
+      <div className="font-medium text-foreground">{title}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
+    </Link>
   );
 }

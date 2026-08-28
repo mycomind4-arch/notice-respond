@@ -1,7 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useCallback } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { workflows } from "../../domain/workflows";
 import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef } from "@/components/workflow-shell";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { createWorkflowHead } from "@/domain/enhanced-head";
 import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
@@ -42,6 +44,16 @@ function codeenforcement() {
   const [recipient, setRecipient] = useState({ name: "", org: "", address1: "", address2: "", city: "", state: "", zip: "" });
   const [done, setDone] = useState(false);
   const allChecked = checks.every(Boolean);
+  const [workflowStarted, setWorkflowStarted] = useState(false);
+  const workflowRef = useRef<HTMLDivElement>(null);
+
+  const startWorkflow = useCallback(() => {
+    setWorkflowStarted(true);
+    setTimeout(() => {
+      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
+
   const llmAnalysis = useCombinedAnalysis("code-enforcement");
 
   function generateDraft() {
@@ -100,8 +112,87 @@ Sincerely,
 
   if (done) return <Success title="Your response has been submitted" href="/workflows/code-enforcement" />;
 
-  return (
-    <WorkflowShell title="Respond to a Code Enforcement Notice" steps={STEPS} step={step} setStep={setStep} canContinue={canContinue()} onNext={next} onBack={() => setStep((s) => Math.max(s - 1, 0))}>
+      <div className="min-h-screen bg-paper">
+      <SiteHeader />
+      <main>
+        {/* HERO */}
+        <section className="relative overflow-hidden border-b border-rule/60">
+          <div className="absolute inset-0 bg-gradient-to-b from-paper-deep/40 via-paper to-paper" aria-hidden="true" />
+          <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20 md:py-28">
+            <nav className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-stamp transition-colors">Notice Respond</Link>
+              <span className="text-rule">/</span>
+              <Link to="/workflows" className="hover:text-stamp transition-colors">Workflows</Link>
+              <span className="text-rule">/</span>
+              <span className="text-ink-soft">Municipal Notice</span>
+            </nav>
+            <div className="postmark w-fit mt-6">Municipal Notice</div>
+            <h1 className="mt-6 font-serif text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+              Respond to your <span className="italic text-stamp">code enforcement notice</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+              Your city or county sent a code enforcement notice alleging a property violation. Upload it, understand the violation, and prepare a documented response with evidence of compliance or a plan to correct.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                Start your response
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              </button>
+              <Link to="/workflows" className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-6 py-3.5 text-sm font-medium transition-colors hover:border-ink/30">Browse other notices</Link>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-rule/60 bg-rule/60 sm:grid-cols-4">
+              <KeyFact label="Notice type" value="Code Violation" />
+              <KeyFact label="Jurisdiction" value="City or county" />
+              <KeyFact label="Recommended mail" value="Certified" />
+              <KeyFact label="Cost to prepare" value="Free" />
+            </div>
+          </div>
+        </section>
+
+        {/* WHAT IS */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Understanding the notice</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">What is a code enforcement notice?</h2>
+            <div className="mt-6 space-y-4 text-base leading-7 text-ink-soft">
+              <p>A code enforcement notice is issued by a city or county government when a property is alleged to violate local ordinances. Common violations include overgrown vegetation, unpermitted structures, unsafe conditions, parking violations, and nuisance complaints.</p>
+              <p>These notices typically include a deadline to correct the violation and may carry daily fines for non-compliance. Ignoring them can lead to administrative hearings, liens on your property, or in extreme cases, abatement where the government performs the work and bills you.</p>
+              <p>You have the right to respond, request an inspection, or appeal. A documented response showing your compliance plan or contesting the violation can stop the escalation and preserve your right to a hearing.</p>
+            </div>
+            <div className="mt-8 rounded-lg border border-rule/60 bg-paper-deep/30 p-5">
+              <div className="font-mono text-xs uppercase tracking-widest text-stamp">What this notice includes</div>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Issuing department</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Case/reference number</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Cited violation and code section</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Property address</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Compliance deadline</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Required corrective action</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Fine or penalty amount</li>
+                <li className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>Hearing or appeal information</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="border-b border-rule/60 bg-paper-deep/20">
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">The process</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">How Notice Respond works</h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              <ProcessStep number="01" title="Upload & analyze" text="Upload the code enforcement notice. AI extracts the violation type, cited code sections, deadline, and required corrections." />
+              <ProcessStep number="02" title="Review & draft" text="Document your compliance plan or contest the violation with evidence — photos, permits, prior correspondence. Generate a formal response letter." />
+              <ProcessStep number="03" title="Mail with proof" text="Approve the exact draft. Certified mail creates a documented record of your response before the compliance deadline." />
+            </div>
+          </div>
+        </section>
+
+        {/* WORKFLOW */}
+        <section ref={workflowRef} className="border-b border-rule/60" style={{ scrollMarginTop: "80px" }}>
+          <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+            {workflowStarted ? (
+              <WorkflowShell title="Respond to a Code Enforcement Notice" steps={STEPS} step={step} setStep={setStep} canContinue={canContinue()} onNext={next} onBack={() => setStep((s) => Math.max(s - 1, 0))}>
       {step === 0 && (
         <div>
           <div className="postmark w-fit">1 · Start</div>
@@ -164,6 +255,85 @@ Sincerely,
       {step === 7 && (<div><div className="postmark w-fit">8 · Recipient</div><h2 className="mt-4 font-serif text-3xl">Where should we send it?</h2><p className="mt-3 text-muted-foreground">Enter the agency's mailing address.</p><RecipientForm recipient={recipient} setRecipient={setRecipient} orgPlaceholder={agency || "Code Enforcement"} /></div>)}
       {step === 8 && (<div><div className="postmark w-fit">9 · Mail</div><h2 className="mt-4 font-serif text-3xl">Choose your mail type</h2><p className="mt-3 text-muted-foreground">Certified mail is recommended for proof of timely delivery.</p><MailOptions selected={mailType} onSelect={setMailType} /></div>)}
       {step === 9 && <CheckoutStep mailType={mailType} recipient={recipient} />}
-    </WorkflowShell>
+                  </WorkflowShell>
+                        ) : (
+              <div className="text-center py-16">
+                <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                  Start your response
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* TRUST BAND */}
+        <section className="border-y border-rule/60 bg-ink text-paper">
+          <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-16">
+            <div className="inline-flex items-center gap-0.4rem border border-stamp/40 px-2.5 py-1 font-mono text-[0.68rem] uppercase tracking-[0.15em] text-stamp rounded-full">Trust architecture</div>
+            <h2 className="mt-5 font-serif text-3xl text-paper">You stay in control of every step.</h2>
+            <p className="mt-4 text-base leading-7 text-paper/70">The notice is the source material. Your facts remain under your control. AI assists — it does not decide. You review the response before approval. Approval applies to the exact draft. Payment is distinct from authorization. Mailing creates a documented record.</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <TrustItem title="Your data, your control" text="Documents are processed for extraction. Nothing is shared with third parties." />
+              <TrustItem title="Review before send" text="You approve the exact letter. Nothing is mailed without your explicit confirmation." />
+              <TrustItem title="Proof of delivery" text="Certified mail provides tracking and delivery confirmation — your record of timely response." />
+            </div>
+          </div>
+        </section>
+
+        {/* RELATED */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related workflows</div>
+            <h2 className="mt-3 font-serif text-2xl">Other notice types</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <RelatedCard href="/workflows/permit-correction" title="Permit Correction" desc="Respond to permit-related notices" />
+              <RelatedCard href="/workflows/court-summons" title="Court Summons" desc="Respond to a court summons" />
+              <RelatedCard href="/workflows/tax-notice" title="Tax Notice" desc="Respond to state or local tax notices" />
+            </div>
+            <div className="mt-6"><Link to="/workflows" className="text-sm text-stamp hover:text-ink transition-colors">Browse all notice types →</Link></div>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
   );
+}
+
+function KeyFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-paper p-3 text-center">
+      <div className="font-serif text-lg text-ink">{value}</div>
+      <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ProcessStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div>
+      <div className="font-mono text-xs font-semibold text-stamp">{number}</div>
+      <h3 className="mt-2 font-serif text-xl text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+    </div>
+  );
+}
+
+function TrustItem({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-paper/15 p-4">
+      <h3 className="font-medium text-paper">{title}</h3>
+      <p className="mt-1.5 text-sm text-paper/60">{text}</p>
+    </div>
+  );
+}
+
+function RelatedCard({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link to={href} className="block rounded-lg border border-rule/60 bg-card p-4 transition-colors hover:border-stamp/40">
+      <div className="font-medium text-foreground">{title}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
+    </Link>
+  );
+}
 }
