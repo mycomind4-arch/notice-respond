@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .agents/.env
 node_modules/
 .npm/
@@ -11,3 +12,13 @@ __pycache__/
 **/node_modules/
 **/conversations/6a8e5567c42cd4f53b2f30ad/mailmypdf-bundle/*/node_modules/
 **/conversations/6a8e5567c42cd4f53b2f30ad/mailmypdf-bundle/*/.next/
+=======
+node_modules/
+dist/
+.output/
+.wrangler/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+>>>>>>> github/main
