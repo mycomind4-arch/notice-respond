@@ -9,23 +9,14 @@
  * where a client could submit an arbitrary draft/recipient after approval.
  *
  * No mailing is submitted until the Stripe session is verified as paid.
+ *
+ * Pricing is centralized via @mailmypdf/pricing.
  */
 
 import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, type H3Event } from "h3";
 import { createClient } from "@supabase/supabase-js";
 import { requireAuthenticatedUser } from "../../src/lib/auth-guard";
-
-const PRICES = {
-  standard: 499,
-  certified: 1494,
-  registered: 3249,
-} as const;
-
-const LABELS = {
-  standard: "Standard Mailing",
-  certified: "Certified Mailing",
-  registered: "Registered Mailing",
-} as const;
+import { PRICES, LABELS, isValidPricingKey, type PricingKey } from "@mailmypdf/pricing";
 
 function getSupabaseServiceClient() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -49,25 +40,22 @@ export default defineEventHandler(async (event) => {
     approvalId?: string;
     workflowId?: string;
     workflowTitle?: string;
-    mailingMethod?: keyof typeof PRICES;
+    mailingMethod?: string;
     matterReference?: string;
     matterType?: string;
-    // Legacy fields — ignored if approvalId is present
-    draft?: string;
-    recipient?: { name?: string; org?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string };
   }>(event);
 
   const approvalId = input?.approvalId?.trim();
   const workflowId = input?.workflowId?.trim();
-  const mailingMethod = input?.mailingMethod;
+  const methodRaw = input?.mailingMethod;
 
-  // ── Require approval ──────────────────────────────────────
   if (!approvalId) {
     throw createError({ statusCode: 400, statusMessage: "Server-side approval is required before checkout. Call /api/approve first." });
   }
   if (!workflowId) throw createError({ statusCode: 400, statusMessage: "Workflow ID is required." });
-  if (!mailingMethod || !(mailingMethod in PRICES)) throw createError({ statusCode: 400, statusMessage: "A valid mailing method is required." });
+  if (!methodRaw || !isValidPricingKey(methodRaw)) throw createError({ statusCode: 400, statusMessage: "A valid mailing method is required." });
 
+  const method = methodRaw as PricingKey;
   const supabase = getSupabaseServiceClient();
 
   // ── Load the immutable approval record ────────────────────
@@ -82,13 +70,10 @@ export default defineEventHandler(async (event) => {
   if (approvalError || !approval) {
     throw createError({ statusCode: 404, statusMessage: "Approval record not found, revoked, or not owned by the authenticated user." });
   }
-
-  // ── Verify the approval matches the requested workflow ─────
   if (approval.workflow_id !== workflowId) {
     throw createError({ statusCode: 409, statusMessage: "Approval does not match the requested workflow." });
   }
 
-  // ── Use the approved draft and recipient ───────────────────
   const draft = approval.draft as string;
   const recipient = approval.recipient as {
     name?: string; org?: string; address1?: string; address2?: string;
@@ -109,14 +94,13 @@ export default defineEventHandler(async (event) => {
   const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   const appUrl = process.env.APP_URL || getRequestURL(event).origin;
 
-  // ── Create mailing intent from the APPROVED artifact ────────
   const { data: intent, error: intentError } = await supabase
     .from("mailing_intents")
     .insert({
       owner_id: user.id,
       workflow_id: workflowId,
       status: "pending",
-      mailing_method: mailingMethod,
+      mailing_method: method,
       draft,
       recipient,
       matter_reference: input?.matterReference?.trim() || workflowId,
@@ -138,10 +122,10 @@ export default defineEventHandler(async (event) => {
         price_data: {
           currency: "usd",
           product_data: {
-            name: LABELS[mailingMethod],
-            description: `${input?.workflowTitle?.trim() || workflowId} · ${LABELS[mailingMethod]}`,
+            name: LABELS[method],
+            description: `${input?.workflowTitle?.trim() || workflowId} · ${LABELS[method]}`,
           },
-          unit_amount: PRICES[mailingMethod],
+          unit_amount: PRICES[method],
         },
         quantity: 1,
       }],
