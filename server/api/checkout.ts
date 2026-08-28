@@ -2,6 +2,12 @@
  * POST /api/checkout
  *
  * Creates an authenticated Stripe Checkout Session for a mailing intent.
+ *
+ * SECURITY: This endpoint now requires a server-side approval reference.
+ * The draft and recipient are loaded from the immutable approval record,
+ * NOT from client-supplied values. This closes the approval-bypass gap
+ * where a client could submit an arbitrary draft/recipient after approval.
+ *
  * No mailing is submitted until the Stripe session is verified as paid.
  */
 
@@ -40,37 +46,70 @@ export default defineEventHandler(async (event) => {
   const user = await requireAuthenticatedUser(toAuthRequest(event));
 
   const input = await readBody<{
-    draft?: string;
+    approvalId?: string;
     workflowId?: string;
     workflowTitle?: string;
     mailingMethod?: keyof typeof PRICES;
-    recipient?: { name?: string; org?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string };
     matterReference?: string;
     matterType?: string;
+    // Legacy fields — ignored if approvalId is present
+    draft?: string;
+    recipient?: { name?: string; org?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string };
   }>(event);
 
-  const draft = input?.draft?.trim();
+  const approvalId = input?.approvalId?.trim();
   const workflowId = input?.workflowId?.trim();
   const mailingMethod = input?.mailingMethod;
-  const recipient = input?.recipient;
 
-  if (!draft || draft.length < 20) throw createError({ statusCode: 400, statusMessage: "A completed response draft is required." });
+  // ── Require approval ──────────────────────────────────────
+  if (!approvalId) {
+    throw createError({ statusCode: 400, statusMessage: "Server-side approval is required before checkout. Call /api/approve first." });
+  }
   if (!workflowId) throw createError({ statusCode: 400, statusMessage: "Workflow ID is required." });
   if (!mailingMethod || !(mailingMethod in PRICES)) throw createError({ statusCode: 400, statusMessage: "A valid mailing method is required." });
-  if (!recipient?.name || !recipient.address1 || !recipient.city || !recipient.state || !recipient.zip) {
-    throw createError({ statusCode: 400, statusMessage: "A complete recipient address is required." });
+
+  const supabase = getSupabaseServiceClient();
+
+  // ── Load the immutable approval record ────────────────────
+  const { data: approval, error: approvalError } = await supabase
+    .from("approvals")
+    .select("id, owner_id, case_id, workflow_id, draft, recipient, draft_hash, recipient_hash, status, approved_at")
+    .eq("id", approvalId)
+    .eq("owner_id", user.id)
+    .eq("status", "active")
+    .single();
+
+  if (approvalError || !approval) {
+    throw createError({ statusCode: 404, statusMessage: "Approval record not found, revoked, or not owned by the authenticated user." });
   }
-  if (!/^[A-Za-z]{2}$/.test(recipient.state)) throw createError({ statusCode: 400, statusMessage: "Recipient state must be a 2-letter abbreviation." });
-  if (!/^\d{5}(-\d{4})?$/.test(recipient.zip)) throw createError({ statusCode: 400, statusMessage: "Recipient ZIP code is invalid." });
+
+  // ── Verify the approval matches the requested workflow ─────
+  if (approval.workflow_id !== workflowId) {
+    throw createError({ statusCode: 409, statusMessage: "Approval does not match the requested workflow." });
+  }
+
+  // ── Use the approved draft and recipient ───────────────────
+  const draft = approval.draft as string;
+  const recipient = approval.recipient as {
+    name?: string; org?: string; address1?: string; address2?: string;
+    city?: string; state?: string; zip?: string;
+  };
+
+  if (!draft || draft.length < 20) throw createError({ statusCode: 409, statusMessage: "Approved draft is invalid." });
+  if (!recipient?.name || !recipient.address1 || !recipient.city || !recipient.state || !recipient.zip) {
+    throw createError({ statusCode: 409, statusMessage: "Approved recipient is incomplete." });
+  }
+  if (!/^[A-Za-z]{2}$/.test(recipient.state)) throw createError({ statusCode: 409, statusMessage: "Approved recipient state is invalid." });
+  if (!/^\d{5}(-\d{4})?$/.test(recipient.zip)) throw createError({ statusCode: 409, statusMessage: "Approved recipient ZIP code is invalid." });
 
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) throw createError({ statusCode: 503, statusMessage: "Stripe is not configured." });
 
-  const supabase = getSupabaseServiceClient();
   const { default: Stripe } = await import("stripe");
   const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   const appUrl = process.env.APP_URL || getRequestURL(event).origin;
 
+  // ── Create mailing intent from the APPROVED artifact ────────
   const { data: intent, error: intentError } = await supabase
     .from("mailing_intents")
     .insert({
@@ -82,6 +121,9 @@ export default defineEventHandler(async (event) => {
       recipient,
       matter_reference: input?.matterReference?.trim() || workflowId,
       matter_type: input?.matterType?.trim() || "notice-respond",
+      approval_id: approvalId,
+      approved_draft_hash: approval.draft_hash,
+      approved_recipient_hash: approval.recipient_hash,
     })
     .select("id")
     .single();
@@ -107,6 +149,7 @@ export default defineEventHandler(async (event) => {
         mailing_intent_id: intent.id,
         owner_user_id: user.id,
         workflow_id: workflowId,
+        approval_id: approvalId,
       },
       success_url: `${appUrl}/workflows/${workflowId}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/workflows/${workflowId}?checkout=cancelled`,

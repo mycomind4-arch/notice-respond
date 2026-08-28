@@ -9,15 +9,20 @@
  *   2. The Stripe session is paid.
  *   3. The Stripe session belongs to the same user and workflow.
  *   4. The durable mailing intent exists and has not already been submitted.
+ *   5. ★ The intent's approved_draft_hash matches the stored draft.
+ *   6. ★ The intent's approved_recipient_hash matches the stored recipient.
  *
  * The server then reconstructs the response document from the intent,
  * uploads it to MailMyPDF, creates the communication, and records the
  * provider order/tracking state. The client never controls recipient,
  * price, or payment state at the point of mailing.
+ *
+ * ★ = new integrity check added by the Gold Hardening Program.
  */
 
 import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, type H3Event } from "h3";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import { requireAuthenticatedUser } from "../../../src/lib/auth-guard";
 import { uploadDocument, createCommunication, type MailType } from "../../../src/platform/mailmypdf";
 
@@ -47,6 +52,23 @@ function getConfiguredStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) throw createError({ statusCode: 503, statusMessage: "Stripe is not configured." });
   return import("stripe").then(({ default: Stripe }) => new Stripe(secretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion }));
+}
+
+function sha256(text: string): string {
+  return createHash("sha256").update(text, "utf8").digest("hex");
+}
+
+function hashRecipient(recipient: Record<string, string>): string {
+  const canonical = JSON.stringify({
+    name: recipient.name?.trim().toUpperCase() || "",
+    org: recipient.org?.trim().toUpperCase() || "",
+    address1: recipient.address1?.trim().toUpperCase() || "",
+    address2: recipient.address2?.trim().toUpperCase() || "",
+    city: recipient.city?.trim().toUpperCase() || "",
+    state: recipient.state?.trim().toUpperCase() || "",
+    zip: recipient.zip?.trim() || "",
+  });
+  return sha256(canonical);
 }
 
 export default defineEventHandler(async (event) => {
@@ -108,14 +130,32 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: "Stored response draft is invalid or too large." });
   }
 
+  // ── ★ APPROVAL HASH VERIFICATION ──────────────────────────
+  // Verify the stored draft matches the approved draft hash.
+  // This prevents any tampering between approval and mailing.
+  if (intent.approved_draft_hash) {
+    const computedDraftHash = sha256(intent.draft);
+    if (computedDraftHash !== intent.approved_draft_hash) {
+      // Record security event
+      await supabase.from("audit_entries").insert({
+        id: crypto.randomUUID(),
+        case_id: null,
+        owner_id: user.id,
+        actor: user.id,
+        action: "approval_hash_mismatch",
+        object_type: "mailing_intent",
+        description: "Stored draft hash does not match approved draft hash — mailing blocked.",
+        result: "blocked",
+        is_security_event: true,
+        data: { intentId, computedHash: computedDraftHash, approvedHash: intent.approved_draft_hash },
+      });
+      throw createError({ statusCode: 403, statusMessage: "Integrity check failed: the stored draft does not match the approved draft." });
+    }
+  }
+
   const recipient = intent.recipient as {
-    name?: string;
-    org?: string;
-    address1?: string;
-    address2?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
+    name?: string; org?: string; address1?: string; address2?: string;
+    city?: string; state?: string; zip?: string;
   } | null;
 
   if (!recipient?.name || !recipient.address1 || !recipient.city || !recipient.state || !recipient.zip) {
@@ -123,6 +163,26 @@ export default defineEventHandler(async (event) => {
   }
   if (!/^[A-Za-z]{2}$/.test(recipient.state)) throw createError({ statusCode: 409, statusMessage: "Stored recipient state is invalid." });
   if (!/^\d{5}(-\d{4})?$/.test(recipient.zip)) throw createError({ statusCode: 409, statusMessage: "Stored recipient ZIP code is invalid." });
+
+  // ── ★ RECIPIENT HASH VERIFICATION ─────────────────────────
+  if (intent.approved_recipient_hash) {
+    const computedRecipientHash = hashRecipient(recipient as Record<string, string>);
+    if (computedRecipientHash !== intent.approved_recipient_hash) {
+      await supabase.from("audit_entries").insert({
+        id: crypto.randomUUID(),
+        case_id: null,
+        owner_id: user.id,
+        actor: user.id,
+        action: "recipient_hash_mismatch",
+        object_type: "mailing_intent",
+        description: "Stored recipient hash does not match approved recipient hash — mailing blocked.",
+        result: "blocked",
+        is_security_event: true,
+        data: { intentId, computedHash: computedRecipientHash, approvedHash: intent.approved_recipient_hash },
+      });
+      throw createError({ statusCode: 403, statusMessage: "Integrity check failed: the stored recipient does not match the approved recipient." });
+    }
+  }
 
   const { error: paidError } = await supabase
     .from("mailing_intents")
@@ -162,6 +222,8 @@ export default defineEventHandler(async (event) => {
         stripe_session_id: stripeSessionId,
         stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
         owner_user_id: user.id,
+        approval_id: intent.approval_id || null,
+        approved_draft_hash: intent.approved_draft_hash || null,
       },
       idempotency_key: idempotencyKey,
     });

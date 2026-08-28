@@ -133,3 +133,39 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS mailing_intents_prevent_owner_change ON mailing_intents;
 CREATE TRIGGER mailing_intents_prevent_owner_change BEFORE UPDATE ON mailing_intents FOR EACH ROW EXECUTE FUNCTION prevent_mailing_intent_owner_change();
+
+-- ═══════════════════════════════════════════════════════════
+-- APPROVAL GATE — Server-side consequential-action boundary
+-- ═══════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id TEXT NOT NULL,
+  case_id TEXT NOT NULL,
+  workflow_id TEXT NOT NULL,
+  draft_hash TEXT NOT NULL,
+  recipient_hash TEXT NOT NULL,
+  draft TEXT NOT NULL,
+  recipient JSONB NOT NULL,
+  review_state JSONB NOT NULL,
+  approved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  revoked_at TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'active'
+);
+
+CREATE INDEX IF NOT EXISTS approvals_owner_idx ON approvals(owner_id);
+CREATE INDEX IF NOT EXISTS approvals_case_idx ON approvals(case_id);
+CREATE INDEX IF NOT EXISTS approvals_status_idx ON approvals(status);
+
+ALTER TABLE approvals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS approvals_select_own ON approvals;
+CREATE POLICY approvals_select_own ON approvals FOR SELECT USING (auth.uid()::text = owner_id);
+DROP POLICY IF EXISTS approvals_insert_own ON approvals;
+CREATE POLICY approvals_insert_own ON approvals FOR INSERT WITH CHECK (auth.uid()::text = owner_id);
+
+-- Add approval reference to mailing_intents
+ALTER TABLE mailing_intents ADD COLUMN IF NOT EXISTS approval_id UUID REFERENCES approvals(id);
+ALTER TABLE mailing_intents ADD COLUMN IF NOT EXISTS approved_draft_hash TEXT;
+ALTER TABLE mailing_intents ADD COLUMN IF NOT EXISTS approved_recipient_hash TEXT;
+
+-- RLS for the new columns is inherited from the existing mailing_intents policies.
