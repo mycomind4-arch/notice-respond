@@ -400,6 +400,8 @@ function IRSNotice() {
             <button onClick={next} disabled={!stepOk} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">
               {state.phase === "checkout" ? "Pay and send" : "Continue"} →
             </button>
+          </div>
+        </div>
             </>) : (
               <div className="text-center py-16">
                 <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">

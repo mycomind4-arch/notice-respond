@@ -110,7 +110,8 @@ Sincerely,
 
   if (done) return <Success title="Your appeal has been submitted" href="/workflows/file-appeal" />;
 
-      <div className="min-h-screen bg-paper">
+  return (
+          <div className="min-h-screen bg-paper">
       <SiteHeader />
       <main>
         {/* HERO */}
@@ -315,5 +316,4 @@ function RelatedCard({ href, title, desc }: { href: string; title: string; desc:
       <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
     </Link>
   );
-}
 }

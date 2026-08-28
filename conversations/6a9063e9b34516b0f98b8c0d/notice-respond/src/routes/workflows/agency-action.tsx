@@ -109,7 +109,8 @@ Sincerely,
 
   if (done) return <Success title="Your agency response has been submitted" href="/workflows/agency-action" />;
 
-      <div className="min-h-screen bg-paper">
+  return (
+          <div className="min-h-screen bg-paper">
       <SiteHeader />
       <main>
         {/* HERO */}
@@ -314,5 +315,4 @@ function RelatedCard({ href, title, desc }: { href: string; title: string; desc:
       <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
     </Link>
   );
-}
 }

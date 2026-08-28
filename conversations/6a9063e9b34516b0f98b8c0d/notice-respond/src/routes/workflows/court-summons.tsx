@@ -107,7 +107,8 @@ Sincerely,
 
   if (done) return <Success title="Your court response has been submitted" href="/workflows/court-summons" />;
 
-      <div className="min-h-screen bg-paper">
+  return (
+          <div className="min-h-screen bg-paper">
       <SiteHeader />
       <main>
         {/* HERO */}
@@ -311,5 +312,4 @@ function RelatedCard({ href, title, desc }: { href: string; title: string; desc:
       <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
     </Link>
   );
-}
 }
