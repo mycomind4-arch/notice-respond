@@ -20,8 +20,9 @@
 
 import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, type H3Event } from "h3";
 import { createClient } from "@supabase/supabase-js";
-import { createHash } from "node:crypto";
+// Hashing now from @mailmypdf/payment-fulfillment via shared platform module
 import { requireAuthenticatedUser } from "../../src/lib/auth-guard";
+import { sha256, hashRecipient } from "../../src/platform/approval";
 
 function toAuthRequest(event: H3Event): Request {
   return new Request(getRequestURL(event).toString(), {
@@ -34,24 +35,6 @@ function getSupabaseServiceClient() {
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRole) throw createError({ statusCode: 503, statusMessage: "Supabase server configuration is incomplete." });
   return createClient(url, serviceRole, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-function sha256(text: string): string {
-  return createHash("sha256").update(text, "utf8").digest("hex");
-}
-
-function hashRecipient(recipient: Record<string, string>): string {
-  // Canonicalize recipient fields for consistent hashing
-  const canonical = JSON.stringify({
-    name: recipient.name?.trim().toUpperCase() || "",
-    org: recipient.org?.trim().toUpperCase() || "",
-    address1: recipient.address1?.trim().toUpperCase() || "",
-    address2: recipient.address2?.trim().toUpperCase() || "",
-    city: recipient.city?.trim().toUpperCase() || "",
-    state: recipient.state?.trim().toUpperCase() || "",
-    zip: recipient.zip?.trim() || "",
-  });
-  return sha256(canonical);
 }
 
 export default defineEventHandler(async (event) => {
