@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+  const llmAnalysis = useCombinedAnalysis("cp504-response");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS, WorkflowLandingPage } from "@/components/workflow-shell";
+import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
 import { MailingFunnel, type MailingFunnelState } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
-import { buildWorkflowRouteHead } from "@/components/seo";
 import {
   createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
@@ -21,14 +21,18 @@ import { detectMissingInfo, missingInfoSummary } from "@/domain/missing-info";
 // Security
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/cp504-response")({
-  head: () => buildWorkflowRouteHead(getWorkflowById("cp504-response")!),
+  head: () => createWorkflowHead("cp504-response"),
   component: CP504Response,
 });
 
 function CP504Response() {
   const definition = getWorkflowById("cp504-response")!;
-  const [started, setStarted] = useState(false);
   const steps = definition.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));
   const [cp504Extraction, setCP504Extraction] = useState<CP504Extraction | null>(null);
@@ -36,8 +40,17 @@ function CP504Response() {
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mailingFunnelState, setMailingFunnelState] = useState<MailingFunnelState | null>(null);
+  const [workflowStarted, setWorkflowStarted] = useState(false);
+  const workflowRef = useRef<HTMLDivElement>(null);
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
+
+  const startWorkflow = useCallback(() => {
+    setWorkflowStarted(true);
+    setTimeout(() => {
+      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
 
   // ── Document upload and extraction ──
   const handleFileUpload = useCallback(async (file: File) => {
@@ -156,7 +169,10 @@ function CP504Response() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+
+    // LLM-powered analysis (alongside deterministic)
+    llmAnalysis.analyzeWithLLM(file, text);
+    }, [update, llmAnalysis]);
 
   // ── Draft generation ──
   const handleGenerateDraft = useCallback(() => {
@@ -187,7 +203,6 @@ function CP504Response() {
     if (state.phase === "draft" && !state.draft) {
       handleGenerateDraft();
     }
-  if (!started && definition) return <WorkflowLandingPage definition={definition} onStart={() => setStarted(true)} />;
     if (state.phase === "checkout" || state.phase === "submitted") return;
     update((s) => advanceStep(s, definition));
   };
@@ -200,17 +215,90 @@ function CP504Response() {
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
 
   return (
-    <div className="min-h-screen command-center">
+    <div className="min-h-screen bg-paper">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <div className="mb-2">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-stamp transition-colors">← Notice Respond</Link>
-        </div>
-        <h1 className="mb-6 font-serif text-3xl">{definition.title}</h1>
+      <main>
+        {/* ── HERO ── */}
+        <section className="relative overflow-hidden border-b border-rule/60">
+          <div className="absolute inset-0 bg-gradient-to-b from-paper-deep/40 via-paper to-paper" aria-hidden="true" />
+          <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20 md:py-28">
+            <nav className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-stamp transition-colors">Notice Respond</Link>
+              <span className="text-rule">/</span>
+              <Link to="/workflows" className="hover:text-stamp transition-colors">Workflows</Link>
+              <span className="text-rule">/</span>
+              <span className="text-ink-soft">CP504 Response</span>
+            </nav>
+            <div className="postmark w-fit mt-6">IRS Notice · CP504</div>
+            <h1 className="mt-6 font-serif text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+              Respond to your <span className="italic text-stamp">CP504 notice</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+              The IRS is notifying you of its intent to levy. This is urgent — after 30 days, the IRS can seize your property, wages, or bank accounts. Upload the notice, verify the amount, and prepare a response to request a Collection Due Process hearing before enforcement begins.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={startWorkflow}
+                className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5"
+              >
+                Start your response
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+              <Link to="/workflows" className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-6 py-3.5 text-sm font-medium transition-colors hover:border-ink/30">
+                Browse other notices
+              </Link>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-rule/60 bg-rule/60 sm:grid-cols-4">
+              <KeyFact label="Response window" value="30 days" />
+              <KeyFact label="Notice type" value="Intent to Levy" />
+              <KeyFact label="Your right" value="CDP Hearing" />
+              <KeyFact label="Cost to prepare" value="Free" />
+            </div>
+          </div>
+        </section>
 
-        <Stepper steps={steps} current={state.step} onStep={(i) => update((s) => goToStep(s, definition, i))} />
+        {/* ── WHAT IS CP504 ── */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Understanding the notice</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">What is a CP504 notice?</h2>
+            <div className="mt-6 space-y-4 text-base leading-7 text-ink-soft">
+              <p>A CP504 is an <strong className="text-ink">Intent to Levy</strong> notice. It's the IRS's final warning before seizing your property to satisfy an unpaid tax debt. After 30 days from the notice date, the IRS can levy your bank accounts, garnish your wages, or seize other assets — without further notice.</p>
+              <p>You have the right to request a <strong className="text-ink">Collection Due Process (CDP) hearing</strong> by filing Form 12153. This hearing gives you the opportunity to propose alternatives: an installment agreement, an offer in compromise, or to challenge the validity of the debt. Requesting the hearing automatically stops collection action until the IRS makes a determination.</p>
+              <p>If you miss the 30-day window, you lose your right to a CDP hearing. You can still request an <strong className="text-ink">Equivalent Hearing</strong> within one year, but the IRS can continue collection during that process. Act immediately — this is the most time-sensitive notice in the IRS collection sequence.</p>
+            </div>
+            <div className="mt-8 rounded-lg border border-rule/60 bg-paper-deep/30 p-5">
+              <div className="font-mono text-xs uppercase tracking-widest text-stamp">What a CP504 includes</div>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {["Notice number and date","Total balance due","Tax years included","30-day deadline for CDP request","Right to Collection Due Process hearing","Levy warning (wages, bank, property)","IRS payment address","Form 12153 reference"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
 
-        <div className="mt-10 envelope-card p-6 md:p-10">
+        {/* ── HOW IT WORKS ── */}
+        <section className="border-b border-rule/60 bg-paper-deep/20">
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">The process</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">How Notice Respond works</h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              <ProcessStep number="01" title="Upload & analyze" text="Upload the CP504 PDF or paste the text. The system extracts the deadline, balance due, and levy warning — and identifies your right to a Collection Due Process hearing." />
+              <ProcessStep number="02" title="Review & draft" text="See the extracted facts and deadline. Add your supporting evidence. Generate a response requesting a CDP hearing or proposing an installment agreement or offer in compromise." />
+              <ProcessStep number="03" title="Mail with proof" text="Approve the exact draft. Certified mail provides the tracking number you need as proof of timely CDP request — critical for preserving your hearing rights." />
+            </div>
+          </div>
+        </section>
+
+        {/* ── WORKFLOW ── */}
+        <section ref={workflowRef} className="border-b border-rule/60" style={{ scrollMarginTop: "80px" }}>
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            {workflowStarted ? (<>
+              <Stepper steps={steps} current={state.step} onStep={(i) => update((s) => goToStep(s, definition, i))} />
+              <div className="mt-10 envelope-card p-6 md:p-10">
           {/* ── Step 0: Intro ── */}
           {state.phase === "intro" && (
             <div>
@@ -279,6 +367,13 @@ function CP504Response() {
           {/* ── Step 2: Extraction Review ── */}
           {state.phase === "extraction" && (
             <div>
+
+              {llmAnalysis.llmAnalysis && (
+                <LLMAnalysisPanel analysis={llmAnalysis.llmAnalysis} provider={llmAnalysis.llmProvider} />
+              )}
+              {llmAnalysis.llmLoading && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary animate-pulse">✦ AI is analyzing your document…</div>
+              )}
               <div className="postmark w-fit">3 · Review</div>
               <h2 className="mt-4 font-serif text-3xl">Review extracted information</h2>
               <p className="mt-3 text-muted-foreground">We extracted the following from your notice. Verify each item — this information will be used to prepare your response.</p>
@@ -434,6 +529,19 @@ function CP504Response() {
               )}
 
               <textarea className="input-field mt-6 min-h-72 font-mono text-sm leading-6" value={state.draft} onChange={(e) => update((s) => setDraft(s, e.target.value))} />
+              <button
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ workflowId: 'cp504-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
+                    });
+                    if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
+              >✦ Generate with AI</button>
               <button onClick={handleGenerateDraft} className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Regenerate draft</button>
             </div>
           )}
@@ -502,24 +610,105 @@ function CP504Response() {
               <button onClick={next} disabled={!canContinue} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">{state.phase === "checkout" ? "Pay and send" : "Continue"} →</button>
             </div>
           )}
-        </div>
 
-        {state.phase === "intro" && definition.seo?.faq && (
-          <div className="mt-16">
-            <h2 className="font-serif text-2xl">Frequently asked questions</h2>
-            <div className="mt-6 space-y-4">
-              {definition.seo.faq.map((item, i) => (
-                <div key={i} className="rounded-xl border border-rule bg-card p-5">
-                  <h3 className="font-medium text-foreground">{item.question}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{item.answer}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 text-sm text-muted-foreground"><Link to="/" className="hover:text-foreground transition-colors">← All Notice Respond workflows</Link></div>
+        </div>
+            </>) : (
+              <div className="text-center py-16">
+                <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                  Start your response
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        {definition.seo?.faq && (
+          <section className="border-b border-rule/60">
+            <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+              <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Questions & answers</div>
+              <h2 className="mt-3 font-serif text-2xl">Frequently asked questions</h2>
+              <div className="mt-6 space-y-4">
+                {definition.seo.faq.map((item, i) => (
+                  <div key={i} className="rounded-xl border border-rule bg-card p-5">
+                    <h3 className="font-medium text-foreground">{item.question}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
         )}
+
+        {/* ── TRUST BAND ── */}
+        <section className="border-y border-rule/60 bg-ink text-paper">
+          <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-16">
+            <div className="inline-flex items-center gap-0.4rem border border-stamp/40 px-2.5 py-1 font-mono text-[0.68rem] uppercase tracking-[0.15em] text-stamp rounded-full">Trust architecture</div>
+            <h2 className="mt-5 font-serif text-3xl text-paper">You stay in control of every step.</h2>
+            <p className="mt-4 text-base leading-7 text-paper/70">The notice is the source material. Your facts remain under your control. AI assists — it does not decide. You review the response before approval. Approval applies to the exact draft. Payment is distinct from authorization. Mailing creates a documented record.</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <TrustItem title="Your data, your control" text="Documents are processed for extraction. Nothing is shared with third parties." />
+              <TrustItem title="Review before send" text="You approve the exact letter. Nothing is mailed without your explicit confirmation." />
+              <TrustItem title="Proof of delivery" text="Certified mail provides tracking and delivery confirmation — your proof of timely CDP request." />
+            </div>
+          </div>
+        </section>
+
+        {/* ── RELATED NOTICES ── */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related workflows</div>
+            <h2 className="mt-3 font-serif text-2xl">Other IRS notice types</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <RelatedCard href="/workflows/cp14-response" title="CP14 — Balance Due" desc="First collection notice for unpaid taxes" />
+              <RelatedCard href="/workflows/cp2000-response" title="CP2000 — Proposed Adjustment" desc="Income reporting discrepancy notice" />
+              <RelatedCard href="/workflows/cp523-response" title="CP523 — Installment Default" desc="Missed payment plan notice" />
+            </div>
+            <div className="mt-6"><Link to="/workflows" className="text-sm text-stamp hover:text-ink transition-colors">Browse all notice types →</Link></div>
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function KeyFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-paper p-3 text-center">
+      <div className="font-serif text-lg text-ink">{value}</div>
+      <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ProcessStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div>
+      <div className="font-mono text-xs font-semibold text-stamp">{number}</div>
+      <h3 className="mt-2 font-serif text-xl text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+    </div>
+  );
+}
+
+function TrustItem({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-paper/15 p-4">
+      <h3 className="font-medium text-paper">{title}</h3>
+      <p className="mt-1.5 text-sm text-paper/60">{text}</p>
+    </div>
+  );
+}
+
+function RelatedCard({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link to={href} className="block rounded-lg border border-rule/60 bg-card p-4 transition-colors hover:border-stamp/40">
+      <div className="font-medium text-foreground">{title}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
+    </Link>
   );
 }

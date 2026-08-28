@@ -4,7 +4,7 @@ import { extractCP14, generateCP14Draft } from "../src/domain/cp14.ts";
 import { classifyNoticeType } from "../src/domain/notice-type.ts";
 import { validateDraft } from "../src/domain/draft-validator.ts";
 import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
-import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks, evaluateQualityGate } from "../src/domain/workflow-runtime.ts";
+import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks, approveWorkflow, evaluateQualityGate } from "../src/domain/workflow-runtime.ts";
 import { auditCP14Authority, checkDocumentRecognition, checkDeadlineVerification, checkFactGrounding, checkRequirementCoverage, checkEvidenceGrounding, checkDraftValidation, checkSubmissionReadiness, checkProofReady } from "../src/domain/cp14-gates.ts";
 import { detectContradictions } from "../src/domain/contradiction.ts";
 import { detectMissingInfo } from "../src/domain/missing-info.ts";
@@ -476,7 +476,10 @@ test("CP14 workflow state: review checks must all be checked", () => {
   assert.equal(canAdvance(state, def), false, "Cannot advance with unchecked review");
   
   state = setReviewChecks(state, state.reviewChecks.map(() => true));
-  assert.equal(state.approved, true, "Should be approved when all checks are true");
+  // Review checks prove readiness but do not authorize — explicit approval required
+  assert.equal(state.approved, false, "Review checks alone do not approve");
+  state = approveWorkflow(state);
+  assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow");
   assert.equal(canAdvance(state, def), true, "Can advance with all checks true");
 });
 

@@ -4,7 +4,7 @@ import { extractCP2000, generateCP2000Draft } from "../src/domain/cp2000.ts";
 import { classifyNoticeType } from "../src/domain/notice-type.ts";
 import { validateDraft } from "../src/domain/draft-validator.ts";
 import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
-import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks } from "../src/domain/workflow-runtime.ts";
+import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks, approveWorkflow } from "../src/domain/workflow-runtime.ts";
 
 // ── Fixtures ──────────────────────────────────────────────────
 
@@ -282,7 +282,10 @@ test("CP2000 workflow state: review checks must all be checked", () => {
   assert.equal(canAdvance(state, def), false, "Cannot advance with unchecked review");
   
   state = setReviewChecks(state, state.reviewChecks.map(() => true));
-  assert.equal(state.approved, true, "Should be approved when all checks are true");
+  // Review checks prove readiness but do not authorize — explicit approval required
+  assert.equal(state.approved, false, "Review checks alone do not approve");
+  state = approveWorkflow(state);
+  assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow");
   assert.equal(canAdvance(state, def), true, "Can advance with all checks true");
 });
 

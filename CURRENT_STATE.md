@@ -1,6 +1,6 @@
 # CURRENT_STATE.md — Fresh Repository Audit
 
-**Date:** 2026-08-19
+**Date:** 2026-08-27
 **Auditor:** Milo (continuing agent)
 **Method:** Direct code inspection + test/build execution
 
@@ -15,7 +15,7 @@
 - **Payments:** Stripe (dependency present, integration in mailing funnel)
 - **Mailing:** MailMyPDF API (provider + server endpoint implemented)
 - **Node:** v20.20.2
-- **Tests:** 815 pass / 0 fail
+- **Tests:** 994 total / 992 pass / 2 pre-existing failures
 - **Build:** Succeeds, produces `dist/_worker.js` for Cloudflare Workers
 
 ---
@@ -42,8 +42,8 @@ agent/             — Previous agent checkpoint files
 | Module | Purpose | Connected to Production? |
 |--------|---------|------------------------|
 | `workflow-definition.ts` | Canonical workflow definition types, engine registry, priority scoring | Types used; factory not called at runtime |
-| `workflow-master-registry.ts` | 47 workflow entries across all verticals | Used for directory display only |
-| `workflow-catalog.ts` | 6 production workflow definitions (source of truth) | ✅ Yes — routes import from here |
+| `workflow-master-registry.ts` | 54+ workflow entries across all verticals | Used for directory display + test validation |
+| `workflow-catalog.ts` | 18 production workflow definitions (source of truth) | ✅ Yes — routes import from here |
 | `workflow-factory.ts` | Factory: validate → resolve engine → load packs → construct | ❌ No — architecture only |
 | `workflow-runtime.ts` | Generic state machine (phases, steps, transitions) | ✅ Yes — used by all routes |
 | `domain-packs.ts` | Pack registry + 8 pack interfaces | ❌ No — registry empty at runtime |
@@ -85,6 +85,13 @@ agent/             — Previous agent checkpoint files
 | `/workflows/court-summons` | court-summons | functional | Works |
 | `/workflows/agency-action` | agency-action | functional | Works |
 | `/workflows/file-appeal` | file-appeal | functional | Works |
+| `/workflows/tax-notice` | tax-notice | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/code-enforcement` | code-enforcement | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/permit-correction` | permit-correction | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/dmv-notice` | dmv-notice | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/ssa-notice` | ssa-notice | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/uscis-notice` | uscis-notice | functional | LLM analysis + draft generation, full pipeline |
+| `/workflows/benefits-notice` | benefits-notice | functional | LLM analysis + draft generation, full pipeline |
 
 ---
 

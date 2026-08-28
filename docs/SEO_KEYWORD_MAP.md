@@ -121,3 +121,32 @@ Every leaf page should link upward to its category directory and the master Noti
 ## Keyword tracking recommendation
 
 Track a deliberately small set of primary terms rather than filling the Keyword.com account with near-duplicates. Prioritize terms that combine identifiable notice type + action/problem. Add informational terms when they support a strong workflow funnel.
+
+
+## Workflow Routes (Live as of 2026-08-27)
+
+The following interactive workflow routes are live in production:
+
+| Route | Workflow ID | SEO Title | Keywords |
+|------|-------------|-----------|----------|
+| /workflows/cp2000-response | cp2000-response | Respond to an IRS CP2000 Notice | cp2000, cp2000 irs, cp2000 letter |
+| /workflows/cp14-response | cp14-response | Respond to an IRS CP14 Notice | cp14 notice, irs cp14 |
+| /workflows/cp504-response | cp504-response | Respond to an IRS CP504 Notice | CP504, intent to levy |
+| /workflows/cp523-response | cp523-response | Respond to an IRS CP523 Notice | CP523, installment default |
+| /workflows/irs-notice | irs-notice | Respond to an IRS Notice | irs notice, irs letter |
+| /workflows/court-summons | court-summons | Respond to a Court Summons | court summons, civil summons |
+| /workflows/agency-action | agency-action | Respond to an Agency Action | agency action, agency notice |
+| /workflows/file-appeal | file-appeal | File an Appeal | file appeal, appeal filing |
+| /workflows/tax-notice | tax-notice | Respond to a Tax Notice | tax notice, tax authority letter |
+| /workflows/code-enforcement | code-enforcement | Respond to a Code Enforcement Notice | code enforcement, municipal violation |
+| /workflows/permit-correction | permit-correction | Respond to a Permit Correction Notice | permit correction, building permit |
+| /workflows/dmv-notice | dmv-notice | Respond to a DMV Notice | dmv notice, license suspension |
+| /workflows/ssa-notice | ssa-notice | Respond to an SSA Notice | ssa notice, social security determination |
+| /workflows/uscis-notice | uscis-notice | Respond to a USCIS Notice | uscis rfe, uscis notice |
+| /workflows/benefits-notice | benefits-notice | Respond to a Benefits Notice | benefits notice, overpayment notice |
+
+Each route has:
+- Full SEO metadata (title, description, OpenGraph)
+- Structured FAQ section (4+ questions with JSON-LD)
+- LLM-powered document analysis + draft generation
+- Complete workflow pipeline (upload → analyze → draft → review → mail → checkout)
