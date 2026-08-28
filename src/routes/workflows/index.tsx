@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { NOTICE_WORKFLOWS, workflowCategories } from "@/components/notice-workflow-directory";
+import { NOTICE_WORKFLOWS, workflowCategories } from "@/components/notice-workflow-directory-fixed";
 import { SectionHeader } from "@/components/ui-primitives";
 
 const SITE_ORIGIN = "https://notice-respond.pages.dev";
