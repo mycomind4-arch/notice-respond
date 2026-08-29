@@ -142,7 +142,7 @@ Sincerely,
                 Start your response
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
               </button>
-              <a href="#how-it-works" className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-6 py-3.5 text-sm font-medium transition-colors hover:border-ink/30">How it works</a>
+              <a href="https://notice-respond.pages.dev/workflows/tenant-eviction-response" className="inline-flex items-center gap-2 rounded-full border border-stamp/40 bg-stamp/5 px-6 py-3.5 text-sm font-medium text-stamp transition-colors hover:bg-stamp/10">Start the full workflow →</a>
             </div>
             <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-rule/60 bg-rule/60 sm:grid-cols-4">
               <KeyFact label="Notice types" value="10+" />
