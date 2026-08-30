@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { extractDocumentText } from "@/lib/pdf-extraction";
+import { createCase, uploadEvidenceMetadata, isConfigured as isFairProcessConfigured } from "@/lib/fairprocess-client";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -55,6 +56,8 @@ function CP2000Response() {
   const [cp2000Strategy, setCP2000Strategy] = useState<CP2000ResponseStrategy | null>(null);
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const [draftProvenance, setDraftProvenance] = useState<DraftProvenance | null>(null);
+  const [fairProcessCaseId, setFairProcessCaseId] = useState<string | null>(null);
+  const [evidenceUploaded, setEvidenceUploaded] = useState(false);
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
@@ -124,6 +127,23 @@ function CP2000Response() {
         uploadedAt: new Date().toISOString(),
       };
       update((s) => setUpload(s, upload));
+      // Create FairProcess case + register evidence (if configured)
+      if (isFairProcessConfigured()) {
+        try {
+          const fpCase = await createCase({
+            jurisdiction: "US Federal",
+            agency: "IRS",
+            agencyCaseNumber: null,
+            asOf: new Date().toISOString(),
+          });
+          setFairProcessCaseId(fpCase.id);
+          await uploadEvidenceMetadata(fpCase.id, file, `cases/${fpCase.id}/evidence/${file.name}`);
+          setEvidenceUploaded(true);
+        } catch (err) {
+          console.error("FairProcess integration error:", err);
+          // Non-blocking — workflow continues even if FairProcess is unavailable
+        }
+      }
       if (text && text.length > 20) {
         const contentClassification = classifyContent(text);
         if (contentClassification.detectedInjectionPatterns.length > 0) {
