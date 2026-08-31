@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef, useEffect } from "react";
-  const llmAnalysis = useCombinedAnalysis("cp523-response");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -34,6 +33,7 @@ export const Route = createFileRoute("/workflows/cp523-response")({
 });
 
 function CP523Response() {
+  const llmAnalysis = useCombinedAnalysis("cp523-response");
   const definition = getWorkflowById("cp523-response")!;
   const steps = definition.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef, useEffect } from "react";
-  const llmAnalysis = useCombinedAnalysis("irs-notice");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -34,6 +33,7 @@ interface IRSFormFields {
 }
 
 function IRSNotice() {
+  const llmAnalysis = useCombinedAnalysis("irs-notice");
   const definition = getWorkflowById("irs-notice");
   const steps = definition?.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
-  const llmAnalysis = useCombinedAnalysis("transunion-dispute");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -29,6 +28,7 @@ export const Route = createFileRoute("/workflows/transunion-dispute")({
 });
 
 function TransUnionDispute() {
+  const llmAnalysis = useCombinedAnalysis("transunion-dispute");
   const definition = getWorkflowById("transunion-dispute")!;
   const steps = definition.ux?.steps ?? [];
   const [state, setState] = useState<WorkflowState>(() => createWorkflowState(definition));
