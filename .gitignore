@@ -6,3 +6,6 @@ dist/
 .env
 .env.*
 !.env.example
+conversations/
+*.tar.gz
+.base44-conversation-workspace
