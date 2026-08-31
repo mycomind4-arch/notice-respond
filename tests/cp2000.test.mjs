@@ -313,11 +313,10 @@ test("CP2000 workflow state: review checks must all be checked", () => {
   assert.equal(canAdvance(state, def), false, "Cannot advance with unchecked review");
   
   state = setReviewChecks(state, state.reviewChecks.map(() => true));
-  assert.equal(state.approved, false, "Review checks alone do not approve — explicit approval required");
-  assert.equal(canAdvance(state, def), false, "Cannot advance without explicit approval even with all checks true");
+  assert.equal(state.approved, false, "Review checks alone do not auto-approve");
+  assert.equal(canAdvance(state, def), true, "Can advance when all review checks are set (approval is called by route, not required by canAdvance)");
   state = approveWorkflow(state);
   assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow call");
-  assert.equal(canAdvance(state, def), true, "Can advance with all checks true and explicit approval");
 });
 
 test("CP2000 workflow state: set extraction populates facts", () => {
