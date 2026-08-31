@@ -20,7 +20,7 @@ test("mailing endpoint requires a paid Stripe session and verifies ownership", (
   assert.match(mailing, /payment_status !== \"paid\"/);
   assert.match(mailing, /owner_user_id/);
   assert.match(mailing, /mailing_intent_id/);
-  assert.match(mailing, /stripe:/);
+  assert.match(mailing, /stripe\.checkout\.sessions/);
 });
 
 test("mailing schema supports redirect-safe idempotent intents", () => {

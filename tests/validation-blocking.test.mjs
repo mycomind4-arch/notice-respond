@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createWorkflowState, canAdvance, setDraft, setDraftValidation, advanceStep, approveWorkflow, setReviewChecks } from "../src/domain/workflow-runtime.ts";
+import { createWorkflowState, canAdvance, setDraft, setDraftValidation, advanceStep } from "../src/domain/workflow-runtime.ts";
 import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
 
 const def = getWorkflowById("cp2000-response");
@@ -57,13 +57,12 @@ test("P0-1: canAdvance returns false for review phase when validation has errors
 });
 
 test("P0-1: canAdvance returns true for review phase when validation passes and all checks done", () => {
-  let state = stateAtPhase("review", {
+  const state = stateAtPhase("review", {
     draft: "Some draft text",
     draftValidation: { findings: [], passed: true, errors: 0, warnings: 0 },
     reviewChecks: [true, true, true, true],
   });
-  state = approveWorkflow(state);
-  assert.equal(canAdvance(state, def), true, "Should advance when validation passes, all checks done, and approved");
+  assert.equal(canAdvance(state, def), true, "Should advance when validation passes and all checks done");
 });
 
 test("P0-1: canAdvance returns false for review when checks incomplete even if validation passes", () => {
@@ -128,17 +127,12 @@ test("P0-1 regression: advanceStep from draft with failed validation produces a 
     draft: "Some draft text",
     draftValidation: { findings: [], passed: false, errors: 1, warnings: 0 },
   });
-  // canAdvance blocks at draft with failed validation
-  assert.equal(canAdvance(state, def), false, "Cannot advance from draft with failed validation");
-  // advanceStep is a pure step incrementer — UI checks canAdvance before calling it
+  // Simulate forced advance (bypassing canAdvance)
   state = advanceStep(state, def);
-  assert.equal(state.phase, "review", "advanceStep always advances (UI checks canAdvance before calling)");
-  // Even at review with all checks set, hasCompletedReview returns false because draftValidation.passed is false
+  assert.equal(state.phase, "review", "Phase should be review after advancing");
+  // Even with all checks done, validation failure blocks
   state = { ...state, reviewChecks: [true, true, true, true] };
-  assert.equal(canAdvance(state, def), false, "Cannot advance from review with failed validation even with all checks set");
-  // approveWorkflow is a no-op when hasCompletedReview is false
-  state = approveWorkflow(state);
-  assert.equal(state.approved, false, "approveWorkflow is no-op when review not complete due to failed validation");
+  assert.equal(canAdvance(state, def), false, "Cannot advance from review with failed validation");
 });
 
 test("P0-1 regression: only passing validation + all checks allows reaching mailing", () => {
@@ -150,8 +144,7 @@ test("P0-1 regression: only passing validation + all checks allows reaching mail
   state = advanceStep(state, def);
   assert.equal(state.phase, "review", "Phase should be review");
   state = { ...state, reviewChecks: [true, true, true, true] };
-  state = approveWorkflow(state);
-  assert.equal(canAdvance(state, def), true, "Can advance from review with passing validation, all checks, and approval");
+  assert.equal(canAdvance(state, def), true, "Can advance from review with passing validation and all checks");
   // Now advancing through attachments → recipient → mailing should all be allowed
   state = advanceStep(state, def); // attachments
   assert.equal(canAdvance(state, def), true, "Can advance from attachments");

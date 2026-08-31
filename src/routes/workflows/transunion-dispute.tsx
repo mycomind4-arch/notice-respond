@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback, useRef } from "react";
+  const llmAnalysis = useCombinedAnalysis("transunion-dispute");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
 import { MailingFunnel, type MailingFunnelState } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
 import {
-  createWorkflowState, approveWorkflow, advanceStep, retreatStep, goToStep, canAdvance,
+  createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
   setDraft, setDraftValidation, setReviewChecks, setMailing,
   type WorkflowState, type DocumentUpload,
@@ -17,42 +18,13 @@ import { recommendStrategies } from "@/domain/strategy";
 // Security
 import { classifyContent, validateTextInput, validateFilename, validateFileSize, validateMimeType } from "@/domain/security";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/transunion-dispute")({
-  head: () => {
-    const def = getWorkflowById("transunion-dispute")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("transunion-dispute"),
   component: TransUnionDispute,
 });
 
@@ -182,7 +154,10 @@ function TransUnionDispute() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+
+    // LLM-powered analysis (alongside deterministic)
+    llmAnalysis.analyzeWithLLM(file, text);
+    }, [update, llmAnalysis]);
 
   // ── Draft generation ──
   const handleGenerateDraft = useCallback(() => {
@@ -211,12 +186,7 @@ function TransUnionDispute() {
       handleGenerateDraft();
     }
     if (state.phase === "checkout" || state.phase === "submitted") return;
-    update((s) => {
-        // When leaving the review phase, explicitly approve the workflow
-        // This satisfies the runtime's approval gate before consequential steps
-        const approved = state.phase === "review" ? approveWorkflow(s) : s;
-        return advanceStep(approved, definition);
-      });
+    update((s) => advanceStep(s, definition));
   };
 
   const back = () => update((s) => retreatStep(s, definition));
@@ -224,7 +194,7 @@ function TransUnionDispute() {
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-2">
@@ -303,6 +273,13 @@ function TransUnionDispute() {
           {/* ── Step 2: Extraction Review ── */}
           {state.phase === "extraction" && (
             <div>
+
+              {llmAnalysis.llmAnalysis && (
+                <LLMAnalysisPanel analysis={llmAnalysis.llmAnalysis} provider={llmAnalysis.llmProvider} />
+              )}
+              {llmAnalysis.llmLoading && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary animate-pulse">✦ AI is analyzing your document…</div>
+              )}
               <div className="postmark w-fit">3 · Review</div>
               <h2 className="mt-4 font-serif text-3xl">Review extracted information</h2>
               <p className="mt-3 text-muted-foreground">We extracted the following from your credit report. Verify each item — this information will be used to prepare your dispute.</p>
@@ -442,6 +419,19 @@ function TransUnionDispute() {
               )}
 
               <textarea className="input-field mt-6 min-h-72 font-mono text-sm leading-6" value={state.draft} onChange={(e) => update((s) => setDraft(s, e.target.value))} />
+              <button
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ workflowId: 'transunion-dispute', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
+                    });
+                    if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
+              >✦ Generate with AI</button>
               <button onClick={handleGenerateDraft} className="mt-4 rounded-full border border-rule px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Regenerate draft</button>
             </div>
           )}
@@ -507,6 +497,9 @@ function TransUnionDispute() {
               <button onClick={next} disabled={!canContinue} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30 disabled:transform-none disabled:shadow-none">{state.phase === "checkout" ? "Pay and send" : "Continue"} →</button>
             </div>
           )}
+
+        {(() => { const seo = getWorkflowSEO("transunion-dispute"); return seo ? <FAQSection faq={seo.faq} /> : null; })()}
+
         </div>
 
         {state.phase === "intro" && definition.seo?.faq && (

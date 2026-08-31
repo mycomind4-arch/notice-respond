@@ -1,10 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-import { NOTICE_WORKFLOWS, WorkflowHead, WorkflowPage, WorkflowStructuredData } from "@/components/notice-workflow-directory";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-const workflow = NOTICE_WORKFLOWS.find((item) => item.slug === "tax-notice")!;
+/** Compatibility redirect — canonical URL is /workflows/tax-notice */
 export const Route = createFileRoute("/workflows/respond-to-a-tax-notice")({
-  head: () => ({ ...WorkflowHead({ workflow }), links: [{ rel: "canonical", href: "/workflows/respond-to-a-tax-notice" }], scripts: [...WorkflowStructuredData({ workflow })] }),
-  component: () => <><SiteHeader /><WorkflowPage workflow={workflow} /><SiteFooter /></>,
+  beforeLoad: () => { throw redirect({ to: "/workflows/tax-notice" }); },
+  component: () => null,
 });

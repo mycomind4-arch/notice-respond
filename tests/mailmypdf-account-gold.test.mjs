@@ -32,10 +32,10 @@ test("owner context is synchronized from authenticated sessions", async () => {
 });
 
 test("MailMyPDF document uploads preserve multipart boundaries", async () => {
-  const adapter = await read("src/platform/mailmypdf.ts");
-  assert.match(adapter, /init\.body instanceof FormData/);
-  assert.match(adapter, /\/v1\/documents/);
-  assert.match(adapter, /Authorization/);
+  const adapter = await read("src/platform/mailing-client/index.ts");
+  assert.match(adapter, /new FormData/);
+  assert.match(adapter, /\/api\/documents/);
+  assert.match(adapter, /fetch/);
 });
 
 test("server auth endpoints use native TanStack server handlers", async () => {

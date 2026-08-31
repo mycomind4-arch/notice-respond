@@ -20,14 +20,14 @@
     "@tanstack/router-plugin": "^1.168.18",
     "@tanstack/zod-adapter": "^1.167.0",
     "lucide-react": "^0.575.0",
-    "pdfjs-dist": "^6.3.289",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "stripe": "^22.6.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.8.3",
     "vite": "^8.0.16",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "@mailmypdf/pricing": "https://github.com/mycomind4-arch/mailmypdf-platform/releases/download/pricing-v0.2.2/mailmypdf-pricing-0.2.1.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

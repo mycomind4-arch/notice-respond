@@ -30,3 +30,16 @@ The public experience stays simple. Users should see the smallest useful number 
 
 ## Navigation lock
 Do **not** add vertical-specific navigation items to the ecosystem shell. The canonical ecosystem navigation remains authoritative.
+
+
+## Live Workflow Routes (2026-08-27)
+
+All 18 production workflows have live interactive routes:
+
+- /workflows/cp2000-response, /workflows/cp14-response, /workflows/cp504-response, /workflows/cp523-response
+- /workflows/irs-notice, /workflows/tax-notice, /workflows/court-summons, /workflows/agency-action, /workflows/file-appeal
+- /workflows/code-enforcement, /workflows/permit-correction, /workflows/dmv-notice
+- /workflows/ssa-notice, /workflows/uscis-notice, /workflows/benefits-notice
+- /workflows/transunion-dispute, /workflows/experian-dispute, /workflows/equifax-dispute
+
+Legacy SEO-only routes (/workflows/respond-to-*) now 301-redirect to their canonical interactive routes.

@@ -233,17 +233,6 @@ test("CP2000 workflow state: advance through steps", () => {
   state = advanceStep(state, def);
   assert.equal(state.phase, "document");
   
-  // Document phase requires extraction to advance
-  state = setExtraction(state, {
-    noticeType: "irs_cp2000",
-    classificationConfidence: 0.85,
-    facts: { noticeNumber: "CP2000", taxYear: 2023 },
-    deadlines: [],
-    agency: "IRS",
-    referenceNumber: "CP2000",
-    rawText: "test",
-    extractionConfidence: 0.85,
-  });
   state = advanceStep(state, def);
   assert.equal(state.phase, "extraction");
 });
@@ -254,16 +243,6 @@ test("CP2000 workflow state: can advance requires facts at facts step", () => {
   
   // Advance to facts step (step 3)
   state = advanceStep(state, def); // document
-  state = setExtraction(state, {
-      noticeType: "irs_cp2000",
-      classificationConfidence: 0.85,
-      facts: { noticeNumber: "CP2000", taxYear: 2023 },
-      deadlines: [],
-      agency: "IRS",
-      referenceNumber: "CP2000",
-      rawText: "test",
-      extractionConfidence: 0.85,
-    });
   state = advanceStep(state, def); // extraction
   state = advanceStep(state, def); // facts
   
@@ -279,16 +258,6 @@ test("CP2000 workflow state: can advance requires objective at objective step", 
   let state = createWorkflowState(def);
   
   state = advanceStep(state, def); // intro → document
-  state = setExtraction(state, {
-    noticeType: "irs_cp2000",
-    classificationConfidence: 0.85,
-    facts: { noticeNumber: "CP2000", taxYear: 2023 },
-    deadlines: [],
-    agency: "IRS",
-    referenceNumber: "CP2000",
-    rawText: "test",
-    extractionConfidence: 0.85,
-  });
   state = advanceStep(state, def); // document → extraction
   state = advanceStep(state, def); // extraction → facts
   state = setUserFacts(state, "Facts here");
@@ -305,18 +274,19 @@ test("CP2000 workflow state: review checks must all be checked", () => {
   const def = getWorkflowById("cp2000-response");
   let state = createWorkflowState(def);
   
+  // Fast-forward to review
   state = { ...state, step: 6, phase: "review" };
   state = setUserFacts(state, "Facts");
   state = setUserObjective(state, "Objective");
-  state = { ...state, draftValidation: { findings: [], passed: true, errors: 0, warnings: 0 } };
   
   assert.equal(canAdvance(state, def), false, "Cannot advance with unchecked review");
   
   state = setReviewChecks(state, state.reviewChecks.map(() => true));
-  assert.equal(state.approved, false, "Review checks alone do not auto-approve");
-  assert.equal(canAdvance(state, def), true, "Can advance when all review checks are set (approval is called by route, not required by canAdvance)");
+  // Review checks prove readiness but do not authorize — explicit approval required
+  assert.equal(state.approved, false, "Review checks alone do not approve");
   state = approveWorkflow(state);
-  assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow call");
+  assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow");
+  assert.equal(canAdvance(state, def), true, "Can advance with all checks true");
 });
 
 test("CP2000 workflow state: set extraction populates facts", () => {

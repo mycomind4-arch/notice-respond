@@ -1,46 +1,66 @@
 # Ecosystem Architecture Map
 
-**Date:** 2026-08-18
-**Audited by:** Elara (Superagent)
+**Date:** 2026-08-27 (updated with full-archive audit findings)
+**Prior audit:** 2026-08-18
+**Method:** Real test runs against actual code — see `docs/01_DEEP_AUDIT.md` for full findings
 
 ## Existing Repositories
 
-| Repo | Type | Status | Role |
-|---|---|---|---|
-| notice-respond | vertical | live | Workflow factory + notice response workflows |
-| mailmypdf | core | production | Mailing, tracking, proof, payments, fulfillment |
-| mailmypdf-platform | platform | development | Shared packages (many thin/planned) |
-| fairprocessmaps | data | live | Jurisdiction/property intelligence |
-| code-enforcement | vertical | scaffolded | Code enforcement vertical (new) |
-| immigration-mail | vertical | live | Immigration document processing |
-| certified-mail-from-pdf | vertical | live | Certified mail product |
-| appeal-mail | vertical | live | Appeal letter generation |
-| dispute-mail | vertical | live | Dispute letter generation |
+| Repo | Type | Status | Role | Tests |
+|---|---|---|---|---|
+| notice-respond | vertical | live | Workflow factory + notice response workflows | 992/994 |
+| mailmypdf | core | production | Mailing, tracking, proof, payments, fulfillment | 508/519 (11 route-migration fails) |
+| mailmypdf-platform | platform | dead weight | Shared packages (nothing imports from it) | — |
+| fairprocessmaps | data | live (frozen backend) | Jurisdiction/property intelligence (FastAPI stack frozen per ADR-006) | — |
+| fairprocess-repo | data+engine | live | Due-process engine + property intelligence on Cloudflare D1/R2 + county GIS | 91/91 |
+| FairProcess V1 | engine | partial (ai-worker won't build) | Recordation Integrity Engine for code-enforcement | 106/106 pass, ai-worker ❌, case-model 0 tests |
+| code-enforcement | vertical | scaffolded | Code enforcement vertical | 306/306 |
+| immigration-mail | vertical | live | Immigration document processing | — |
+| certified-mail-from-pdf | vertical | live | Certified mail product | — |
+| appeal-mail | vertical | live | Appeal letter generation | — |
+| dispute-mail | vertical | live | Dispute letter generation | — |
+| permit-signal | vertical | archived | Permit deadline monitoring — DO NOT EXTEND | — |
+
+## Key Architecture Changes from Full Archive Audit
+
+### 1. fairprocess-repo replaces fairprocessmaps as primary due-process engine
+- fairprocess-repo runs on Cloudflare Workers/D1/R2 — same stack as all other repos
+- fairprocessmaps' FastAPI/Postgres/Neo4j backend is frozen reference, not deployed
+- fairprocess-repo has real Humboldt County GIS integration (map click → parcel → zoning, flood zone, etc.)
+- fairprocess-repo has working due-process rule engine (10-day notice, hearing right, appeal pathway)
+- fairprocess-repo has R2-backed evidence vault (upload/download/delete + timeline events)
+
+### 2. Evidence vault consolidation needed
+Three candidates exist. Pick one canonical:
+- **fairprocess-repo's R2 vault** ← RECOMMENDED (live, R2-backed, wired end-to-end)
+- FairProcess V1's `evidence-vault` package (26/26 tests, but standalone)
+- code-enforcement/src/domain (conceptual only)
+
+### 3. mailmypdf vertical registry gap
+`code-enforcement` and `records-requests` are NOT in `mailmypdf/src/verticals/registry.ts`. This blocks Phase 4/5 of the blueprint. Must register them before mailing is wired.
+
+### 4. FairProcess V1 ai-worker won't compile
+Two type errors (Deadline Watchdog return shape, Audit Narrative missing `sections` field). Fix before relying on these features. Also: `case-model` package has zero test coverage.
+
+### 5. permit-signal explicitly archived
+README says don't add features. If permit monitoring needed, get canonical repo `mycomind4-arch/permitsignal`.
+
+### 6. mailmypdf-platform confirmed dead weight
+Zero `@mailmypdf/*` imports from any other repo. Leave out of scope.
 
 ## Reusable Capabilities Already Implemented
 
 ### notice-respond (canonical workflow infrastructure)
-- `workflow-definition.ts` — MasterWorkflowDefinition interface (search, documents, deadlines, requirements, evidence, analysis, drafting, submission, quality gate, SEO, UX, directory)
-- `workflow-catalog.ts` — 6 workflow definitions (irs-notice, court-summons, agency-action, file-appeal, cp2000-response, cp14-response)
+- `workflow-definition.ts` — MasterWorkflowDefinition interface
+- `workflow-catalog.ts` — 25 workflow definitions (18 deployed routes)
 - `workflow-runtime.ts` — Generic state machine with phases, extraction, facts, deadlines, evidence, draft validation, mailing state
-- `cp2000.ts` — CP2000 extraction engine (classification + extraction)
-- `cp14.ts` — CP14 extraction engine
-- `cp14-gates.ts` — 8 authority gates for CP14
-- `fact.ts` — NoticeFact with provenance (sourceExcerpt, extractionMethod, confidence)
-- `evidence.ts` — Evidence model with relationships, types, verification status
-- `contradiction.ts` — Contradiction detection (date, amount, name, evidence conflicts)
-- `deadline.ts` — Deadline model with certainty levels
-- `missing-info.ts` — Missing info detection with severity and impact
-- `draft-validator.ts` — Draft validation (required sections, factual claims, requirement coverage)
-- `strategy.ts` — Response strategy generation
-- `next-action.ts` — Next action recommendation
-- `versioning.ts` — Workflow versioning
-- `quality.ts` — Quality assessment
-- `readiness.ts` — Readiness checks
-- `audit.ts` — Audit trail
-- `mailing.ts` — Mailing state and options
+- CP2000 gold-standard pipeline: discrepancy analysis, evidence checklist, strategy generation, two-pass validation, case model, research packs, draft provenance
+- CP14 authority gates (8 gates)
+- Fact/Evidence/Contradiction/Deadline/MissingInfo/Strategy/NextAction modules
+- Draft validator with requirement coverage
 - MailingFunnel component (recipient, method, checkout, tracking)
-- Workflow shell component (reusable across workflows)
+- Enhanced SEO head generator (FAQPage + WebApplication + BreadcrumbList JSON-LD)
+- Per-workflow SEO content (keywords, FAQ, breadcrumbs, OpenGraph)
 
 ### mailmypdf (canonical fulfillment infrastructure)
 - MailService + Lob adapter (actual mailing)
@@ -48,46 +68,42 @@
 - ProofOfMailing (hash-linked custody chain)
 - Stripe payments (checkout, refunds, subscriptions)
 - Document handling (SHA-256, storage, security validation)
-- Verticals registry (dispute-mail, gov-reply, appeal-reply, etc.)
-- Products: appeal-reply, debt-defense, notice-response, records-request, tenant-reply, permit-reply, claim-proof, benefits-appeal
+- Verticals registry (12 registered — code-enforcement + records-requests MISSING)
 
-### mailmypdf-platform (shared packages — mostly thin/planned)
-- packages/intelligence — Provenance, Entity, Fact, Evidence, Timeline, Contradiction, Deadline, Finding, Risk (implemented but unstable)
-- packages/vertical-foundry — Full factory system with 80+ files (agent dispatch, build pipeline, QA, deployment, scoring — mostly theoretical)
-- packages/core, documents, ai, proof, fulfillment, design-system — thin index.ts files
+### fairprocess-repo (canonical due-process + property intelligence)
+- Parcel resolution via Humboldt County ArcGIS REST API
+- Auto-gathered property intelligence (APN, zoning, acres, flood/coastal zone)
+- Interactive timeline with event tracking
+- Due-process rule engine (10-day notice minimum, hearing right, appeal pathway)
+- R2-backed evidence vault (upload/download/delete + timeline event creation)
+- Dashboard panels: Overview, Property Intelligence, Timeline, Evidence Vault, Discrepancies, Building Dept, Code Enforcement, Legal Library, Connectors, Admin
 
-### fairprocessmaps
-- Backend with jurisdiction/property intelligence
-- Frontend with geographic capabilities
-- Database with property data
+### FairProcess V1 (Recordation Integrity Engine)
+- `policy-engine` (10 tests) — versioned procedural rules
+- `audit-engine` (7 tests) — audit trail
+- `evidence-vault` (26 tests) — evidence model
+- `fact-workbench` (27 tests) — fact extraction + verification
+- `case-model` (0 tests ⚠️) — core type definitions
+- `ai-worker` (❌ won't build) — deadline watchdog + audit narrative (needs type fixes)
 
 ## Architecture Decision: Where the Workflow Factory Lives
 
-**notice-respond** owns the Workflow Factory because:
-1. It already has the canonical WorkflowDefinition + WorkflowCatalog + WorkflowRuntime
-2. It has real, tested domain modules (facts, evidence, contradictions, deadlines, etc.)
-3. It has a working deployed app on Cloudflare Pages
-4. It has passing tests (340 tests)
-5. It has the MailingFunnel integration
+**notice-respond** owns the Workflow Factory. It has the canonical WorkflowDefinition + WorkflowCatalog + WorkflowRuntime, tested domain modules, a working deployed app on Cloudflare Pages, 992 passing tests, and the MailingFunnel integration.
 
-The Workflow Factory extends notice-respond's existing system to support:
-- Multiple engine types (document→action, dispute, records, appeal, jurisdictional)
-- Workflow master registry with priority scoring
-- Engine specialization via domain packs
-- Extensible to hundreds of workflows via configuration, not code duplication
+## Integration Blueprint
+
+See `docs/02_AGENT_INTEGRATION_BLUEPRINT.md` for the full phase-by-phase integration plan with dependencies and fix-before-trusting list.
 
 ## What NOT to Rebuild
-- MasterWorkflowDefinition (exists, extend it)
-- WorkflowCatalog (exists, extend it)
-- WorkflowRuntime (exists, keep it)
-- Fact/Evidence/Contradiction/Deadline modules (exist, keep them)
+- MasterWorkflowDefinition / WorkflowCatalog / WorkflowRuntime (exists, extend)
+- Fact/Evidence/Contradiction/Deadline modules (exists, keep)
 - MailingFunnel (exists, improve UX)
-- Test infrastructure (exists, extend it)
-- Cloudflare deployment (exists, keep it)
+- Evidence vault (use fairprocess-repo's R2 vault — don't build a second one)
+- Due-process rule engine (use fairprocess-repo's — don't run fairprocessmaps' too)
 
 ## What to Add
-- Engine type in WorkflowDefinition
-- Engine registry (5 engines: document→action, dispute, records, appeal, jurisdictional)
-- Workflow master registry with all workflow families
-- Priority/opportunity scoring model
-- Domain pack registry for engine specialization
+- code-enforcement and records-requests in mailmypdf vertical registry
+- Fix FairProcess V1 ai-worker type errors (Deadline Watchdog + Audit Narrative)
+- Add test coverage to FairProcess V1 case-model
+- Migrate remaining mailmypdf verticals from *.pages.dev to root-relative routes
+- Verify code-enforcement domain wiring in live repo (archive doesn't show it)

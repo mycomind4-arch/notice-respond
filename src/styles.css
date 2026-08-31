@@ -588,7 +588,3 @@
    ══════════════════════════════════════════════════════════════════════════ */
 .empty-state { text-align: center; padding: 3rem 1.5rem; }
 .empty-state-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: color-mix(in oklab, var(--stamp) 8%, transparent); margin-bottom: 1rem; }
-
-/* ═══ Carousel scrollbar hide ═══ */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }

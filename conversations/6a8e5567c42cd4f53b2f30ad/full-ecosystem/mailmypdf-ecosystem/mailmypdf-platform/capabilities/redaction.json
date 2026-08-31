@@ -1,1 +1,0 @@
-{"id":"document.redaction","version":"1.0.0","status":"promoted","source":"mycomind4-arch/redact-desk","provides":["pii-detection","luhn-validation","masked-previews","confidence-gated-redaction","page-geometry-grouping"],"engineAdapters":"optional"}

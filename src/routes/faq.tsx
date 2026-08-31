@@ -3,37 +3,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/faq")({
-  head: () => {
-    const SITE_ORIGIN = "https://notice-respond.pages.dev";
-    const faqSchema = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: categories.flatMap((cat) =>
-        cat.questions.map((q) => ({
-          "@type": "Question",
-          name: q.q,
-          acceptedAnswer: { "@type": "Answer", text: q.a },
-        }))
-      ),
-    };
-    return {
-      meta: [
-        { title: "FAQ — Notice Respond" },
-        { name: "description", content: "Answers to common questions about Notice Respond: legal advice, data security, mailing options, response deadlines, and more." },
-        { name: "robots", content: "index, follow" },
-        { property: "og:title", content: "FAQ | Notice Respond" },
-        { property: "og:description", content: "Answers to common questions about Notice Respond." },
-        { property: "og:type", content: "website" },
-        { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
-        { property: "og:url", content: SITE_ORIGIN + "/faq" },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: "FAQ | Notice Respond" },
-        { name: "twitter:description", content: "Answers to common questions about Notice Respond." },
-      ],
-      links: [{ rel: "canonical", href: SITE_ORIGIN + "/faq" }],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(faqSchema) }],
-    };
-  },
+  head: () => ({ meta: [
+    { title: "FAQ — Notice Respond" },
+    { name: "description", content: "Answers to common questions about Notice Respond." },
+  ] }),
   component: FAQPage,
 });
 

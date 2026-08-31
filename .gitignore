@@ -1,25 +1,10 @@
-.agents/.env
 node_modules/
 dist/
 .output/
 .wrangler/
-.npm/
 *.tsbuildinfo
-__pycache__/
-.cache/
 .env
 .env.*
 !.env.example
-
-# Build artifacts for all verticals
-**/.next/
-**/.open-next/
-**/.wrangler/
-**/node_modules/
-**/conversations/6a8e5567c42cd4f53b2f30ad/mailmypdf-bundle/*/node_modules/
-**/conversations/6a8e5567c42cd4f53b2f30ad/mailmypdf-bundle/*/.next/
-
-# Conversation artifacts
-conversations/
-*.tar.gz
-.base44-conversation-workspace
+dist-deploy/
+dist/

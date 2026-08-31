@@ -1,7 +1,0 @@
-node_modules/
-.next/
-.open-next/
-.wrangler/
-*.log
-.env
-.env.local

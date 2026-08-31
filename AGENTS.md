@@ -31,7 +31,7 @@ that can be mailed with proof of delivery.
 ```
 src/
   domain/                   — Notice-specific domain models and intelligence
-    workflow-catalog.ts     — ★ Single source of truth for all workflows
+    workflow-catalog.ts     — ★ Single source of truth for all workflows (18 workflows)
     workflow-runtime.ts     — State machine: createWorkflowState, advanceStep, canAdvance
     workflow-adapter.ts     — Legacy adapter (workflows.ts re-exports from catalog)
     draft-validator.ts      — Independent validation pass on generated drafts
@@ -56,8 +56,15 @@ src/
     workflows/              — Interactive workflow pages
       irs-notice.tsx        — Generic IRS workflow (form-based, uses runtime)
       cp2000-response.tsx   — CP2000 workflow (auto-extraction + interactive review)
+    tax-notice.tsx         — Tax notice (LLM analysis + draft generation)
+    code-enforcement.tsx   — Code enforcement notice (LLM analysis + draft generation)
+    permit-correction.tsx  — Permit correction notice (LLM analysis + draft generation)
+    dmv-notice.tsx         — DMV notice (LLM analysis + draft generation)
+    ssa-notice.tsx         — SSA notice (LLM analysis + draft generation)
+    uscis-notice.tsx        — USCIS notice (LLM analysis + draft generation)
+    benefits-notice.tsx    — Benefits notice (LLM analysis + draft generation)
       cp2000-seo.tsx        — SEO landing page for CP2000
-tests/                      — Test files (237 tests, all passing)
+tests/                      — Test files (994 tests, 992 passing)
 agent/                      — Agent recovery state
 ```
 
