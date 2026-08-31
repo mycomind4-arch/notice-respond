@@ -32,6 +32,8 @@ import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
 
+import { useStartWorkflowGuard } from "@/lib/use-start-workflow-guard";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/cp2000-response")({
   head: () => createWorkflowHead("cp2000-response"),
   component: CP2000Response,
@@ -57,12 +59,16 @@ function CP2000Response() {
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
+  const { startWorkflow: guardedStart } = useStartWorkflowGuard();
+  const { authFetch } = useAuthFetch();
   const startWorkflow = useCallback(() => {
-    setWorkflowStarted(true);
-    setTimeout(() => {
-      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }, []);
+    guardedStart(() => {
+      setWorkflowStarted(true);
+      setTimeout(() => {
+        workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    });
+  }, [guardedStart]);
 
   const buildGoldStandardPipeline = useCallback((extraction: CP2000Extraction) => {
     let case_ = createCP2000Case(extraction);
@@ -545,7 +551,7 @@ function CP2000Response() {
                   )}
                   <button onClick={async () => {
                     if (llmAnalysis.llmAnalysis) {
-                      const res = await fetch('/api/workflows/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflowId: 'cp2000-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }) });
+                      const res = await authFetch('/api/workflows/draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflowId: 'cp2000-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }) });
                       if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
                     }
                   }} disabled={!llmAnalysis.llmAnalysis} className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30">✦ Generate with AI</button>

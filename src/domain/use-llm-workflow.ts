@@ -6,6 +6,10 @@
  * validation layer. The LLM output is the primary intelligence source; the
  * deterministic output validates and enriches it.
  *
+ * AUTH: This hook automatically includes the authenticated user's Bearer token
+ * in all API calls. If the user is not authenticated, the calls will receive
+ * a 401 from the server, and the error is surfaced to the UI.
+ *
  * Usage:
  *   const llm = useLLMWorkflow("cp2000-response");
  *   await llm.analyze(file, text);
@@ -13,6 +17,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useAuth } from "@/lib/auth";
 
 export interface LLMAnalysis {
   summary?: string;
@@ -36,6 +41,7 @@ export interface LLMWorkflowState {
 }
 
 export function useLLMWorkflow(workflowId: string) {
+  const { accessToken } = useAuth();
   const [state, setState] = useState<LLMWorkflowState>({
     loading: false,
     error: null,
@@ -47,17 +53,31 @@ export function useLLMWorkflow(workflowId: string) {
 
   const analyze = useCallback(async (file: File | null, text: string): Promise<LLMAnalysis | null> => {
     setState((s) => ({ ...s, loading: true, error: null }));
+
+    if (!accessToken) {
+      setState((s) => ({ ...s, loading: false, error: "Sign in to your MailMyPDF Account to use AI analysis." }));
+      return null;
+    }
+
     try {
+      const authHeaders: Record<string, string> = {
+        Authorization: `Bearer ${accessToken}`,
+      };
+
       let res: Response;
       if (file) {
         const formData = new FormData();
         formData.append("document", file);
         formData.append("workflowId", workflowId);
-        res = await fetch("/api/workflows/analyze", { method: "POST", body: formData });
+        res = await fetch("/api/workflows/analyze", {
+          method: "POST",
+          body: formData,
+          headers: authHeaders,
+        });
       } else {
         res = await fetch("/api/workflows/analyze", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...authHeaders, "Content-Type": "application/json" },
           body: JSON.stringify({ text, workflowId }),
         });
       }
@@ -78,7 +98,7 @@ export function useLLMWorkflow(workflowId: string) {
       setState((s) => ({ ...s, loading: false, error: message }));
       return null;
     }
-  }, [workflowId]);
+  }, [workflowId, accessToken]);
 
   const generateDraft = useCallback(async (
     analysis: LLMAnalysis,
@@ -87,10 +107,19 @@ export function useLLMWorkflow(workflowId: string) {
     documentText?: string,
   ): Promise<string | null> => {
     setState((s) => ({ ...s, loading: true, error: null }));
+
+    if (!accessToken) {
+      setState((s) => ({ ...s, loading: false, error: "Sign in to your MailMyPDF Account to generate a draft." }));
+      return null;
+    }
+
     try {
       const res = await fetch("/api/workflows/draft", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({
           workflowId,
           analysis,
@@ -117,7 +146,7 @@ export function useLLMWorkflow(workflowId: string) {
       setState((s) => ({ ...s, loading: false, error: message }));
       return null;
     }
-  }, [workflowId]);
+  }, [workflowId, accessToken]);
 
   const reset = useCallback(() => {
     setState({

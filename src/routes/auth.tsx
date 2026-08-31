@@ -3,6 +3,7 @@ import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/lib/auth";
+import { safeReturnTo } from "@/lib/use-start-workflow-guard";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "MailMyPDF Account — Notice Respond" }, { name: "robots", content: "noindex,nofollow" }] }),
@@ -20,6 +21,10 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Validate returnTo to prevent open-redirect attacks.
+  // Must be a relative path starting with "/" but not "//" or a URL scheme.
+  const validatedReturnTo = safeReturnTo(searchParams?.returnTo);
 
   if (loading) {
     return (
@@ -44,7 +49,7 @@ function AuthPage() {
             Continue to your Notice Respond cases or manage your account.
           </p>
           <div className="mt-8 flex justify-center gap-3">
-            <Link to={(searchParams?.returnTo || "/dashboard") as "/dashboard"} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">
+            <Link to={validatedReturnTo as "/dashboard"} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">
               My cases
             </Link>
             <Link to="/" className="rounded-full border border-input px-6 py-3 text-sm font-medium">
@@ -71,7 +76,7 @@ function AuthPage() {
     else if (result.needsConfirmation) setMessage("Check your email to confirm your MailMyPDF Account.");
     else if (mode === "reset") setMessage("Password reset instructions sent.");
     else if (mode === "magic") setMessage("Magic-link instructions sent.");
-    else navigate({ to: (searchParams?.returnTo || "/dashboard") as "/dashboard" });
+    else navigate({ to: validatedReturnTo as "/dashboard" });
   };
 
   const modeLabels: Record<Mode, string> = {

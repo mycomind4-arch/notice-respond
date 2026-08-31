@@ -4,6 +4,10 @@
  * Document analysis endpoint. Accepts a file upload (PDF, PNG, JPEG) or raw text,
  * sends it to the LLM for structured intelligence extraction.
  *
+ * AUTH: Requires an authenticated MailMyPDF Account session. The Bearer token
+ * is validated server-side via requireAuthenticatedUser. Anonymous requests
+ * receive a 401 with code AUTH_REQUIRED.
+ *
  * Request:
  *   multipart/form-data with:
  *     - document: File (PDF/PNG/JPEG) OR
@@ -13,12 +17,18 @@
  * Response:
  *   { ok: true, analysis: {...}, provider: "gemini", workflow: "..." }
  */
-import { createError, defineEventHandler, readBody, readMultipartFormData, type H3Event } from "h3";
+import { createError, defineEventHandler, getRequestHeaders, getRequestURL, readBody, readMultipartFormData, type H3Event } from "h3";
 import { callGeminiWithDocument, callLLM, getAvailableProviders } from "../../../src/platform/llm-service";
 import { getWorkflowPrompt } from "../../../src/domain/workflow-prompts";
+import { requireAuthenticatedUser, authErrorResponse } from "../../../src/lib/auth-guard";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
-const ACCEPTED_MIMES = new Set(["application/pdf", "image/png", "image/jpeg"]);
+
+function toAuthRequest(event: H3Event): Request {
+  return new Request(getRequestURL(event).toString(), {
+    headers: getRequestHeaders(event) as HeadersInit,
+  });
+}
 
 function toMimeType(fileType: string): string | null {
   if (fileType === "application/pdf") return "application/pdf";
@@ -30,6 +40,15 @@ function toMimeType(fileType: string): string | null {
 export default defineEventHandler(async (event: H3Event) => {
   if (event.method !== "POST") {
     throw createError({ statusCode: 405, statusMessage: "Method not allowed." });
+  }
+
+  // ── Server-side authentication gate ───────────────────────────
+  // Every workflow-processing endpoint must independently verify auth.
+  // This cannot be bypassed by calling the API directly.
+  try {
+    await requireAuthenticatedUser(toAuthRequest(event));
+  } catch (error) {
+    return authErrorResponse(error);
   }
 
   const providers = getAvailableProviders();

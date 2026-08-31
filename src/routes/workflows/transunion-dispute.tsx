@@ -22,12 +22,14 @@ import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/transunion-dispute")({
   head: () => createWorkflowHead("transunion-dispute"),
   component: TransUnionDispute,
 });
 
 function TransUnionDispute() {
+  const { authFetch } = useAuthFetch();
   const llmAnalysis = useCombinedAnalysis("transunion-dispute");
   const definition = getWorkflowById("transunion-dispute")!;
   const steps = definition.ux?.steps ?? [];
@@ -422,7 +424,7 @@ function TransUnionDispute() {
               <button
                 onClick={async () => {
                   if (llmAnalysis.llmAnalysis) {
-                    const res = await fetch('/api/workflows/draft', {
+                    const res = await authFetch('/api/workflows/draft', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ workflowId: 'transunion-dispute', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
                     });

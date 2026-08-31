@@ -21,12 +21,14 @@ import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/experian-dispute")({
   head: () => createWorkflowHead("experian-dispute"),
   component: ExperianDispute,
 });
 
 function ExperianDispute() {
+  const { authFetch } = useAuthFetch();
   const llmAnalysis = useCombinedAnalysis("experian-dispute");
   const definition = getWorkflowById("experian-dispute")!;
   const steps = definition.ux?.steps ?? [];
@@ -174,7 +176,7 @@ function ExperianDispute() {
           {state.phase === "draft" && (<div><div className="postmark w-fit">6 · Draft</div><h2 className="mt-4 font-serif text-3xl">Your dispute letter</h2><p className="mt-3 text-muted-foreground">Review every fact, name, account number, and statement. This is editable — change anything. We've validated the draft against the extracted information.</p>{state.draftValidation && !state.draftValidation.passed && (<div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4"><div className="font-mono text-xs uppercase tracking-widest text-amber-700">Validation findings ({state.draftValidation.errors} errors, {state.draftValidation.warnings} warnings)</div><ul className="mt-2 space-y-1">{state.draftValidation.findings.filter((f) => !f.passed).map((f, i) => (<li key={i} className={"text-sm " + (f.severity === "error" ? "text-destructive" : "text-amber-800")}>{f.severity === "error" ? "✗" : "⚠"} {f.detail}</li>))}</ul></div>)}{state.draftValidation?.passed && <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">✓ Draft passed all validation checks.</div>}<textarea className="input-field mt-6 min-h-72 font-mono text-sm leading-6" value={state.draft} onChange={(e) => update((s) => setDraft(s, e.target.value))} /><button
                 onClick={async () => {
                   if (llmAnalysis.llmAnalysis) {
-                    const res = await fetch('/api/workflows/draft', {
+                    const res = await authFetch('/api/workflows/draft', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ workflowId: 'experian-dispute', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
                     });

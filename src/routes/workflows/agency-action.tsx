@@ -10,6 +10,8 @@ import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
+import { useStartWorkflowGuard } from "@/lib/use-start-workflow-guard";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/agency-action")({
   head: () => ({ meta: [
     { rel: 'canonical', href: '/workflows/agency-action' },
@@ -51,12 +53,16 @@ function AgencyAction() {
   const [workflowStarted, setWorkflowStarted] = useState(false);
   const workflowRef = useRef<HTMLDivElement>(null);
 
+  const { startWorkflow: guardedStart } = useStartWorkflowGuard();
+  const { authFetch } = useAuthFetch();
   const startWorkflow = useCallback(() => {
-    setWorkflowStarted(true);
-    setTimeout(() => {
-      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }, []);
+    guardedStart(() => {
+      setWorkflowStarted(true);
+      setTimeout(() => {
+        workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    });
+  }, [guardedStart]);
 
   const llmAnalysis = useCombinedAnalysis("agency-action");
   const allChecked = checks.every(Boolean);
@@ -94,7 +100,7 @@ Sincerely,
     if (step === 4 && !draft) {
       try {
         if (llmAnalysis.llmAnalysis) {
-          const r = await fetch("/api/workflows/draft", {
+          const r = await authFetch("/api/workflows/draft", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ workflowId: "agency-action", analysis: llmAnalysis.llmAnalysis, userFacts: facts, userObjective: objective }),

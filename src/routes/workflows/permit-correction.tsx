@@ -10,6 +10,8 @@ import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
 
+import { useStartWorkflowGuard } from "@/lib/use-start-workflow-guard";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/permit-correction")({
   head: () => createWorkflowHead("permit-correction"),
   component: permitcorrection,
@@ -47,12 +49,16 @@ function permitcorrection() {
   const [workflowStarted, setWorkflowStarted] = useState(false);
   const workflowRef = useRef<HTMLDivElement>(null);
 
+  const { startWorkflow: guardedStart } = useStartWorkflowGuard();
+  const { authFetch } = useAuthFetch();
   const startWorkflow = useCallback(() => {
-    setWorkflowStarted(true);
-    setTimeout(() => {
-      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }, []);
+    guardedStart(() => {
+      setWorkflowStarted(true);
+      setTimeout(() => {
+        workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    });
+  }, [guardedStart]);
 
   const llmAnalysis = useCombinedAnalysis("permit-correction");
 
@@ -88,7 +94,7 @@ Sincerely,
     if (step === 4 && !draft) {
       try {
         if (llmAnalysis.llmAnalysis) {
-          const r = await fetch("/api/workflows/draft", {
+          const r = await authFetch("/api/workflows/draft", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ workflowId: "permit-correction", analysis: llmAnalysis.llmAnalysis, userFacts: facts, userObjective: objective }),
@@ -243,7 +249,7 @@ Sincerely,
           {llmAnalysis.llmAnalysis && (
             <button
               onClick={async () => {
-                const r = await fetch("/api/workflows/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workflowId: "permit-correction", analysis: llmAnalysis.llmAnalysis, userFacts: facts, userObjective: objective }) });
+                const r = await authFetch("/api/workflows/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workflowId: "permit-correction", analysis: llmAnalysis.llmAnalysis, userFacts: facts, userObjective: objective }) });
                 if (r.ok) { const d = await r.json(); setDraft(d.draft); }
               }}
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5"

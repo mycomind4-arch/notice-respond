@@ -18,6 +18,7 @@ import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
+import { useStartWorkflowGuard } from "@/lib/use-start-workflow-guard";
 export const Route = createFileRoute("/workflows/irs-notice")({
   head: () => createWorkflowHead("irs-notice"),
   component: IRSNotice,
@@ -95,12 +96,15 @@ function IRSNotice() {
   const workflowRef = useRef<HTMLDivElement>(null);
   const stepOk = canAdvance(state, definition);
 
+  const { startWorkflow: guardedStart } = useStartWorkflowGuard();
   const startWorkflow = useCallback(() => {
-    setWorkflowStarted(true);
-    setTimeout(() => {
-      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }, []);
+    guardedStart(() => {
+      setWorkflowStarted(true);
+      setTimeout(() => {
+        workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    });
+  }, [guardedStart]);
 
   if (state.phase === "submitted" || state.phase === "done") {
     return (

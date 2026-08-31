@@ -25,6 +25,8 @@ import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
 import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
 import { FAQSection } from "@/components/faq-section";
 import { getWorkflowSEO } from "@/domain/workflow-seo";
+import { useStartWorkflowGuard } from "@/lib/use-start-workflow-guard";
+import { useAuthFetch } from "@/lib/use-auth-fetch";
 export const Route = createFileRoute("/workflows/cp504-response")({
   head: () => createWorkflowHead("cp504-response"),
   component: CP504Response,
@@ -45,12 +47,16 @@ function CP504Response() {
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
+  const { startWorkflow: guardedStart } = useStartWorkflowGuard();
+  const { authFetch } = useAuthFetch();
   const startWorkflow = useCallback(() => {
-    setWorkflowStarted(true);
-    setTimeout(() => {
-      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  }, []);
+    guardedStart(() => {
+      setWorkflowStarted(true);
+      setTimeout(() => {
+        workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    });
+  }, [guardedStart]);
 
   // ── Document upload and extraction ──
   const handleFileUpload = useCallback(async (file: File) => {
@@ -532,7 +538,7 @@ function CP504Response() {
               <button
                 onClick={async () => {
                   if (llmAnalysis.llmAnalysis) {
-                    const res = await fetch('/api/workflows/draft', {
+                    const res = await authFetch('/api/workflows/draft', {
                       method: 'POST', headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ workflowId: 'cp504-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
                     });
