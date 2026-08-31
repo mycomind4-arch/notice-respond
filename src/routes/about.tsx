@@ -3,7 +3,22 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/about")({
-  head: () => ({ meta: [{ title: "About — Notice Respond" }, { name: "description", content: "Notice Respond helps people respond to government notices with confidence." }] }),
+  head: () => ({
+    meta: [
+      { title: "About Notice Respond — Document Response & Mailing Service" },
+      { name: "description", content: "Notice Respond helps people respond to government notices with confidence — organize, prepare, and mail responses with proof of delivery." },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "About Notice Respond" },
+      { property: "og:description", content: "A specialized MailMyPDF product for understanding, preparing, and documenting responses to official notices." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: "https://notice-respond.pages.dev/about" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "About Notice Respond" },
+      { name: "twitter:description", content: "Helping people respond to government notices with confidence." },
+    ],
+    links: [{ rel: "canonical", href: "https://notice-respond.pages.dev/about" }],
+  }),
   component: AboutPage,
 });
 

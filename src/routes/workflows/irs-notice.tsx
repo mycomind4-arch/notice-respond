@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
+import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS, WorkflowLandingPage } from "@/components/workflow-shell";
 import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 import {
   createWorkflowState, approveWorkflow, advanceStep, retreatStep, goToStep, canAdvance,
   setUserFacts, setUserObjective, setDraft, setReviewChecks, setMailing,
@@ -14,16 +15,7 @@ import { extractFromText } from "@/platform/notice-extraction";
 import { createFact } from "@/domain/fact";
 
 export const Route = createFileRoute("/workflows/irs-notice")({
-  head: () => {
-    const def = getWorkflowById("irs-notice");
-    return { meta: [
-      { title: def?.seo?.title ?? `${def?.title} — Notice Respond` },
-      { name: "description", content: def?.seo?.description ?? def?.description ?? "" },
-      { property: "og:title", content: def?.seo?.openGraph?.title ?? def?.title ?? "" },
-      { property: "og:description", content: def?.seo?.openGraph?.description ?? def?.description ?? "" },
-      { property: "og:type", content: "website" },
-    ] };
-  },
+  head: () => buildWorkflowRouteHead(getWorkflowById("irs-notice")!),
   component: IRSNotice,
 });
 
@@ -43,6 +35,7 @@ function IRSNotice() {
   const [formFields, setFormFields] = useState<IRSFormFields>({
     noticeNumber: "", noticeType: "", noticeDate: "", responseDeadline: "", taxYear: "",
   });
+  const [started, setStarted] = useState(false);
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
   // ── Draft generation ──
@@ -101,9 +94,11 @@ function IRSNotice() {
 
   const stepOk = canAdvance(state, definition);
 
+  if (!started && definition) return <WorkflowLandingPage definition={definition} onStart={() => setStarted(true)} />;
+
   if (state.phase === "submitted" || state.phase === "done") {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen command-center">
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-4 py-20 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-stamp/10">
@@ -122,7 +117,7 @@ function IRSNotice() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="mb-2">

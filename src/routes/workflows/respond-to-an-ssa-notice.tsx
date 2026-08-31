@@ -5,6 +5,6 @@ import { NOTICE_WORKFLOWS, WorkflowHead, WorkflowPage, WorkflowStructuredData } 
 
 const workflow = NOTICE_WORKFLOWS.find((item) => item.slug === "ssa-notice")!;
 export const Route = createFileRoute("/workflows/respond-to-an-ssa-notice")({
-  head: () => ({ ...WorkflowHead({ workflow }), links: [{ rel: "canonical", href: "/workflows/respond-to-an-ssa-notice" }], scripts: [WorkflowStructuredData({ workflow })] }),
+  head: () => ({ ...WorkflowHead({ workflow }), links: [{ rel: "canonical", href: "/workflows/respond-to-an-ssa-notice" }], scripts: [...WorkflowStructuredData({ workflow })] }),
   component: () => <><SiteHeader /><WorkflowPage workflow={workflow} /><SiteFooter /></>,
 });

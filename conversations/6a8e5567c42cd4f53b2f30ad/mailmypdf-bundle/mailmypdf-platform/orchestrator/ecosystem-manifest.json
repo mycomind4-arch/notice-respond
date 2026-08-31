@@ -1,0 +1,211 @@
+{
+  "ecosystem": {
+    "name": "MailMyPDF",
+    "description": "Physical mail infrastructure for digital-first legal, civic, and business workflows",
+    "githubOrg": "mycomind4-arch",
+    "version": "0.1.0",
+    "lastUpdated": "2026-08-15T02:11:00Z"
+  },
+  "repositories": [
+    {
+      "id": "mailmypdf",
+      "type": "core",
+      "status": "production",
+      "description": "Canonical fulfillment, payment, mailing, tracking, and proof-of-service infrastructure",
+      "github": "mycomind4-arch/mailmypdf",
+      "production": true,
+      "createdAt": "2026-07-15T10:35:10Z",
+      "lastUpdated": "2026-08-13T23:08:37Z",
+      "sizeKB": 1175,
+      "openIssues": 9,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "appeal-mail",
+      "type": "vertical",
+      "status": "live",
+      "description": "Appeal letter generation and mailing for administrative/legal appeals",
+      "github": "mycomind4-arch/appeal-mail",
+      "production": false,
+      "createdAt": "2026-08-13T06:03:01Z",
+      "lastUpdated": "2026-08-14T20:43:56Z",
+      "sizeKB": 58080,
+      "openIssues": 0,
+      "branches": 2,
+      "defaultBranch": "main",
+      "extraBranches": ["feat/appeal-intelligence-core"]
+    },
+    {
+      "id": "immigration-mail",
+      "type": "vertical",
+      "status": "live",
+      "description": "Immigration document processing and response mailing",
+      "github": "mycomind4-arch/immigration-mail",
+      "production": false,
+      "createdAt": "2026-08-12T23:38:59Z",
+      "lastUpdated": "2026-08-13T11:15:52Z",
+      "sizeKB": 65215,
+      "openIssues": 0,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "notice-respond",
+      "type": "vertical",
+      "status": "live",
+      "description": "Government notice response preparation and mailing",
+      "github": "mycomind4-arch/notice-respond",
+      "production": false,
+      "createdAt": "2026-08-13T05:47:57Z",
+      "lastUpdated": "2026-08-13T06:42:25Z",
+      "sizeKB": 58245,
+      "openIssues": 0,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "dispute-mail",
+      "type": "vertical",
+      "status": "live",
+      "description": "Dispute letter generation and mailing for consumer disputes",
+      "github": "mycomind4-arch/dispute-mail",
+      "production": false,
+      "createdAt": "2026-08-13T06:06:34Z",
+      "lastUpdated": "2026-08-13T06:22:42Z",
+      "sizeKB": 57952,
+      "openIssues": 0,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "mailmypdf-smallbusiness",
+      "type": "platform",
+      "status": "development",
+      "description": "Business correspondence workspace with CRM integration and workflow automation",
+      "github": "mycomind4-arch/mailmypdf-smallbusiness",
+      "production": false,
+      "createdAt": "2026-08-14T21:34:10Z",
+      "lastUpdated": "2026-08-14T22:58:42Z",
+      "sizeKB": 128,
+      "openIssues": 0,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "mailmypdf-platform",
+      "type": "platform",
+      "status": "development",
+      "description": "Reusable technology platform — primitives shared across the MailMyPDF product family",
+      "github": "mycomind4-arch/mailmypdf-platform",
+      "production": false,
+      "createdAt": "2026-08-15T01:39:52Z",
+      "lastUpdated": "2026-08-15T02:07:23Z",
+      "sizeKB": 0,
+      "openIssues": 0,
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "mailmypdf-backup",
+      "type": "backup",
+      "status": "archived",
+      "description": "Backup of MailMyPDF — pre proof-of-service API work",
+      "github": "mycomind4-arch/mailmypdf-backup",
+      "production": false,
+      "createdAt": "2026-08-01T00:00:00Z",
+      "branches": 1,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "debt-defense",
+      "type": "vertical",
+      "status": "planned",
+      "description": "Debt dispute and defense letter generation (not yet created)",
+      "github": null,
+      "production": false,
+      "branches": 0,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "benefits-appeal",
+      "type": "vertical",
+      "status": "planned",
+      "description": "Benefits appeal letter generation (not yet created)",
+      "github": null,
+      "production": false,
+      "branches": 0,
+      "defaultBranch": "main"
+    },
+    {
+      "id": "claims-mail",
+      "type": "vertical",
+      "status": "planned",
+      "description": "Insurance claims correspondence and mailing (not yet created)",
+      "github": null,
+      "production": false,
+      "branches": 0,
+      "defaultBranch": "main"
+    }
+  ],
+  "engineeringModes": [
+    {
+      "name": "OBSERVE",
+      "description": "Read-only. Audit ecosystem health, discover opportunities, report findings.",
+      "canModifyCode": false,
+      "canCommit": false,
+      "canDeploy": false,
+      "autoSelectsTasks": false
+    },
+    {
+      "name": "PLAN",
+      "description": "Create recommended work plans but do not modify any code.",
+      "canModifyCode": false,
+      "canCommit": false,
+      "canDeploy": false,
+      "autoSelectsTasks": false
+    },
+    {
+      "name": "BUILD",
+      "description": "Implement approved work. Requires explicit task selection.",
+      "canModifyCode": true,
+      "canCommit": true,
+      "canDeploy": false,
+      "autoSelectsTasks": false
+    },
+    {
+      "name": "AUTONOMOUS",
+      "description": "Select and implement work automatically. No approval required.",
+      "canModifyCode": true,
+      "canCommit": true,
+      "canDeploy": true,
+      "autoSelectsTasks": true
+    },
+    {
+      "name": "SAFE_AUTONOMOUS",
+      "description": "Auto-select and implement high-confidence work. Significant architectural changes require approval. This is the preferred default.",
+      "canModifyCode": true,
+      "canCommit": true,
+      "canDeploy": false,
+      "autoSelectsTasks": true,
+      "safeActions": [
+        "fix obvious bugs",
+        "update tests",
+        "improve documentation",
+        "extract clear reusable code",
+        "wire already-approved platform capabilities",
+        "fix CI",
+        "improve observability",
+        "update dependencies where safe"
+      ],
+      "requiresApproval": [
+        "architectural changes",
+        "new package creation",
+        "breaking API changes",
+        "deployment changes",
+        "dependency major version bumps"
+      ]
+    }
+  ],
+  "defaultMode": "SAFE_AUTONOMOUS"
+}

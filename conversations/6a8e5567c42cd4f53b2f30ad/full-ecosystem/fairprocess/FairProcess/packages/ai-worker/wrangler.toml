@@ -1,0 +1,19 @@
+name = "fairprocess-ai"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+account_id = "f8d66bff44fbc75a56a75b7a3fbb9a38"
+
+# Workers AI binding — available as env.AI in the worker
+[ai]
+binding = "AI"
+
+# R2 bucket for evidence file storage
+# Create the bucket in the Cloudflare dashboard first, then deploy with this binding
+[[r2_buckets]]
+binding = "EVIDENCE_BUCKET"
+bucket_name = "fairprocess-evidence"
+
+[vars]
+DEFAULT_MODEL = "@cf/meta/llama-3.2-3b-instruct"
+ADVANCED_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"

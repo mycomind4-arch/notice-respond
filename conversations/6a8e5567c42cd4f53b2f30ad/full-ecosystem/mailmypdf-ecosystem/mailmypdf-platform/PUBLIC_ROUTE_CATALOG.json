@@ -1,0 +1,37 @@
+{
+  "canonicalHost": "https://mailmypdf.ai",
+  "sitemap": "/sitemap.xml",
+  "prelaunchIndexing": "disabled-until-owner-launch",
+  "globalNavigation": [
+    {"label":"Products","href":"/ecosystem"},
+    {"label":"How It Works","href":"/how-it-works"},
+    {"label":"Resources","href":"/resources"},
+    {"label":"Pricing","href":"/pricing"}
+  ],
+  "accountNavigation": {
+    "anonymous": [{"label":"Sign In","href":"/auth"}],
+    "customer": [{"label":"Dashboard","href":"/dashboard"},{"label":"Mailing History","href":"/dashboard/orders"},{"label":"Account","href":"/account/profile"}],
+    "admin": [{"label":"Admin","href":"/admin"}]
+  },
+  "productFamilies": [
+    {"id":"core","label":"MailMyPDF","prefixes":["/send","/write"]},
+    {"id":"appeal","label":"Appeal Mail","prefixes":["/appeal"]},
+    {"id":"notice","label":"Notice Respond","prefixes":["/notice"]},
+    {"id":"immigration","label":"Immigration Mail","prefixes":["/immigration"]},
+    {"id":"dispute","label":"Dispute Mail","prefixes":["/dispute"]},
+    {"id":"business","label":"Small Business Mail","prefixes":["/business"]},
+    {"id":"records","label":"Records Request","prefixes":["/records"]},
+    {"id":"tenant","label":"Tenant Reply","prefixes":["/tenant"]},
+    {"id":"permit","label":"Permit Reply","prefixes":["/permit"]},
+    {"id":"benefits","label":"Benefits Appeal","prefixes":["/benefits"]},
+    {"id":"claim","label":"Claim Proof","prefixes":["/claim"]},
+    {"id":"govreply","label":"GovReply","prefixes":["/govreply"]}
+  ],
+  "rules": {
+    "mailingHistoryRequiresAuth": true,
+    "adminRequiresPlatformRole": true,
+    "legacyPagesDevUrlsAreNonCanonical": true,
+    "verticalsDoNotOwnGlobalNavigation": true,
+    "placeholderRoutesMustRemainStable": true
+  }
+}

@@ -1,0 +1,51 @@
+# Docker Compose for FairProcess — API server + PostgreSQL
+# Usage:
+#   OIDC_ISSUER=https://identity.example.com \
+#   OIDC_AUDIENCE=fairprocess-api \
+#   docker compose up -d
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: fairprocess
+      POSTGRES_PASSWORD: fairprocess
+      POSTGRES_DB: fairprocess
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fairprocess"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://fairprocess:fairprocess@db:5432/fairprocess"
+      PORT: "3001"
+      OIDC_ISSUER: "${OIDC_ISSUER:?OIDC_ISSUER is required}"
+      OIDC_AUDIENCE: "${OIDC_AUDIENCE:?OIDC_AUDIENCE is required}"
+      OIDC_JWKS_URI: "${OIDC_JWKS_URI:-}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:3000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  seed:
+    build: .
+    command: ["node", "packages/database/dist/migrate.js", "up"]
+    environment:
+      DATABASE_URL: "postgresql://fairprocess:fairprocess@db:5432/fairprocess"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  pgdata:

@@ -1,0 +1,46 @@
+{
+  "name": "fairprocess-web",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "cf:build": "npx @opennextjs/cloudflare build",
+    "cf:deploy": "npx @opennextjs/cloudflare deploy",
+    "cf:preview": "npx @opennextjs/cloudflare preview"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@tanstack/react-query": "^5.75.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "jsdom": "^29.1.1",
+    "lucide-react": "^0.507.0",
+    "maplibre-gl": "^6.1.0",
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-map-gl": "^8.0.0",
+    "reactflow": "^11.11.0",
+    "tailwindcss": "^4.0.0",
+    "vis-data": "^7.1.9",
+    "vis-timeline": "^7.7.3",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.0.0",
+    "@playwright/test": "^1.52.0",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "postcss": "^8.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.118.0"
+  }
+}

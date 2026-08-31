@@ -1,0 +1,1 @@
+{"id":"evidence.completeness","version":"1.0.0","status":"promoted","source":"mycomind4-arch/ParcelProof","provides":["weighted-completeness","required-evidence-gaps","provenance-completeness","evidence-state-decisions"],"decisionStates":["INSUFFICIENT EVIDENCE","REVIEW REQUIRED","EVIDENCE COMPLETE"]}

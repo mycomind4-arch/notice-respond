@@ -1,0 +1,24 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "fairprocess-web"
+account_id = "bacc6e3e5bd085ab2370c988b35fce3c"
+main = ".open-next/worker.js"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fairprocess"
+database_id = "0cdba437-b016-4dcd-91ae-08e14dd1662f"
+migrations_dir = "../../database/d1/migrations"
+
+[[r2_buckets]]
+binding = "EVIDENCE_BUCKET"
+bucket_name = "fairprocess-evidence"
+
+[vars]
+NEXT_PUBLIC_API_URL = ""
+MAILMYPDF_API_URL = "https://mycomind4-arch-mailmypdf.mailmypdf.workers.dev"

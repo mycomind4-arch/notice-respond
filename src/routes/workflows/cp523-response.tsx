@@ -1,5 +1,7 @@
+import { extractDocumentText } from "@/lib/pdf-extraction";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+  const llmAnalysis = useCombinedAnalysis("cp523-response");
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
@@ -22,42 +24,13 @@ import { classifyContent, validateTextInput, validateFilename, validateFileSize,
 // Import the domain pack (registers with factory)
 import "@/domain/cp523-packs";
 
+import { createWorkflowHead } from "@/domain/enhanced-head";
+import { useCombinedAnalysis } from "@/domain/use-combined-analysis";
+import { LLMAnalysisPanel } from "@/components/llm-analysis-panel";
+import { FAQSection } from "@/components/faq-section";
+import { getWorkflowSEO } from "@/domain/workflow-seo";
 export const Route = createFileRoute("/workflows/cp523-response")({
-  head: () => {
-    const def = getWorkflowById("cp523-response")!;
-    return {
-      meta: [
-        { title: def.seo?.title ?? def.title + " — Notice Respond" },
-        { name: "description", content: def.seo?.description ?? def.description },
-        { property: "og:title", content: def.seo?.openGraph?.title ?? def.title },
-        { property: "og:description", content: def.seo?.openGraph?.description ?? def.description },
-        { property: "og:type", content: "website" },
-      ],
-      links: [
-        { rel: "canonical", href: def.seo?.canonical ?? def.searchIntent.canonicalPath },
-      ],
-      scripts: [
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: (def.seo?.faq ?? []).map((f) => ({
-            "@type": "Question",
-            name: f.question,
-            acceptedAnswer: { "@type": "Answer", text: f.answer },
-          })),
-        }) },
-        { type: "application/ld+json", children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebApplication",
-          name: def.title,
-          description: def.description,
-          applicationCategory: "LegalDocumentService",
-          operatingSystem: "Web",
-          offers: { "@type": "Offer", priceFrom: "4.99", priceCurrency: "USD" },
-        }) },
-      ],
-    };
-  },
+  head: () => createWorkflowHead("cp523-response"),
   component: CP523Response,
 });
 
@@ -70,6 +43,15 @@ function CP523Response() {
   const [securityWarning, setSecurityWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mailingFunnelState, setMailingFunnelState] = useState<MailingFunnelState | null>(null);
+  const [workflowStarted, setWorkflowStarted] = useState(false);
+  const workflowRef = useRef<HTMLDivElement>(null);
+
+  const startWorkflow = useCallback(() => {
+    setWorkflowStarted(true);
+    setTimeout(() => {
+      workflowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
 
   const update = (fn: (s: WorkflowState) => WorkflowState) => setState(fn);
 
@@ -95,24 +77,10 @@ function CP523Response() {
         return;
       }
 
-      let text = "";
-      if (file.type === "application/pdf") {
-        try {
-          const buffer = await file.arrayBuffer();
-          const decoder = new TextDecoder("latin1");
-          const raw = decoder.decode(buffer);
-          const textMatches = raw.match(/\(([^)]+)\)/g);
-          if (textMatches) {
-            text = textMatches.map(m => m.slice(1, -1)).join(" ");
-          }
-        } catch { text = ""; }
-      } else if (file.type.startsWith("image/")) {
-        text = "";
-      } else {
-        text = await file.text();
-      }
-
-      const upload: DocumentUpload = {
+      const extractionResult = await extractDocumentText(file);
+        let text = extractionResult.text;
+        const isImageOnly = extractionResult.isImageOnly;
+        const upload: DocumentUpload = {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
@@ -189,7 +157,10 @@ function CP523Response() {
       rawText: sanitizedText,
       extractionConfidence: extraction.classificationConfidence,
     }));
-  }, [update]);
+
+    // LLM-powered analysis (alongside deterministic)
+    llmAnalysis.analyzeWithLLM(file, text);
+    }, [update, llmAnalysis]);
 
   // ── Draft generation ──
   const handleGenerateDraft = useCallback(() => {
@@ -239,25 +210,94 @@ function CP523Response() {
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-paper">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <div className="mb-2">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-stamp transition-colors">← Notice Respond</Link>
-        </div>
-
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">{definition.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{definition.description}</p>
-        </div>
-
-        {securityWarning && (
-          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
-            {securityWarning}
+      <main>
+        {/* ── HERO ── */}
+        <section className="relative overflow-hidden border-b border-rule/60">
+          <div className="absolute inset-0 bg-gradient-to-b from-paper-deep/40 via-paper to-paper" aria-hidden="true" />
+          <div className="relative mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20 md:py-28">
+            <nav className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-label="Breadcrumb">
+              <Link to="/" className="hover:text-stamp transition-colors">Notice Respond</Link>
+              <span className="text-rule">/</span>
+              <Link to="/workflows" className="hover:text-stamp transition-colors">Workflows</Link>
+              <span className="text-rule">/</span>
+              <span className="text-ink-soft">CP523 Response</span>
+            </nav>
+            <div className="postmark w-fit mt-6">IRS Notice · CP523</div>
+            <h1 className="mt-6 font-serif text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+              Respond to your <span className="italic text-stamp">CP523 notice</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+              The IRS is proposing to terminate your installment agreement because you missed a payment. You have the right to appeal before the agreement is cancelled. Upload the notice, verify the default details, and prepare a response to request reinstatement.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={startWorkflow}
+                className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5"
+              >
+                Start your response
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </button>
+              <Link to="/workflows" className="inline-flex items-center gap-2 rounded-full border border-rule bg-card px-6 py-3.5 text-sm font-medium transition-colors hover:border-ink/30">
+                Browse other notices
+              </Link>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-rule/60 bg-rule/60 sm:grid-cols-4">
+              <KeyFact label="Response window" value="30 days" />
+              <KeyFact label="Notice type" value="Default Warning" />
+              <KeyFact label="Your right" value="Appeal (CAP)" />
+              <KeyFact label="Cost to prepare" value="Free" />
+            </div>
           </div>
-        )}
+        </section>
 
-        <Stepper steps={steps} current={state.phase} />
+        {/* ── WHAT IS CP523 ── */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Understanding the notice</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">What is a CP523 notice?</h2>
+            <div className="mt-6 space-y-4 text-base leading-7 text-ink-soft">
+              <p>A CP523 is an <strong className="text-ink">Installment Agreement Default Notice</strong>. The IRS sends it when you've missed a payment on your installment agreement (Form 9465). The notice proposes to terminate the agreement — and with it, the protections that kept collection actions at bay.</p>
+              <p>You have the right to <strong className="text-ink">appeal the proposed termination</strong> by requesting a Collection Appeals Program (CAP) hearing. This is faster than a CDP hearing and can result in the agreement being reinstated, modified, or continued. You must request the appeal within 30 days of the notice.</p>
+              <p>If the agreement is terminated, the IRS can resume full collection activity — levies, liens, and wage garnishment. Any unpaid balance becomes immediately due. Responding promptly is critical: if you can make the missed payment, the IRS will often reinstate the agreement without a formal appeal.</p>
+            </div>
+            <div className="mt-8 rounded-lg border border-rule/60 bg-paper-deep/30 p-5">
+              <div className="font-mono text-xs uppercase tracking-widest text-stamp">What a CP523 includes</div>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {["Notice number and date","Installment agreement details","Missed payment information","Total remaining balance","30-day appeal deadline","Right to CAP appeal","IRS response address","Reinstatement instructions"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-ink-soft"><span className="text-stamp">▸</span>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS ── */}
+        <section className="border-b border-rule/60 bg-paper-deep/20">
+          <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">The process</div>
+            <h2 className="mt-3 font-serif text-3xl leading-tight">How Notice Respond works</h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-3">
+              <ProcessStep number="01" title="Upload & analyze" text="Upload the CP523 PDF or paste the text. The system extracts the notice details, missed payment info, and remaining balance — and identifies your right to appeal." />
+              <ProcessStep number="02" title="Review & draft" text="See the extracted facts. Add your explanation for the missed payment and any supporting evidence. Generate a response requesting reinstatement or a CAP appeal." />
+              <ProcessStep number="03" title="Mail with proof" text="Approve the exact draft. Certified mail provides proof of timely appeal — essential for preserving your rights before the 30-day deadline expires." />
+            </div>
+          </div>
+        </section>
+
+        {/* ── WORKFLOW ── */}
+        <section ref={workflowRef} className="border-b border-rule/60" style={{ scrollMarginTop: "80px" }}>
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            {workflowStarted ? (<>
+              {securityWarning && (
+                <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
+                  {securityWarning}
+                </div>
+              )}
+              <Stepper steps={steps} current={state.phase} />
 
         {/* Document upload */}
         {state.phase === "document" && (
@@ -352,7 +392,22 @@ function CP523Response() {
             {state.draft ? (
               <pre className="whitespace-pre-wrap rounded-lg border bg-card p-4 text-sm">{state.draft}</pre>
             ) : (
+              <>
+              <button
+                onClick={async () => {
+                  if (llmAnalysis.llmAnalysis) {
+                    const res = await fetch('/api/workflows/draft', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ workflowId: 'cp523-response', analysis: llmAnalysis.llmAnalysis, userFacts: state.userFacts, userObjective: state.userObjective, documentText: state.upload?.rawText }),
+                    });
+                    if (res.ok) { const data = await res.json(); update((s) => setDraft(s, data.draft)); if (data.validation) update((s) => setDraftValidation(s, data.validation)); }
+                  }
+                }}
+                disabled={!llmAnalysis.llmAnalysis}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-stamp transition-transform hover:-translate-y-0.5 disabled:opacity-30"
+              >✦ Generate with AI</button>
               <button onClick={handleGenerateDraft} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground">Generate Draft</button>
+              </>
             )}
           </div>
         )}
@@ -400,18 +455,113 @@ function CP523Response() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="mt-8 flex justify-between">
-          <button onClick={back} className="rounded-lg border px-4 py-2 text-sm">Back</button>
-          <button onClick={next} disabled={!canContinue} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">
-            {state.phase === "done" ? "Finish" : "Continue"}
-          </button>
-        </div>
+              {/* Navigation */}
+              <div className="mt-8 flex justify-between">
+                <button onClick={back} className="rounded-lg border px-4 py-2 text-sm">Back</button>
+                <button onClick={next} disabled={!canContinue} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">
+                  {state.phase === "done" ? "Finish" : "Continue"}
+                </button>
+              </div>
 
-        {/* Disclaimer */}
-        <p className="mt-8 text-xs text-muted-foreground">{definition.ux?.disclaimerText ?? definition.disclaimer}</p>
+              {/* Disclaimer */}
+              <p className="mt-8 text-xs text-muted-foreground">{definition.ux?.disclaimerText ?? definition.disclaimer}</p>
+            </> ) : (
+              <div className="text-center py-16">
+                <button onClick={startWorkflow} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-sm font-medium text-paper shadow-card transition-transform hover:-translate-y-0.5">
+                  Start your response
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        {definition.seo?.faq && (
+          <section className="border-b border-rule/60">
+            <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+              <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Questions & answers</div>
+              <h2 className="mt-3 font-serif text-2xl">Frequently asked questions</h2>
+              <div className="mt-6 space-y-4">
+                {definition.seo.faq.map((item, i) => (
+                  <div key={i} className="rounded-xl border border-rule bg-card p-5">
+                    <h3 className="font-medium text-foreground">{item.question}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{item.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── TRUST BAND ── */}
+        <section className="border-y border-rule/60 bg-ink text-paper">
+          <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-16">
+            <div className="inline-flex items-center gap-0.4rem border border-stamp/40 px-2.5 py-1 font-mono text-[0.68rem] uppercase tracking-[0.15em] text-stamp rounded-full">Trust architecture</div>
+            <h2 className="mt-5 font-serif text-3xl text-paper">You stay in control of every step.</h2>
+            <p className="mt-4 text-base leading-7 text-paper/70">The notice is the source material. Your facts remain under your control. AI assists — it does not decide. You review the response before approval. Approval applies to the exact draft. Payment is distinct from authorization. Mailing creates a documented record.</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <TrustItem title="Your data, your control" text="Documents are processed for extraction. Nothing is shared with third parties." />
+              <TrustItem title="Review before send" text="You approve the exact letter. Nothing is mailed without your explicit confirmation." />
+              <TrustItem title="Proof of delivery" text="Certified mail provides tracking and delivery confirmation — your proof of timely appeal." />
+            </div>
+          </div>
+        </section>
+
+        {/* ── RELATED NOTICES ── */}
+        <section className="border-b border-rule/60">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+            <div className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Related workflows</div>
+            <h2 className="mt-3 font-serif text-2xl">Other IRS notice types</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <RelatedCard href="/workflows/cp14-response" title="CP14 — Balance Due" desc="First collection notice for unpaid taxes" />
+              <RelatedCard href="/workflows/cp2000-response" title="CP2000 — Proposed Adjustment" desc="Income reporting discrepancy notice" />
+              <RelatedCard href="/workflows/cp504-response" title="CP504 — Intent to Levy" desc="Urgent notice before enforcement action" />
+            </div>
+            <div className="mt-6"><Link to="/workflows" className="text-sm text-stamp hover:text-ink transition-colors">Browse all notice types →</Link></div>
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function KeyFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-paper p-3 text-center">
+      <div className="font-serif text-lg text-ink">{value}</div>
+      <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ProcessStep({ number, title, text }: { number: string; title: string; text: string }) {
+  return (
+    <div>
+      <div className="font-mono text-xs font-semibold text-stamp">{number}</div>
+      <h3 className="mt-2 font-serif text-xl text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+    </div>
+  );
+}
+
+function TrustItem({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-paper/15 p-4">
+      <h3 className="font-medium text-paper">{title}</h3>
+      <p className="mt-1.5 text-sm text-paper/60">{text}</p>
+    </div>
+  );
+}
+
+function RelatedCard({ href, title, desc }: { href: string; title: string; desc: string }) {
+  return (
+    <Link to={href} className="block rounded-lg border border-rule/60 bg-card p-4 transition-colors hover:border-stamp/40">
+      <div className="font-medium text-foreground">{title}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{desc}</div>
+    </Link>
   );
 }

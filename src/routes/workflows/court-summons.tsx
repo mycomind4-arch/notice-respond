@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { workflows } from "../../domain/workflows";
-import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef } from "@/components/workflow-shell";
+import { WorkflowShell, Success, UploadZone, ReviewChecks, MailOptions, RecipientForm, CheckoutStep, type StepDef, WorkflowLandingPage } from "@/components/workflow-shell";
+import { getWorkflowById } from "@/domain/workflow-catalog";
+import { buildWorkflowRouteHead } from "@/components/seo";
 
 export const Route = createFileRoute("/workflows/court-summons")({
-  head: () => ({ meta: [
-    { title: "Respond to a Court Summons — Notice Respond" },
-    { name: "description", content: "Prepare a written response to a court summons or complaint and file it by mail with proof of delivery." },
-  ] }),
+  head: () => buildWorkflowRouteHead(getWorkflowById("court-summons")!),
   component: CourtSummons,
 });
 
@@ -26,6 +25,8 @@ const REVIEW_CHECKS = [
 ];
 
 function CourtSummons() {
+  const catDef = getWorkflowById("court-summons");
+  const [started, setStarted] = useState(false);
   const definition = workflows["court-summons"];
   const [step, setStep] = useState(0);
   const [courtName, setCourtName] = useState("");
@@ -75,6 +76,7 @@ Sincerely,
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
+  if (!started && catDef) return <WorkflowLandingPage definition={catDef} onStart={() => setStarted(true)} />;
   if (done) return <Success title="Your court response has been submitted" href="/workflows/court-summons" />;
 
   return (

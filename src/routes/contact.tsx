@@ -4,7 +4,22 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({ meta: [{ title: "Contact — Notice Respond" }, { name: "description", content: "Get in touch with the Notice Respond team." }] }),
+  head: () => ({
+    meta: [
+      { title: "Contact Notice Respond — Support & Inquiries" },
+      { name: "description", content: "Get in touch with the Notice Respond team for support, questions, or feedback." },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Contact Notice Respond" },
+      { property: "og:description", content: "Get in touch with the Notice Respond team." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: "https://notice-respond.pages.dev/contact" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Contact Notice Respond" },
+      { name: "twitter:description", content: "Get in touch with the Notice Respond team." },
+    ],
+    links: [{ rel: "canonical", href: "https://notice-respond.pages.dev/contact" }],
+  }),
   component: ContactPage,
 });
 

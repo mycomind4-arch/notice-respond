@@ -39,9 +39,19 @@ import { executeSave, type SaveStatus, initialSaveStatus } from "@/platform/save
 export const Route = createFileRoute("/workflows/analyze")({
   head: () => ({
     meta: [
-      { title: "Analyze a Notice — Notice Respond" },
-      { name: "description", content: "Upload or paste a notice. Get instant analysis with voice narration, deadline tracking, and response drafting." },
+      { title: "Analyze a Notice — IRS, Court, Agency | Notice Respond" },
+      { name: "description", content: "Upload or paste a government notice. Get instant analysis with deadline tracking, response strategy, and document preparation." },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: "Analyze a Notice | Notice Respond" },
+      { property: "og:description", content: "Upload or paste a notice. Get instant analysis with voice narration, deadline tracking, and response drafting." },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Notice Respond · MailMyPDF" },
+      { property: "og:url", content: "https://notice-respond.pages.dev/workflows/analyze" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Analyze a Notice | Notice Respond" },
+      { name: "twitter:description", content: "Upload or paste a notice. Get instant analysis with deadline tracking and response drafting." },
     ],
+    links: [{ rel: "canonical", href: "https://notice-respond.pages.dev/workflows/analyze" }],
   }),
   component: AnalyzeNotice,
 });
@@ -458,7 +468,7 @@ function AnalyzeNotice() {
   const missingSummary = useMemo(() => missingInfoSummary(missingItems), [missingItems]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen command-center">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-6 py-10" role="main">
         {/* Header */}

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "permit-signal"
+version = "0.1.0"
+description = "Evidence-linked municipal permit and public opportunity intelligence"
+requires-python = ">=3.11"
+dependencies = [
+  "aiosqlite>=0.20,<1",
+  "beautifulsoup4>=4.12,<5",
+  "fastapi>=0.115,<1",
+  "httpx>=0.28,<1",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "pypdf>=5,<7",
+  "tenacity>=9,<10",
+  "uvicorn[standard]>=0.34,<1"
+]
+
+[project.optional-dependencies]
+engines = [
+  "crawl4ai @ git+https://github.com/unclecode/crawl4ai.git@7e801521428ee12509994d39151006f64055ebe3",
+  "docling @ git+https://github.com/docling-project/docling.git@e548307e8d32bb197c787b1f2998a87bafbc743b",
+  "paddleocr @ git+https://github.com/PaddlePaddle/PaddleOCR.git@211989f046cc1878460f9e65574690c00a127a1a"
+]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+  "ruff>=0.9,<1"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
