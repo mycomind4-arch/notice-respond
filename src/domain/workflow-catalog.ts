@@ -1,3 +1,4 @@
+import { PRICES } from "@mailmypdf/pricing";
 import type { MasterWorkflowDefinition, CapabilityPack, UXMetadata, SEOMetadata } from "./workflow-definition";
 
 const sharedCapabilities: CapabilityPack[] = [
