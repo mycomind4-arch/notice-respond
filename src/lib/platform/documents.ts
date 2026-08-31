@@ -3,35 +3,50 @@
  *
  * Wraps document content so that LLM providers treat it as data,
  * not instructions. Strips common prompt-injection patterns.
+ *
+ * Self-contained — does not depend on repo-specific security modules.
  */
-
-import { classifyContent, validateTextInput } from "@/domain/security";
 
 export interface SanitizedText {
   text: string;
   warnings: string[];
 }
 
+// Common prompt injection patterns to detect
+const INJECTION_PATTERNS = [
+  /ignore\s+(the\s+)?(above|previous|prior)\s+instructions/i,
+  /you\s+are\s+(now|actually)\s+/i,
+  /disregard\s+(all|previous|the)\s+/i,
+  /forget\s+(everything|all|your)\s+/i,
+  /new\s+instructions?:/i,
+  /system\s+prompt:/i,
+  /\<\/?system\>/i,
+  /\<\/?instruction/i,
+  /act\s+as\s+(if\s+)?you\s+(are|were)/i,
+  /pretend\s+you\s+(are|are\s+a)/i,
+];
+
 export function sanitizeExtractedText(rawText: string): SanitizedText {
   if (!rawText) return { text: "", warnings: [] };
 
-  // Check for prompt injection patterns
-  const classification = classifyContent(rawText);
   const warnings: string[] = [];
+  let detected = 0;
 
-  if (classification.detectedInjectionPatterns?.length > 0) {
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(rawText)) detected++;
+  }
+
+  if (detected > 0) {
     warnings.push(
-      `${classification.detectedInjectionPatterns.length} potential prompt injection pattern(s) detected. Content will be treated as DATA.`,
+      `${detected} potential prompt injection pattern(s) detected. Content will be treated as DATA.`,
     );
   }
 
-  // Sanitize and validate
-  const validation = validateTextInput(rawText);
+  // Basic sanitization: trim, limit length, remove null bytes
+  let text = rawText.replace(/\0/g, "").trim();
+  if (text.length > 50000) text = text.slice(0, 50000);
 
-  return {
-    text: validation.sanitized || rawText,
-    warnings,
-  };
+  return { text, warnings };
 }
 
 export function wrapDocumentForAI(text: string, label = "uploaded document"): string {

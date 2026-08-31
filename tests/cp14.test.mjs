@@ -4,7 +4,7 @@ import { extractCP14, generateCP14Draft } from "../src/domain/cp14.ts";
 import { classifyNoticeType } from "../src/domain/notice-type.ts";
 import { validateDraft } from "../src/domain/draft-validator.ts";
 import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
-import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks, evaluateQualityGate } from "../src/domain/workflow-runtime.ts";
+import { createWorkflowState, advanceStep, canAdvance, setExtraction, setUpload, setUserFacts, setUserObjective, setDraft, setReviewChecks, approveWorkflow, evaluateQualityGate } from "../src/domain/workflow-runtime.ts";
 import { auditCP14Authority, checkDocumentRecognition, checkDeadlineVerification, checkFactGrounding, checkRequirementCoverage, checkEvidenceGrounding, checkDraftValidation, checkSubmissionReadiness, checkProofReady } from "../src/domain/cp14-gates.ts";
 import { detectContradictions } from "../src/domain/contradiction.ts";
 import { detectMissingInfo } from "../src/domain/missing-info.ts";
@@ -429,6 +429,17 @@ test("CP14 workflow state: advance through steps", () => {
   state = advanceStep(state, def);
   assert.equal(state.phase, "document");
   
+  // Document phase requires extraction to advance
+  state = setExtraction(state, {
+    noticeType: "irs_cp14",
+    classificationConfidence: 0.85,
+    facts: { noticeNumber: "CP14", balanceDue: 1000 },
+    deadlines: [],
+    agency: "IRS",
+    referenceNumber: "CP14",
+    rawText: "test",
+    extractionConfidence: 0.85,
+  });
   state = advanceStep(state, def);
   assert.equal(state.phase, "extraction");
 });
@@ -438,6 +449,17 @@ test("CP14 workflow state: can advance requires facts at facts step", () => {
   let state = createWorkflowState(def);
   
   state = advanceStep(state, def); // document
+  // Document phase requires extraction to advance
+  state = setExtraction(state, {
+    noticeType: "irs_cp14",
+    classificationConfidence: 0.85,
+    facts: { noticeNumber: "CP14", balanceDue: 1000 },
+    deadlines: [],
+    agency: "IRS",
+    referenceNumber: "CP14",
+    rawText: "test",
+    extractionConfidence: 0.85,
+  });
   state = advanceStep(state, def); // extraction
   state = advanceStep(state, def); // facts
   
@@ -453,6 +475,16 @@ test("CP14 workflow state: can advance requires objective at objective step", ()
   let state = createWorkflowState(def);
   
   state = advanceStep(state, def); // intro → document
+  state = setExtraction(state, {
+    noticeType: "irs_cp14",
+    classificationConfidence: 0.85,
+    facts: { noticeNumber: "CP14", balanceDue: 1000 },
+    deadlines: [],
+    agency: "IRS",
+    referenceNumber: "CP14",
+    rawText: "test",
+    extractionConfidence: 0.85,
+  });
   state = advanceStep(state, def); // document → extraction
   state = advanceStep(state, def); // extraction → facts
   state = setUserFacts(state, "Facts here");
@@ -472,12 +504,16 @@ test("CP14 workflow state: review checks must all be checked", () => {
   state = { ...state, step: 6, phase: "review" };
   state = setUserFacts(state, "Facts");
   state = setUserObjective(state, "Objective");
+  state = { ...state, draftValidation: { findings: [], passed: true, errors: 0, warnings: 0 } };
   
   assert.equal(canAdvance(state, def), false, "Cannot advance with unchecked review");
   
   state = setReviewChecks(state, state.reviewChecks.map(() => true));
-  assert.equal(state.approved, true, "Should be approved when all checks are true");
-  assert.equal(canAdvance(state, def), true, "Can advance with all checks true");
+  assert.equal(state.approved, false, "Review checks alone do not approve — explicit approval required");
+  assert.equal(canAdvance(state, def), false, "Cannot advance without explicit approval even with all checks true");
+  state = approveWorkflow(state);
+  assert.equal(state.approved, true, "Should be approved after explicit approveWorkflow call");
+  assert.equal(canAdvance(state, def), true, "Can advance with all checks true and explicit approval");
 });
 
 test("CP14 workflow state: set extraction populates facts", () => {

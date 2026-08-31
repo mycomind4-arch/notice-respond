@@ -6,7 +6,7 @@ import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from 
 import { MailingFunnel, type MailingFunnelState } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
 import {
-  createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
+  createWorkflowState, approveWorkflow, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
   setDraft, setDraftValidation, setReviewChecks, setMailing,
   type WorkflowState, type DocumentUpload,
@@ -223,7 +223,12 @@ function CP523Response() {
       handleGenerateDraft();
     }
     if (state.phase === "checkout" || state.phase === "submitted") return;
-    update((s) => advanceStep(s, definition));
+    update((s) => {
+        // When leaving the review phase, explicitly approve the workflow
+        // This satisfies the runtime's approval gate before consequential steps
+        const approved = state.phase === "review" ? approveWorkflow(s) : s;
+        return advanceStep(approved, definition);
+      });
   };
 
   const back = () => update((s) => retreatStep(s, definition));

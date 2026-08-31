@@ -6,7 +6,7 @@ import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from 
 import { MailingFunnel } from "@/components/mailing-funnel";
 import { getWorkflowById } from "@/domain/workflow-catalog";
 import {
-  createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
+  createWorkflowState, approveWorkflow, advanceStep, retreatStep, goToStep, canAdvance,
   setUpload, setExtraction, setProcessing, setUserFacts, setUserObjective,
   setDraft, setDraftValidation, setReviewChecks, setMailing,
   type WorkflowState, type DocumentUpload,
@@ -123,7 +123,12 @@ function EquifaxDispute() {
   }, [extraction, state.userFacts, state.userObjective, state.extractedFacts, definition, update]);
 
   const canContinue = canAdvance(state, definition);
-  const next = () => { if (state.phase === "draft" && !state.draft) handleGenerateDraft(); if (state.phase === "checkout" || state.phase === "submitted") return; update((s) => advanceStep(s, definition)); };
+  const next = () => { if (state.phase === "draft" && !state.draft) handleGenerateDraft(); if (state.phase === "checkout" || state.phase === "submitted") return; update((s) => {
+        // When leaving the review phase, explicitly approve the workflow
+        // This satisfies the runtime's approval gate before consequential steps
+        const approved = state.phase === "review" ? approveWorkflow(s) : s;
+        return advanceStep(approved, definition);
+      }); };
   const back = () => update((s) => retreatStep(s, definition));
   const strategies = state.extraction ? recommendStrategies(state.extraction.noticeType) : [];
   const defaultRecipient = { name: "", org: bureauCfg.mailingAddress.org, address1: bureauCfg.mailingAddress.line1, address2: bureauCfg.mailingAddress.line2, city: bureauCfg.mailingAddress.city, state: bureauCfg.mailingAddress.state, zip: bureauCfg.mailingAddress.zip };

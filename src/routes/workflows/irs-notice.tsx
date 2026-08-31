@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Stepper, MailOptions, RecipientForm, ReviewChecks, MAIL_OPTIONS } from "@/components/workflow-shell";
 import { getWorkflowById } from "@/domain/workflow-catalog";
 import {
-  createWorkflowState, advanceStep, retreatStep, goToStep, canAdvance,
+  createWorkflowState, approveWorkflow, advanceStep, retreatStep, goToStep, canAdvance,
   setUserFacts, setUserObjective, setDraft, setReviewChecks, setMailing,
   type WorkflowState,
 } from "@/domain/workflow-runtime";
@@ -90,7 +90,12 @@ function IRSNotice() {
     if (state.phase === "draft" && !state.draft) {
       generateDraft();
     }
-    update((s) => advanceStep(s, definition));
+    update((s) => {
+        // When leaving the review phase, explicitly approve the workflow
+        // This satisfies the runtime's approval gate before consequential steps
+        const approved = state.phase === "review" ? approveWorkflow(s) : s;
+        return advanceStep(approved, definition);
+      });
   };
   const back = () => update((s) => retreatStep(s, definition));
 

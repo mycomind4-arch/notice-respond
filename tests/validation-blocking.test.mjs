@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createWorkflowState, canAdvance, setDraft, setDraftValidation, advanceStep } from "../src/domain/workflow-runtime.ts";
+import { createWorkflowState, canAdvance, setDraft, setDraftValidation, advanceStep, approveWorkflow, setReviewChecks } from "../src/domain/workflow-runtime.ts";
 import { getWorkflowById } from "../src/domain/workflow-catalog.ts";
 
 const def = getWorkflowById("cp2000-response");
@@ -39,12 +39,12 @@ test("P0-1: canAdvance returns true for draft phase when validation passes", () 
   assert.equal(canAdvance(state, def), true, "Should advance when validation passes");
 });
 
-test("P0-1: canAdvance returns true for draft phase when validation is null (not yet run)", () => {
+test("P0-1: canAdvance returns false for draft phase when validation is null (not yet run)", () => {
   const state = stateAtPhase("draft", {
     draft: "",
     draftValidation: null,
   });
-  assert.equal(canAdvance(state, def), true, "Should allow advance when validation hasn't run yet");
+  assert.equal(canAdvance(state, def), false, "Should not advance when validation hasn't run yet");
 });
 
 test("P0-1: canAdvance returns false for review phase when validation has errors", () => {
@@ -57,12 +57,13 @@ test("P0-1: canAdvance returns false for review phase when validation has errors
 });
 
 test("P0-1: canAdvance returns true for review phase when validation passes and all checks done", () => {
-  const state = stateAtPhase("review", {
+  let state = stateAtPhase("review", {
     draft: "Some draft text",
     draftValidation: { findings: [], passed: true, errors: 0, warnings: 0 },
     reviewChecks: [true, true, true, true],
   });
-  assert.equal(canAdvance(state, def), true, "Should advance when validation passes and all checks done");
+  state = approveWorkflow(state);
+  assert.equal(canAdvance(state, def), true, "Should advance when validation passes, all checks done, and approved");
 });
 
 test("P0-1: canAdvance returns false for review when checks incomplete even if validation passes", () => {
@@ -127,12 +128,18 @@ test("P0-1 regression: advanceStep from draft with failed validation produces a 
     draft: "Some draft text",
     draftValidation: { findings: [], passed: false, errors: 1, warnings: 0 },
   });
-  // Simulate forced advance (bypassing canAdvance)
+  // advanceStep respects canAdvance — it won't advance with failed validation
   state = advanceStep(state, def);
-  assert.equal(state.phase, "review", "Phase should be review after advancing");
-  // Even with all checks done, validation failure blocks
+  assert.equal(state.phase, "draft", "Phase should stay at draft when validation fails");
+  // Simulate forced bypass to review (e.g., goToStep)
+  const steps = def.ux?.steps ?? [];
+  const reviewIndex = steps.findIndex(s => s.id === "review");
+  state = { ...state, step: reviewIndex, phase: "review" };
+  assert.equal(state.phase, "review", "Phase should be review after forced bypass");
+  // Even with all checks done, validation failure blocks (approveWorkflow won't help because hasCompletedReview checks draftValidation.passed)
   state = { ...state, reviewChecks: [true, true, true, true] };
-  assert.equal(canAdvance(state, def), false, "Cannot advance from review with failed validation");
+  state = approveWorkflow(state);
+  assert.equal(canAdvance(state, def), false, "Cannot advance from review with failed validation even after approve attempt");
 });
 
 test("P0-1 regression: only passing validation + all checks allows reaching mailing", () => {
@@ -144,7 +151,8 @@ test("P0-1 regression: only passing validation + all checks allows reaching mail
   state = advanceStep(state, def);
   assert.equal(state.phase, "review", "Phase should be review");
   state = { ...state, reviewChecks: [true, true, true, true] };
-  assert.equal(canAdvance(state, def), true, "Can advance from review with passing validation and all checks");
+  state = approveWorkflow(state);
+  assert.equal(canAdvance(state, def), true, "Can advance from review with passing validation, all checks, and approval");
   // Now advancing through attachments → recipient → mailing should all be allowed
   state = advanceStep(state, def); // attachments
   assert.equal(canAdvance(state, def), true, "Can advance from attachments");
