@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { authErrorResponse, requireAuthenticatedUser } from "@/lib/auth-guard";
+import { authErrorResponse, NoticeRespondAuthError, requireAuthenticatedUser } from "@/lib/auth-guard";
 import { calculateQuote, getWorkflowPricingProfile, LABELS, type MailClass } from "@mailmypdf/pricing";
 
 /**
@@ -19,8 +19,6 @@ export const Route = createFileRoute("/api/checkout")({
       POST: async ({ request }) => {
         try {
           const user = await requireAuthenticatedUser(request);
-          if (!user) return authErrorResponse();
-
           const input = await request.json() as {
             draft?: string;
             workflowId?: string;
@@ -45,30 +43,31 @@ export const Route = createFileRoute("/api/checkout")({
           const key = process.env.STRIPE_SECRET_KEY;
           if (!key) return Response.json({ error: "Stripe is not configured." }, { status: 503 });
 
-          // ── Canonical pricing — server-authoritative quote ──────────
+          // Canonical pricing is authoritative. Non-production workflows are not
+          // allowed to create a zero-dollar payment session by accident.
           const profile = getWorkflowPricingProfile(input.workflowId);
+          if (!profile || profile.commercialStatus !== "production") {
+            return Response.json(
+              { error: "This workflow is not currently available for paid checkout." },
+              { status: 409 },
+            );
+          }
+
           const actualPages = estimatePageCount(input.draft);
           const mailClass = input.mailingMethod as MailClass;
+          const quote = calculateQuote({
+            workflowId: input.workflowId,
+            verticalId: "notice-respond",
+            actualPages,
+            mailClass,
+          });
 
-          let quoteTotalCents: number;
-          let lineItemName: string;
-          let lineItemDescription: string;
-
-          if (profile && profile.commercialStatus === "production") {
-            const quote = calculateQuote({
-              workflowId: input.workflowId,
-              verticalId: "notice-respond",
-              actualPages,
-              mailClass,
-            });
-            quoteTotalCents = quote.totalCents;
-            lineItemName = `${input.workflowTitle || input.workflowId} — ${LABELS[mailClass]}`;
-            lineItemDescription = `Workflow preparation ($${(quote.basePriceCents / 100).toFixed(2)}) + ${LABELS[mailClass]}`;
-          } else {
-            quoteTotalCents = 0;
-            lineItemName = input.workflowTitle || input.workflowId;
-            lineItemDescription = `Notice response — ${LABELS[mailClass] || "Standard mailing"}`;
+          if (!Number.isInteger(quote.totalCents) || quote.totalCents <= 0) {
+            return Response.json({ error: "The selected workflow does not have a valid checkout price." }, { status: 409 });
           }
+
+          const lineItemName = `${input.workflowTitle || input.workflowId} — ${LABELS[mailClass]}`;
+          const lineItemDescription = `Workflow preparation ($${(quote.basePriceCents / 100).toFixed(2)}) + ${LABELS[mailClass]}`;
 
           const { default: Stripe } = await import("stripe");
           const stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
@@ -84,7 +83,7 @@ export const Route = createFileRoute("/api/checkout")({
                   name: lineItemName,
                   description: lineItemDescription,
                 },
-                unit_amount: quoteTotalCents,
+                unit_amount: quote.totalCents,
               },
               quantity: 1,
             }],
@@ -92,8 +91,8 @@ export const Route = createFileRoute("/api/checkout")({
               workflow_id: input.workflowId,
               mailing_method: input.mailingMethod,
               owner_user_id: user.id,
-              pricing_source: profile ? "canonical" : "fallback",
-              quote_total_cents: String(quoteTotalCents),
+              pricing_source: "canonical",
+              quote_total_cents: String(quote.totalCents),
               actual_pages: String(actualPages),
             },
             success_url: `${appUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -102,8 +101,9 @@ export const Route = createFileRoute("/api/checkout")({
 
           return Response.json({ ok: true, checkoutUrl: session.url, sessionId: session.id });
         } catch (error) {
-          const message = error instanceof Error ? error.message : "Unable to create checkout session.";
-          return Response.json({ error: message }, { status: /authentication|required|token/i.test(message) ? 401 : 502 });
+          if (error instanceof NoticeRespondAuthError) return authErrorResponse(error);
+          console.error("Notice checkout failed", error);
+          return Response.json({ error: "Unable to create checkout session." }, { status: 502 });
         }
       },
     },
