@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { propagateSSOSession } from "./sso-propagate";
 import { setOwnerContext, clearOwnerContext } from "@/platform/owner-context";
 
 export type UserRole = "customer" | "admin" | "super_admin";
@@ -48,8 +49,23 @@ type SupabaseClient = {
 
 async function loadSupabase(): Promise<SupabaseClient | null> {
   const env = (import.meta as { env?: Record<string, string | undefined> }).env || {};
-  const url = env.VITE_SUPABASE_URL;
-  const anonKey = env.VITE_SUPABASE_ANON_KEY;
+  let url = env.VITE_SUPABASE_URL;
+  let anonKey = env.VITE_SUPABASE_ANON_KEY;
+
+  // Fall back to runtime config endpoint (Cloudflare Pages secrets)
+  if (!url || !anonKey) {
+    try {
+      const res = await fetch("/api/auth/config");
+      if (res.ok) {
+        const data = await res.json() as { configured: boolean; url: string; anonKey: string };
+        if (data.configured && data.url && data.anonKey) {
+          url = data.url;
+          anonKey = data.anonKey;
+        }
+      }
+    } catch { /* network error */ }
+  }
+
   if (!url || !anonKey) return null;
   try {
     const { createClient } = await import("@supabase/supabase-js");
@@ -89,12 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
       }
       setLoading(false);
-      const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+      const { data } = client.auth.onAuthStateChange((event, nextSession) => {
         const nextUser = nextSession?.user;
         if (nextUser?.id && nextSession?.access_token) {
           setOwnerContext(nextUser.id);
           setUser(mapUser(nextUser));
           setAccessToken(nextSession.access_token);
+          if (event === "SIGNED_IN" && nextSession?.refresh_token) {
+            propagateSSOSession(nextSession.access_token!, nextSession.refresh_token!, nextSession.expires_in ?? 3600);
+          }
         } else {
           clearOwnerContext();
           setUser(null);

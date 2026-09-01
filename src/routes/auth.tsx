@@ -3,6 +3,7 @@ import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useAuth } from "@/lib/auth";
+import { redirectToHubSSO } from "@/lib/sso-propagate";
 import { safeReturnTo } from "@/lib/use-start-workflow-guard";
 
 export const Route = createFileRoute("/auth")({
